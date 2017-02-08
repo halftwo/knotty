@@ -1,0 +1,65 @@
+
++++++++++++++++++++++++++++++++++++++++++
+     安装部署 x4fcgi 的简要说明
++++++++++++++++++++++++++++++++++++++++++
+
+
+安装及配置
+==============
+1. 将 x4fcgi 程序以及配置文件 conf.x4fcgi 拷贝到部署的目录下。
+
+2. 修改 conf.x4fcgi 的相关配置，通常需要修改以下几项:
+	
+	Fcgi.RootDir = /var/x4fcgi
+	Fcgi.ConnectionMax = 2
+	Fcgi.DisplayError = false
+
+   其他项目根据需要进行修改, 特别是 Fcgi.ConnectionMax 不能大于 php-fpm
+   配置文件中 pm.max_children 的值
+
+3. 启动 x4fcgi 进程
+	./x4fcgi --xic.conf=conf.x4fcgi &
+
+4. 将 php/x4fcgi.php 文件拷贝到 php 的 include_path。
+   php 的 include_path 可以通过以下命令获知:
+	php -i |grep includee_path
+
+5. 安装示例服务。将 ./php 目录下的 example 目录整个拷贝到
+   conf.x4fcgi 配置文件中 Fcgi.RootDir 配置项指定的目录下。
+
+6. 测试。运行 php/example 目录下的 testr.php 程序
+	php php/example/testr.php
+
+
+常见故障及排除办法
+===================
+
+* 客户端程序 testr.php 收到异常返回
+	Fcgi application return status(404)
+  则表明 example 没有正确安装, 或者 conf.x4fcgi 中的 Fcgi.EntryFile 不是
+	run.php
+
+
+* 客户端程序 testr.php 收到异常返回
+	invalid return from fcgi: XIC4FCGI_VERSION not match
+  则有可能 x4fcgi.php 没有安装到正确的位置
+
+
+* 客户端程序 testr.php 收到异常返回
+	Fcgi application return status(500)
+  则表明 example/run.php 程序运行出现错误。那么请在命令行下运行一下该程序
+ 	php example/run.php
+  看看有什么错误消息
+
+
+* 遇到 500 错误的原因，很可能是 php 的扩展 xic.so 版本过老，
+  请联系系统部升级 xic.so。升级完 xic.so 之后，php-fpm 需要重启，否则会
+  收到类似
+	No valid answer from fcgi
+  的异常
+
+
+* 开发机上的dlog如果没有 x4fcgi 的日志, 则该开发机的 dlog 版本过老，
+  请升级 dlogd, dlog_center, 并安装第三方开源压缩程序 lz4
+
+

@@ -1,0 +1,18 @@
+
+function init()
+end
+
+function filter(lg)
+--	local time = lg.time
+--	local ip = lg.ip
+--	local pid = lg.pid
+--	local port = lg.port
+--	local identity = lg.identity
+--	local tag = lg.tag
+--	local locus = lg.locus
+--	local content = lg.content
+end
+
+function finish()
+end
+

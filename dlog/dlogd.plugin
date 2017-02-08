@@ -1,0 +1,29 @@
+dlog.set_center("127.0.0.1")
+
+ignore_tags = {}
+
+
+function init()
+end
+
+
+function finish()
+end
+
+
+function filter(lg)
+--	local time = lg.time
+--	local ip = lg.ip
+--	local pid = lg.pid
+--	local port = lg.port
+--	local identity = lg.identity
+	local tag = lg.tag
+--	local locus = lg.locus
+--	local content = lg.content
+
+	if ignore_tags[tag] then
+		return true
+	end
+
+end
+

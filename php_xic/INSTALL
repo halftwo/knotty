@@ -1,0 +1,52 @@
+
+##
+## compile
+##
+## Substitute the $(PHP_CONFIG) to the real pathname of php-config program
+##
+$ phpize
+$ ./configure --enable-xic=shared --with-php-config=$(PHP_CONFIG)
+$ make
+
+
+##
+## install modules/xic.so to extension_dir of php
+##
+## You can find the php extension_dir by running following command
+##	php -i | grep extension_dir
+##
+##
+
+
+##
+## edit php.ini, add following line:
+##
+## 	extension = xic.so
+##
+## You can find the location of php.ini by running following command
+## 	php --ini
+##
+
+
+##
+## install xic.php into one of directories of the php include_path.
+## See php.ini to find out the php include_path or run command to get it:
+## 		php -i | grep include_path
+##
+$ cp xic.php $(PHP_INCLUDE_PATH)
+
+
+##
+## test
+## 
+$ php ./test.php
+
+
+##
+## restart httpd or php-fpm
+## 
+## If you just upgrade xic.so, you should stop httpd or php-fpm first,
+## then copy xic.so to the extension_dir, and start httpd or php-fpm 
+## finally to finish the upgrading process.
+## 
+

@@ -1,0 +1,52 @@
+
+xic.Endpoints = @ tcp++3030
+
+Fcgi.Location = localhost+9000
+#Fcgi.Location = /var/run/php-fpm-x4fcgi.sock
+
+
+#
+# Should be large enough but smaller than or equal to the php-fpm
+# 	pm.max_children
+# Default 2.
+# You should increase this value in production environment.
+#
+Fcgi.ConnectionMax = 2
+
+
+#
+# The SCRIPT_FILENAME that get to run is 
+#	${Fcgi.RootDir}/SERVICE/${Fcgi.Entry}
+#
+
+Fcgi.RootDir = /var/x4fcgi
+
+Fcgi.EntryFile = run.php
+
+# in milliseconds
+Fcgi.Timeout = 0
+
+
+#
+# You should set Fcgi.DisplayError to false in production environment.
+#
+Fcgi.DisplayError = true
+
+
+#
+# Because the program use asynchronous networking IO.
+# No need to increase the thread number to a high value.
+#
+Fcgi.ThreadPoolNumber = 2
+
+
+#
+# Because the program use asynchronous networking IO.
+# No need to increase the thread number to a high value.
+#
+xic.PThreadPool.Server.SizeMax = 2
+
+
+xic.user = www
+xic.group = www 
+

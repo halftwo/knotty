@@ -1,0 +1,18 @@
+#
+# ./DemoServer --xic.conf=conf.demo &
+#
+
+xic.Endpoints = @tcp++55555 timeout=5000 @tcp+::+5555 timeout=5000
+
+xic.PThreadPool.Server.Size = 10
+xic.PThreadPool.Server.SizeMax = 100
+
+xic.SThreadPool.Server.SizeMax = 10k
+
+# Only root can raise this number
+xic.rlimit.nofile = 2000
+
+xic.sample.server = 1
+xic.passport.shadow = shadow.example
+xic.passport.secret = secret.example
+

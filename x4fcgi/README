@@ -1,0 +1,21 @@
+This project is for xic service provided by fcgi program.
+
+x4fcgi is a daemon translate xic protocol to fcgi protocol.
+
+xic client connects and quests to the x4fcgi like a normal xic server,
+The x4fcgi sends the quests to the fcgi program and return the answer
+from the fcgi program to the client.
+
+The x4fcgi server must set environment variable XIC4FCGI_VERSION to 1.
+The fcgi program must return a header "XIC4FCGI_VERSION: 1".
+
+The stdin for the fcgi program is xic quest message body itself, which
+means it's vbs encoded. The content (wiping off the headers) of the 
+stdout from the fcgi program is xic answer message body.
+
+The fcgi program can be written by any program language, but a dynamic
+language such as PHP is more common.
+
+The x4fcgi does not define any xic interface and method, because all
+it does is a translation instead of the bussiness logics. 
+

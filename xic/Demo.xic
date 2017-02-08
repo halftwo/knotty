@@ -1,0 +1,28 @@
+
+
+Tester or Demo
+===============
+
+=> time {}
+<= { time^%i; utc^%s; local^%s; }
+
+=> echo { ... }
+<= { ... }
+
+=> rubbish { size^%i }
+<= { data^%b }
+
+=~ discard { ... }
+
+=> wait { seconds^%i }
+<= { seconds^%i }
+
+=> rmi { proxy^%s; method^%s; args^{%s^%X} }
+<= { %s^%X }
+
+=> throwException { ?code^%i; ?message^%s; }
+<= {}
+
+=> selfProxy {}
+<= { proxy^%s }
+

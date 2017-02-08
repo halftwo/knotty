@@ -1,0 +1,105 @@
+
+#
+# This line and the lines before and after this are comments.
+# Comment lines must begin with '#', and occupy a whole line.
+# A '#' in the middle of line will not be treated as an indicator of comments.
+#
+# Integer number may suffixed by k(1000), M(10^6), G, T, P, E,
+# or Ki(2^10), Mi(2^20), Gi, Ti, Pi, Ei
+#
+
+#
+# Endpoint timeouts, if specified, can have following forms:
+#	timeout=MSG_TIMEOUT
+#	timeout=MSG_TIMEOUT,CLOSE_TIMEOUT
+#	timeout=MSG_TIMEOUT,CLOSE_TIMEOUT,CONNECT_TIMEOUT
+#	timeout=MSG_TIMEOUT,,CONNECT_TIMEOUT
+#	timeout=,CLOSE_TIMEOUT,CONNECT_TIMEOUT
+#	timeout=,CLOSE_TIMEOUT
+# if CLOSE_TIMEOUT and/or CONNECT_TIMEOUT are not specified, they
+# are the same as the TIMEOUT
+# NB: Adapter has no CONNECT_TIMEOUT.
+#
+
+SAMPLE_ADAPTER_NAME.Endpoints = @tcp+IP1+PORT1 @tcp+IP2+PORT2 timeout=MSG_TIMEOUT2,CLOSE_TIMEOUT2
+# OR
+xic.Endpoints = @tcp+IP1+PORT1 @tcp+IP2+PORT2 timeout=MSG_TIMEOUT2
+
+xic.allow.ips = 127.0.0.1 ::1 192.168.1.0/24
+xic.passport.shadow = shadow.example
+xic.passport.secret = secret.example
+
+
+xic.PThreadPool.Server.Size = 1
+xic.PThreadPool.Server.SizeMax = 1
+xic.PThreadPool.Server.StackSize = 1Mi
+
+xic.PThreadPool.Client.Size = 1
+xic.PThreadPool.Client.SizeMax = 1
+xic.PThreadPool.Client.StackSize = 1Mi
+
+
+xic.SThreadPool.Server.SizeMax = 10k
+xic.SThreadPool.Server.StackSize = 64Ki
+
+xic.SThreadPool.Client.SizeMax = 10k
+xic.SThreadPool.Client.StackSize = 64Ki
+
+
+# Idle time in seconds for Active Connection Management
+xic.acm.client = 300
+xic.acm.server = 0
+
+# Max size of message body
+xic.message.size = 64Mi
+
+# in milliseconds, 0 for no timeout
+xic.timeout.message = 0
+xic.timeout.close = 900k
+xic.timeout.connect = 60k
+
+
+xic.cpu.ac = false
+
+xic.xlog.level = 0
+xic.XError.how = 1
+
+
+xic.dlog.identity = SampleApplicationName
+
+
+xic.dlog.sq = false
+xic.dlog.sa = false 
+xic.dlog.sae = false
+
+xic.dlog.cq = false
+xic.dlog.ca = false 
+xic.dlog.cae = false 
+
+xic.dlog.warning = true
+xic.dlog.debug = false 
+
+
+xic.rlimit.core = 0
+# Only root can raise this number above the default value
+xic.rlimit.nofile = 1024
+# virtual memory (address space), -1 for unlimited
+xic.rlimit.as = -1
+
+
+xic.umask = 022
+xic.user = root
+xic.group = root 
+
+
+# in milliseconds, -1 to disable
+xic.slow.server = -1
+xic.slow.client = -1
+
+# dlog it every n quests (in that probability instead of exactly), 0 to disable
+xic.sample.server = 0
+xic.sample.client = 0
+
+xic.except.server = false
+xic.except.client = false
+
