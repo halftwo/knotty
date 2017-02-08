@@ -362,28 +362,6 @@ inline VListWriter VListWriter::vlist()
 	return VListWriter(_entity);
 }
 
-inline void vlist_write_all(xic::VListWriter& lw, const vbs_list_t *vl)
-{
-	if (vl->_raw.data && vl->_raw.len)
-	{
-		const xstr_t& raw = vl->_raw;
-		assert(raw.data[0] == VBS_LIST && raw.data[raw.len - 1] == VBS_TAIL);
-		lw.raw(raw.data + 1, raw.len - 2);
-	}
-	else
-	{
-		for (const vbs_litem_t *ent = vl->first; ent; ent = ent->next)
-		{
-			lw.v(ent->value);
-		}
-	}
-}
-
-inline void vlist_write_all(xic::VListWriter& lw, const xic::VList& vlist)
-{
-	vlist_write_all(lw, vlist.list());
-}
-
 template <typename ListType>
 inline VListWriter VListWriter::vlist(const ListType& values)
 {
@@ -391,7 +369,7 @@ inline VListWriter VListWriter::vlist(const ListType& values)
 		_entity->finish_child();
 
 	VListWriter lw(_entity);
-	vlist_write_all(lw, values);
+	::vlist_write_all(lw, values);
 	return lw;
 }
 
@@ -402,28 +380,6 @@ inline VDictWriter VListWriter::vdict()
 	return VDictWriter(_entity);
 }
 
-inline void vdict_write_all(xic::VDictWriter& dw, const vbs_dict_t *vd)
-{
-	if (vd->_raw.data && vd->_raw.len)
-	{
-		const xstr_t& raw = vd->_raw;
-		assert(raw.data[0] == VBS_DICT && raw.data[raw.len - 1] == VBS_TAIL);
-		dw.raw(raw.data + 1, raw.len - 2);
-	}
-	else
-	{
-		for (const vbs_ditem_t *ent = vd->first; ent; ent = ent->next)
-		{
-			dw.kv(ent->key, ent->value);
-		}
-	}
-}
-
-inline void vdict_write_all(xic::VDictWriter& dw, const xic::VDict& vdict)
-{
-	vdict_write_all(dw, vdict.dict());
-}
-
 template <typename DictType>
 inline VDictWriter VListWriter::vdict(const DictType& dict)
 {
@@ -431,7 +387,7 @@ inline VDictWriter VListWriter::vdict(const DictType& dict)
 		_entity->finish_child();
 
 	VDictWriter dw(_entity);
-	vdict_write_all(dw, dict);
+	::vdict_write_all(dw, dict);
 	return dw;
 }
 
@@ -599,7 +555,7 @@ inline VListWriter VDictWriter::kvlist(const KeyType& key, const ListType& value
 	_entity->write(key);
 
 	VListWriter lw(_entity);
-	vlist_write_all(lw, values);
+	::vlist_write_all(lw, values);
 	return lw;
 }
 
@@ -621,7 +577,7 @@ inline VDictWriter VDictWriter::kvdict(const KeyType& key, const DictType& dict)
 	_entity->write(key);
 	
 	VDictWriter dw(_entity);
-	vdict_write_all(dw, dict);
+	::vdict_write_all(dw, dict);
 	return dw;
 }
 
@@ -668,6 +624,28 @@ inline void vlist_write_all(xic::VListWriter& lw, const ListType& values)
 	}
 }
 
+inline void vlist_write_all(xic::VListWriter& lw, const vbs_list_t *vl)
+{
+	if (vl->_raw.data && vl->_raw.len)
+	{
+		const xstr_t& raw = vl->_raw;
+		assert(raw.data[0] == VBS_LIST && raw.data[raw.len - 1] == VBS_TAIL);
+		lw.raw(raw.data + 1, raw.len - 2);
+	}
+	else
+	{
+		for (const vbs_litem_t *ent = vl->first; ent; ent = ent->next)
+		{
+			lw.v(ent->value);
+		}
+	}
+}
+
+inline void vlist_write_all(xic::VListWriter& lw, const xic::VList& vlist)
+{
+	vlist_write_all(lw, vlist.list());
+}
+
 
 template <typename KeyType, typename ValueType>
 inline void vdict_write_one_item(xic::VDictWriter& dw, const KeyType& k, const ValueType& v)
@@ -682,6 +660,28 @@ inline void vdict_write_all(xic::VDictWriter& dw, const DictType& dict)
 	{
 		vdict_write_one_item(dw, iter->first, iter->second);
 	}
+}
+
+inline void vdict_write_all(xic::VDictWriter& dw, const vbs_dict_t *vd)
+{
+	if (vd->_raw.data && vd->_raw.len)
+	{
+		const xstr_t& raw = vd->_raw;
+		assert(raw.data[0] == VBS_DICT && raw.data[raw.len - 1] == VBS_TAIL);
+		dw.raw(raw.data + 1, raw.len - 2);
+	}
+	else
+	{
+		for (const vbs_ditem_t *ent = vd->first; ent; ent = ent->next)
+		{
+			dw.kv(ent->key, ent->value);
+		}
+	}
+}
+
+inline void vdict_write_all(xic::VDictWriter& dw, const xic::VDict& vdict)
+{
+	vdict_write_all(dw, vdict.dict());
 }
 
 
