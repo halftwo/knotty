@@ -94,7 +94,7 @@ ssize_t xbase85_decode(void *out, const char *in, size_t len)
 	int cnt = 0;
 	const char *last = src;
 
-	if (len >= 0)
+	if ((ssize_t)len >= 0)
 	{
 		end = src + len;
 		find_end = false;
