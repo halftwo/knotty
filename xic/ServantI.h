@@ -21,7 +21,7 @@ struct MethodTab
 
 	class NodeType
 	{
-		friend class MethodTab;
+		friend struct MethodTab;
 		NodeType(const char *name, size_t nlen, const Servant::MethodFunction& func);
 		NodeType* hash_next;
 	public:
