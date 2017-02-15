@@ -7,13 +7,13 @@ LIBRARY= libdlog.a
 
 EXES= dlogd dlog_center dlog_write dstsd
 
-CFLAGS= -g -Wall -fPIC -rdynamic -O2
+CFLAGS= -g -Wall -fPIC -O2
 
-CXXFLAGS = -g -Wall -fPIC -rdynamic -O2
+CXXFLAGS = -g -Wall -fPIC -O2
 
 CPPFLAGS= -DXSLIB_RCSID -I. -I.. -I../3rd_party/lua/src
 
-LIBS= -pthread -L. -L../lib -L../3rd_party/lua/src -lxs -llua -ldl -lm -lrt
+LIBS= -rdynamic -pthread -L. -L../lib -L../3rd_party/lua/src -lxs -llua -ldl -lm -lrt
 
 all: $(OBJS) $(LIBRARY) $(EXES)
 
