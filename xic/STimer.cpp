@@ -38,8 +38,9 @@ STimerTask::~STimerTask()
 {
 }
 
-struct STimerTaskMan
+class STimerTaskMan
 {
+public:
 	STimerTask *task;
 
 public:
@@ -205,7 +206,7 @@ bool STimerI::replaceTaskLaterThan(STimerTask* task, int timeout)
 		if (_canceled)
 			return false;
 
-		if (_heap.empty() || _heap.top().msec() > msec);
+		if (_heap.empty() || _heap.top().msec() > msec)
 			interrupt = true;
 
 		int idx = tm.index();

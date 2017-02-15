@@ -29,8 +29,9 @@ XTimerTask::~XTimerTask()
 {
 }
 
-struct XTimerTaskMan
+class XTimerTaskMan
 {
+public:
 	XTimerTask *task;
 
 public:
@@ -215,7 +216,7 @@ bool XTimerI::replaceTaskLaterThan(XTimerTask* task, int timeout)
 		if (_canceled)
 			return false;
 
-		if (_heap.empty() || _heap.top().msec() > msec);
+		if (_heap.empty() || _heap.top().msec() > msec)
 			interrupt = true;
 
 		int idx = tm.index();

@@ -112,8 +112,9 @@ void FdQueue::foreach(void (*fun)(FdHandler *hr))
 	}
 }
 
-struct FdMan
+class FdMan
 {
+public:
 	FdHandler *hr;
 
 public:
@@ -183,8 +184,9 @@ struct FdManSwap
 };
 
 
-struct TaskMan
+class TaskMan
 {
+public:
 	TaskHandler *hr;
 
 public:
@@ -826,7 +828,7 @@ bool EpollDisp::replaceTaskLaterThan(TaskHandler* handler, int timeout)
 
 		if (_timeout)
 		{
-			if (_theap.empty() || _theap.top().msec() > msec);
+			if (_theap.empty() || _theap.top().msec() > msec)
 				interrupt = true;
 		}
 
