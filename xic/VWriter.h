@@ -641,6 +641,7 @@ inline void vlist_write_all(xic::VListWriter& lw, const vbs_list_t *vl)
 	}
 }
 
+template <>
 inline void vlist_write_all(xic::VListWriter& lw, const xic::VList& vlist)
 {
 	vlist_write_all(lw, vlist.list());
@@ -679,6 +680,7 @@ inline void vdict_write_all(xic::VDictWriter& dw, const vbs_dict_t *vd)
 	}
 }
 
+template <>
 inline void vdict_write_all(xic::VDictWriter& dw, const xic::VDict& vdict)
 {
 	vdict_write_all(dw, vdict.dict());
