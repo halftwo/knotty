@@ -11,13 +11,13 @@ LIBXIC = libxic.a
 EXES = shadow_gen secret_check DemoServer DemoClient DemoServerSt DemoClientSt
 
 
-CFLAGS = -g -Wall -rdynamic -O2
+CFLAGS = -g -Wall -O2
 
-CXXFLAGS = -g -Wall -rdynamic -O2
+CXXFLAGS = -g -Wall -O2
 
 CPPFLAGS = -I. -I.. -I../include
 
-LIBS = -pthread -L../lib -lxic -ldlog -lxs -lrt
+LIBS = -rdynamic -pthread -L../lib -lxic -ldlog -lxs -lrt
 
 
 all: $(OBJS) $(LIBXIC) $(EXES)
