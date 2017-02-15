@@ -14,7 +14,7 @@
 template<typename Key, typename Data, typename HashFun = HashFunctor<Key> >
 class LruHashMap
 {
-	class Node;
+	struct Node;
 public:
 	typedef Key key_type;
 	typedef Data data_type;
@@ -44,8 +44,9 @@ public:
 	node_type *next_stale(const node_type *node) const;
 
 private:
-	class Node
+	struct Node
 	{
+	private:
 		Node(const Key& key_, const Data& data_): key(key_), data(data_)
 		{}
 
