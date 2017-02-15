@@ -2,10 +2,10 @@
 BASE_HOME = ..
 
 INC = -I. -I$(BASE_HOME) -I$(BASE_HOME)/include
-LIBS = -pthread -L${BASE_HOME}/lib -lxic -ldlog -lxs -lrt
+LIBS = -rdynamic -pthread -L${BASE_HOME}/lib -lxic -ldlog -lxs -lrt
 
-CFLAGS = -g -Wall -rdynamic -O2
-CXXFLAGS = -g -Wall -rdynamic -O2
+CFLAGS = -g -Wall -O2
+CXXFLAGS = -g -Wall -O2
 
 OBJS = FcgiQuest.o FcgiClient.o
 
