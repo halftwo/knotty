@@ -188,7 +188,7 @@ ssize_t unixfs_put_content(const char *pathname, const void *content, size_t siz
 	int fd;
 	ssize_t n;
 
-	if (size < 0)
+	if ((ssize_t)size < 0)
 		return -1;
 
 	fd = open(pathname, O_WRONLY | O_CREAT, 0664);
