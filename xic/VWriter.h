@@ -624,21 +624,31 @@ inline void vlist_write_all(xic::VListWriter& lw, const ListType& values)
 	}
 }
 
-inline void vlist_write_all(xic::VListWriter& lw, const vbs_list_t *vl)
+template <>
+inline void vlist_write_all(xic::VListWriter& lw, const vbs_list_t *const& vl)
 {
-	if (vl->_raw.data && vl->_raw.len)
+	if (vl)
 	{
-		const xstr_t& raw = vl->_raw;
-		assert(raw.data[0] == VBS_LIST && raw.data[raw.len - 1] == VBS_TAIL);
-		lw.raw(raw.data + 1, raw.len - 2);
-	}
-	else
-	{
-		for (const vbs_litem_t *ent = vl->first; ent; ent = ent->next)
+		if (vl->_raw.data && vl->_raw.len)
 		{
-			lw.v(ent->value);
+			const xstr_t& raw = vl->_raw;
+			assert(raw.data[0] == VBS_LIST && raw.data[raw.len - 1] == VBS_TAIL);
+			lw.raw(raw.data + 1, raw.len - 2);
+		}
+		else
+		{
+			for (const vbs_litem_t *ent = vl->first; ent; ent = ent->next)
+			{
+				lw.v(ent->value);
+			}
 		}
 	}
+}
+
+template <>
+inline void vlist_write_all(xic::VListWriter& lw, vbs_list_t *const& vl)
+{
+	vlist_write_all(lw, (const vbs_list_t*)vl);
 }
 
 template <>
@@ -663,21 +673,31 @@ inline void vdict_write_all(xic::VDictWriter& dw, const DictType& dict)
 	}
 }
 
-inline void vdict_write_all(xic::VDictWriter& dw, const vbs_dict_t *vd)
+template <>
+inline void vdict_write_all(xic::VDictWriter& dw, const vbs_dict_t *const& vd)
 {
-	if (vd->_raw.data && vd->_raw.len)
+	if (vd)
 	{
-		const xstr_t& raw = vd->_raw;
-		assert(raw.data[0] == VBS_DICT && raw.data[raw.len - 1] == VBS_TAIL);
-		dw.raw(raw.data + 1, raw.len - 2);
-	}
-	else
-	{
-		for (const vbs_ditem_t *ent = vd->first; ent; ent = ent->next)
+		if (vd->_raw.data && vd->_raw.len)
 		{
-			dw.kv(ent->key, ent->value);
+			const xstr_t& raw = vd->_raw;
+			assert(raw.data[0] == VBS_DICT && raw.data[raw.len - 1] == VBS_TAIL);
+			dw.raw(raw.data + 1, raw.len - 2);
+		}
+		else
+		{
+			for (const vbs_ditem_t *ent = vd->first; ent; ent = ent->next)
+			{
+				dw.kv(ent->key, ent->value);
+			}
 		}
 	}
+}
+
+template <>
+inline void vdict_write_all(xic::VDictWriter& dw, vbs_dict_t *const& vd)
+{
+	vdict_write_all(dw, (const vbs_dict_t*)vd);
 }
 
 template <>
