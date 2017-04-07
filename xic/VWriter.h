@@ -3,6 +3,7 @@
 
 #include "VData.h"
 #include "xslib/oref.h"
+#include "xslib/XRefCount.h"
 #include "xslib/vbs_pack.h"
 #include "xslib/XError.h"
 #include "xslib/xformat.h"
@@ -116,7 +117,8 @@ protected:
 		void writeStanza(const unsigned char *buf, size_t size) 	{ vbs_pack_raw(_pk, buf, size); }
 
 	private:
-		void write(const void *dummy);
+		void write(const void *dummy);		// These private functions should NOT be implemented
+		void write(const XRefCountPtr& dummy);	// and called
 	};
 
 	VComWriter();
