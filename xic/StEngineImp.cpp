@@ -1779,7 +1779,7 @@ void StEngine::_doom(int seconds)
 
 void StEngine::waitForShutdown()
 {
-	xic::readyToServe();
+	xic::readyToServe(_setting);
 
 	if (!_stopped)
 		st_cond_wait(_runCond);

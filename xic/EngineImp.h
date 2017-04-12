@@ -80,7 +80,7 @@ void adjustTSC(uint64_t frequency);
 
 void prepareEngine(const SettingPtr& setting);
 
-void readyToServe();
+void readyToServe(const SettingPtr& setting);
 
 size_t getIps(const xstr_t& host, uint32_t ipv4s[], int *v4num, uint8_t ipv6s[][16], int *v6num, bool& any);
 

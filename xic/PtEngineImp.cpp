@@ -2039,7 +2039,7 @@ void PtEngine::_doom(int seconds)
 
 void PtEngine::waitForShutdown()
 {
-	xic::readyToServe();
+	xic::readyToServe(_setting);
 
 	_timer->waitForCancel();
 }

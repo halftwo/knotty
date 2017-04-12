@@ -336,19 +336,19 @@ void xic::prepareEngine(const SettingPtr& setting)
 			_set_rlimit(RLIMIT_AS, n);
 		}
 
-		std::string user = setting->getString("xic.user");
-		std::string group = setting->getString("xic.group");
-		if (!user.empty() || !group.empty())
-			unix_set_user_group(user.c_str(), group.c_str());
-
 		xic_dlog_debug = setting->getBool("xic.dlog.debug");
 		xic_dlog_warning = setting->getBool("xic.dlog.warning", true);
 	}
 }
 
-void xic::readyToServe()
+void xic::readyToServe(const SettingPtr& setting)
 {
 	_ready_to_serve = true;
+
+	std::string user = setting->getString("xic.user");
+	std::string group = setting->getString("xic.group");
+	if (!user.empty() || !group.empty())
+		unix_set_user_group(user.c_str(), group.c_str());
 }
 
 void xic::parseEndpoint(const xstr_t& endpoint, xic::EndpointInfo& ei)

@@ -88,6 +88,8 @@ xic.rlimit.as = -1
 
 
 xic.umask = 022
+
+# setuid() and setgid() is called in Engine::waitForShutdown()
 xic.user = root
 xic.group = root 
 
