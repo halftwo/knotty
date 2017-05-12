@@ -48,9 +48,7 @@ typedef enum
 
 	VBS_NULL	= 0x0F,
 
-	/* RESERVED	  0x10 */
-	/* RESERVED	  .... */
-	/* RESERVED	  0x17 */
+	VBS_DESCRIPTOR	= 0x10,		/* 0001 0xxx */
 
 	VBS_BOOL	= 0x18,		/* 0001 100x */ 	/* 0=F, 1=T */
 
@@ -66,6 +64,9 @@ typedef enum
 	VBS_INTEGER 	= 0x40,		/* 010x xxxx + */
 					/* 011x xxxx - */
 } vbs_type_t;
+
+
+#define VBS_DESCRIPTOR_MAX	INT16_MAX
 
 
 typedef struct vbs_data_t vbs_data_t;
@@ -96,6 +97,8 @@ struct vbs_dict_t
 struct vbs_data_t
 {
 	vbs_type_t 		type;
+
+	int16_t			descriptor;
 
 	unsigned int		is_owner:1;	/* Only applicable to STRING or BLOB */
 	/*
@@ -412,6 +415,7 @@ vbs_data_t *vbs_dict_get_data(const vbs_dict_t *d, const char *key);
 
 
 
+size_t vbs_buffer_of_descriptor(unsigned char *buf, int16_t descriptor);
 
 size_t vbs_buffer_of_integer(unsigned char *buf, intmax_t value);
 size_t vbs_buffer_of_floating(unsigned char *buf, double value);
@@ -427,6 +431,8 @@ size_t vbs_head_buffer_of_dict(unsigned char *buf, size_t bodylen);	/* bodylen i
 #define vbs_byte_of_null()	((unsigned char)VBS_NULL)
 #define vbs_byte_of_tail()	((unsigned char)VBS_TAIL)
 
+
+size_t vbs_size_of_descriptor(int16_t descriptor);
 
 size_t vbs_size_of_integer(intmax_t value);
 size_t vbs_size_of_floating(double value);
@@ -454,15 +460,15 @@ typedef struct
 {
 	ssize_t (*write)(void *cookie, const void *data, size_t size);	/* xio_write_function */
 	void *cookie;
-	short max_depth;
-	short depth;
-	int error;
+	int16_t max_depth;
+	int16_t depth;
+	int16_t error;
 } vbs_packer_t;
 
 #define VBS_PACKER_INIT(WRITE, COOKIE, MAX_DEPTH)	{ (WRITE), (COOKIE), (MAX_DEPTH) }
 
 static inline void vbs_packer_init(vbs_packer_t *job, ssize_t (*write)(void *, const void *, size_t), 
-			void *cookie, short max_depth)
+			void *cookie, int16_t max_depth)
 {
 	job->write = write;
 	job->cookie = cookie;
@@ -475,6 +481,7 @@ static inline void vbs_packer_init(vbs_packer_t *job, ssize_t (*write)(void *, c
 /* Return 0 if success. 
    Return a negative number if error.
 */
+int vbs_pack_descriptor(vbs_packer_t *job, int16_t descriptor);
 int vbs_pack_integer(vbs_packer_t *job, intmax_t value);
 int vbs_pack_uinteger(vbs_packer_t *job, uintmax_t value);
 int vbs_pack_lstr(vbs_packer_t *job, const void *str, size_t len);
@@ -514,20 +521,22 @@ typedef struct
 	unsigned char *buf;
 	unsigned char *cur;
 	unsigned char *end;
-	short max_depth;
-	short depth;
-	int error;
+	int16_t max_depth;
+	int16_t depth;
+	int16_t descriptor;
+	int16_t error;
 } vbs_unpacker_t;
 
-#define VBS_UNPACKER_INIT(BUF, SIZE, MAX_DEPTH)		{ (BUF), (BUF), (BUF)+(SIZE), (MAX_DEPTH) }
+#define VBS_UNPACKER_INIT(BUF, SIZE, MAX_DEPTH)		{ (BUF), (BUF), (BUF)+(SIZE), (MAX_DEPTH), }
 
-static inline void vbs_unpacker_init(vbs_unpacker_t *job, const void *buf, size_t size, short max_depth)
+static inline void vbs_unpacker_init(vbs_unpacker_t *job, const void *buf, size_t size, int16_t max_depth)
 {
 	job->buf = (unsigned char *)buf;
 	job->cur = (unsigned char *)buf;
 	job->end = (unsigned char *)buf + size;
 	job->max_depth = max_depth;
 	job->depth = 0;
+	job->descriptor = 0;
 	job->error = 0;
 }
 
@@ -591,6 +600,8 @@ int vbs_unpack_primitive(vbs_unpacker_t *job, vbs_data_t *p_data, ssize_t *plen)
 /* Call following functions after vbs_unpack_primitive() */
 int vbs_unpack_body_of_list(vbs_unpacker_t *job, ssize_t len, vbs_list_t *list, const xmem_t *xm, void *xm_cookie);
 int vbs_unpack_body_of_dict(vbs_unpacker_t *job, ssize_t len, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie);
+int vbs_skip_body_of_list(vbs_unpacker_t *job);
+int vbs_skip_body_of_dict(vbs_unpacker_t *job);
 
 
 

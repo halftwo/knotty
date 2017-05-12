@@ -43,15 +43,16 @@ static const char *_tpnames[] =
 	"STRING",	/*  8 */
 	"INTEGER",	/*  9 */
 	"BLOB",		/* 10 */
+	"DESCRIPTOR",	/* 11 */
 };
 
 static unsigned char _tpidx[VBS_INTEGER + 1] = 
 {
-	0,  1,  2,  3,  0,  0,  0, 0,	0,  0,  0,  0,  0,  0,  0,  4,
-	0,  0,  0,  0,  0,  0,  0, 0, 	7,  0,  0, 10,  6,  0,  5,  0,
-	8,  0,  0,  0,  0,  0,  0, 0, 	0,  0,  0,  0,  0,  0,  0,  0,
-	0,  0,  0,  0,  0,  0,  0, 0, 	0,  0,  0,  0,  0,  0,  0,  0,
-	9,
+	 0,  1,  2,  3,  0,  0,  0, 0,	0,  0,  0,  0,  0,  0,  0,  4,
+	11,  0,  0,  0,  0,  0,  0, 0, 	7,  0,  0, 10,  6,  0,  5,  0,
+	 8,  0,  0,  0,  0,  0,  0, 0, 	0,  0,  0,  0,  0,  0,  0,  0,
+	 0,  0,  0,  0,  0,  0,  0, 0, 	0,  0,  0,  0,  0,  0,  0,  0,
+	 9,
 };
 
 const char *vbs_type_name(vbs_type_t type)
@@ -439,7 +440,7 @@ static inline bool _unpacker_size_ok(vbs_unpacker_t *job, intmax_t num)
 static const bset_t _single_byte_bset = 
 {
 	{
-	0xFB00C00E, /* 1111 1011 0000 0000  1000 0000 0000 1110 */
+	0xFB00C00E, /* 1111 1011 1111 1111  1000 0000 0000 1110 */
 
 		    /* ?>=< ;:98 7654 3210  /.-, +*)( '&%$ #"!  */
 	0xFFFFFFFF, /* 1111 1111 1111 1111  1111 1111 1111 1111 */
@@ -460,7 +461,7 @@ static const bset_t _single_byte_bset =
 static const bset_t _multi_byte_bset = 
 {
 	{
-	0xF800400C, /* 1111 1000 0000 0000  0000 0000 0000 1100 */
+	0xF800400C, /* 1111 1000 1111 1111  0000 0000 0000 1100 */
 
 		    /* ?>=< ;:98 7654 3210  /.-, +*)( '&%$ #"!  */
 	0xFFFFFFFF, /* 1111 1111 1111 1111  1111 1111 1111 1111 */
@@ -482,11 +483,16 @@ vbs_type_t vbs_unpack_type(vbs_unpacker_t *job, intmax_t *p_num)
 {
 	if (job->cur < job->end)
 	{
-		unsigned char *p = job->cur;
-		uintmax_t num = 0;
-		int type = 0;
-		int negative = 0;
-		int x;
+		unsigned char *p;
+		uintmax_t num;
+		int type, negative, x;
+
+		job->descriptor = 0;
+		p = job->cur;
+again:
+		num = 0;
+		type = 0;
+		negative = 0;
 
 		x = *(unsigned char *)p++;
 		if (x < 0x80)
@@ -516,6 +522,12 @@ vbs_type_t vbs_unpack_type(vbs_unpacker_t *job, intmax_t *p_num)
  				 */
 
 				/* negative = (x & 0x01); */
+			}
+			else if (x >= VBS_DESCRIPTOR)
+			{
+				num = (x & 0x07);
+				job->descriptor = num + 1;
+				goto again;
 			}
 			else if (!BSET_TEST(&_single_byte_bset, x))
 			{
@@ -578,6 +590,29 @@ vbs_type_t vbs_unpack_type(vbs_unpacker_t *job, intmax_t *p_num)
 				type = (x & 0xFE);
 				negative = (x & 0x01);
 			}
+			else if (x >= VBS_DESCRIPTOR && x < VBS_BOOL)
+			{
+				x &= 0x07;
+				if (x)
+				{
+					left = sizeof(uintmax_t) * 8 - shift;
+					if (left <= 0 || (left < 7 && x >= (1 << left)))
+					{
+						job->error = __LINE__;
+						return VBS_ERR_TOOBIG;
+					}
+					num |= ((uintmax_t)x) << shift;
+				}
+
+				if (num >= VBS_DESCRIPTOR_MAX)
+				{
+					job->error = __LINE__;
+					return VBS_ERR_TOOBIG;
+				}
+
+				job->descriptor = num + 1;
+				goto again;
+			}
 			else if (!BSET_TEST(&_multi_byte_bset, x))
 			{
 				job->error = __LINE__;
@@ -615,6 +650,22 @@ static inline int _unpack_int(vbs_unpacker_t *job, intmax_t *p_value)
 	return 0;
 }
 
+
+inline size_t vbs_size_of_descriptor(int16_t descriptor)
+{
+	if (descriptor > 0)
+	{
+		size_t n = 1;
+		--descriptor;
+		while (descriptor > 0x07)
+		{
+			descriptor >>= 7;
+			++n;
+		}
+		return n;
+	}
+	return 0;
+}
 
 inline size_t vbs_size_of_integer(intmax_t value)
 {
@@ -671,6 +722,24 @@ inline size_t vbs_head_size_of_list(size_t len)
 inline size_t vbs_head_size_of_dict(size_t len)
 {
 	return _tag_size(len);
+}
+
+inline size_t vbs_buffer_of_descriptor(unsigned char *buf, int16_t descriptor)
+{
+	if (descriptor > 0)
+	{
+		unsigned char *p = buf;
+		--descriptor;
+		while (descriptor > 0x07)
+		{
+			*p++ = 0x80 | descriptor;
+			descriptor >>= 7;
+		}
+
+		*p++ = VBS_DESCRIPTOR | descriptor;
+		return (p - buf);
+	}
+	return 0;
 }
 
 inline size_t vbs_buffer_of_integer(unsigned char *buf, intmax_t value)
@@ -822,6 +891,17 @@ size_t vbs_size_of_dict(const vbs_dict_t *vd)
 	}
 }
 
+int vbs_pack_descriptor(vbs_packer_t *job, int16_t descriptor)
+{
+	unsigned char tmpbuf[TMPBUF_SIZE];
+	size_t n = vbs_buffer_of_descriptor(tmpbuf, descriptor);
+	if (job->write(job->cookie, tmpbuf, n) != n)
+	{
+		job->error = __LINE__;
+		return -1;
+	}
+	return 0;
+}
 
 int vbs_pack_integer(vbs_packer_t *job, intmax_t value)
 {
@@ -1041,6 +1121,12 @@ int vbs_pack_tail(vbs_packer_t *job)
 
 inline int vbs_pack_data(vbs_packer_t *job, const vbs_data_t *value)
 {
+	if (value->descriptor > 0)
+	{
+		if (vbs_pack_descriptor(job, value->descriptor) < 0)
+			return -1;
+	}
+		
 	if (value->type == VBS_INTEGER)
 		return vbs_pack_integer(job, value->d_int);
 	else if (value->type == VBS_STRING)
@@ -1387,6 +1473,7 @@ int vbs_unpack_primitive(vbs_unpacker_t *job, vbs_data_t *pv, ssize_t *plen)
 
 	vbs_data_init(pv);
 	pv->type = vbs_unpack_type(job, &num);
+	pv->descriptor = job->descriptor;
 	*plen = 0;
 	switch (pv->type)
 	{
@@ -1483,6 +1570,16 @@ error:
 
 static int _skip_to_tail(vbs_unpacker_t *job, bool dict);
 
+inline int vbs_skip_body_of_list(vbs_unpacker_t *job)
+{
+	return _skip_to_tail(job, false);
+}
+
+inline int vbs_skip_body_of_dict(vbs_unpacker_t *job)
+{
+	return _skip_to_tail(job, true);
+}
+
 static int _skip_primitive(vbs_unpacker_t *job, ssize_t *plen)
 {
 	intmax_t num;
@@ -1562,12 +1659,12 @@ int vbs_unpack_raw(vbs_unpacker_t *job, unsigned char **pbuf, ssize_t *plen)
 	{
 		if (type == VBS_LIST)
 		{
-			if (_skip_to_tail(job, false) < 0)
+			if (vbs_skip_body_of_list(job) < 0)
 				return -1;
 		}
 		else if (type == VBS_DICT)
 		{
-			if (_skip_to_tail(job, true) < 0)
+			if (vbs_skip_body_of_dict(job) < 0)
 				return -1;
 		}
 		len = job->cur - old_cur;
@@ -1596,9 +1693,9 @@ static inline int _skip_data(vbs_unpacker_t *job)
 	if (len <= 0)
 	{
 		if (val.type == VBS_LIST)
-			return _skip_to_tail(job, false);
+			return vbs_skip_body_of_list(job);
 		else if (val.type == VBS_DICT)
-			return _skip_to_tail(job, true);
+			return vbs_skip_body_of_dict(job);
 		else if (val.type == VBS_TAIL)
 			return -1;
 	}

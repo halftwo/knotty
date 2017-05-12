@@ -422,43 +422,90 @@ int vbs_print_decimal64(decimal64_t value, iobuf_t *ob)
 	return 0;
 }
 
-int vbs_print_data(const vbs_data_t *pv, iobuf_t *ob)
+static int _print_hidden(const vbs_data_t *pv, iobuf_t *ob)
 {
 	int r = 0;
 	switch (pv->type)
 	{
 	case VBS_INTEGER:
-		r = iobuf_printf(ob, "%jd", pv->d_int);
+		r = iobuf_puts(ob, "~%i~");
 		break;
 	case VBS_STRING:
-		r = vbs_print_string(&pv->d_xstr, ob);
+		r = iobuf_puts(ob, "~%s~");
 		break;
 	case VBS_BOOL:
-		r = iobuf_puts(ob, pv->d_bool ? "~T" : "~F");
+		r = iobuf_puts(ob, "~%t~");
 		break;
 	case VBS_FLOATING:
-		r = iobuf_printf(ob, "%#.17G", pv->d_floating);
+		r = iobuf_puts(ob, "~%f~");
 		break;
 	case VBS_DECIMAL:
-		r = vbs_print_decimal64(pv->d_decimal64, ob);
+		r = iobuf_puts(ob, "~%d~");
 		break;
 	case VBS_BLOB:
-		r = vbs_print_blob(&pv->d_blob, ob);
+		r = iobuf_puts(ob, "~%b~");
 		break;
 	case VBS_NULL:
-		r = iobuf_puts(ob, "~N");
+		r = iobuf_puts(ob, "~%n~");
 		break;
 	case VBS_DICT:
-		r = vbs_print_dict(pv->d_dict, ob);
+		r = iobuf_puts(ob, "~%D~");
 		break;
 	case VBS_LIST:
-		r = vbs_print_list(pv->d_list, ob);
+		r = iobuf_puts(ob, "~%L~");
 		break;
 	default:
 		r = -1;
 	}
+	return r;
+}
+
+int vbs_print_data(const vbs_data_t *pv, iobuf_t *ob)
+{
+	int r = 0;
+	if (pv->descriptor == VBS_HIDDEN_DESCRIPTOR)
+	{
+		r = _print_hidden(pv, ob);
+	}
+	else
+	{
+		switch (pv->type)
+		{
+		case VBS_INTEGER:
+			r = iobuf_printf(ob, "%jd", pv->d_int);
+			break;
+		case VBS_STRING:
+			r = vbs_print_string(&pv->d_xstr, ob);
+			break;
+		case VBS_BOOL:
+			r = iobuf_puts(ob, pv->d_bool ? "~T" : "~F");
+			break;
+		case VBS_FLOATING:
+			r = iobuf_printf(ob, "%#.17G", pv->d_floating);
+			break;
+		case VBS_DECIMAL:
+			r = vbs_print_decimal64(pv->d_decimal64, ob);
+			break;
+		case VBS_BLOB:
+			r = vbs_print_blob(&pv->d_blob, ob);
+			break;
+		case VBS_NULL:
+			r = iobuf_puts(ob, "~N");
+			break;
+		case VBS_DICT:
+			r = vbs_print_dict(pv->d_dict, ob);
+			break;
+		case VBS_LIST:
+			r = vbs_print_list(pv->d_list, ob);
+			break;
+		default:
+			r = -1;
+		}
+	}
 	return r < 0 ? -1 : 0;
 }
+
+static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv, ssize_t len);
 
 static int _dump_to_tail(vbs_unpacker_t *job, ssize_t bodylen, bool dict, iobuf_t *ob)
 {
@@ -514,52 +561,46 @@ static int _dump_to_tail(vbs_unpacker_t *job, ssize_t bodylen, bool dict, iobuf_
 			}
 		}
 
-		switch (val.type)
-		{
-		case VBS_INTEGER:
-			if ((r = iobuf_printf(ob, "%jd", val.d_int)) < 0)
-				goto error;
-			break;
-		case VBS_STRING:
-			if ((r = vbs_print_string(&val.d_xstr, ob)) < 0)
-				goto error;
-			break;
-		case VBS_BOOL:
-			if (iobuf_puts(ob, val.d_bool ? "~T" : "~F") != 2)
-				goto error;
-			break;
-		case VBS_FLOATING:
-			if (iobuf_printf(ob, "%#.17G", val.d_floating) < 0)
-				goto error;
-			break;
-		case VBS_DECIMAL:
-			if ((r = vbs_print_decimal64(val.d_decimal64, ob)) < 0)
-				goto error;
-			break;
-		case VBS_BLOB:
-			if ((r = vbs_print_blob(&val.d_blob, ob)) < 0)
-				goto error;
-			break;
-		case VBS_NULL:
-			if (iobuf_puts(ob, "~N") != 2)
-				goto error;
-			break;
-		case VBS_DICT:
-			if ((r = _dump_to_tail(job, len, 1, ob)) < 0)
-				goto error;
-			break;
-		case VBS_LIST:
-			if ((r = _dump_to_tail(job, len, 0, ob)) < 0)
-				goto error;
-			break;
-		default:
+		r = _do_unpack_print(job, ob, &val, len);
+		if (r < 0)
 			goto error;
-		}
 	}
 	rc = 0;
 error:
 	job->end = saved_end;
 	return rc;
+}
+
+static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv, ssize_t len)
+{
+	if (pv->descriptor == VBS_HIDDEN_DESCRIPTOR)
+	{
+		if (pv->type == VBS_DICT)
+		{
+			if (iobuf_puts(ob, "~%D~") < 0)
+				return -1;
+			return vbs_skip_body_of_dict(job);
+		}
+		else if (pv->type == VBS_LIST)
+		{
+			if (iobuf_puts(ob, "~%L~") < 0)
+				return -1;
+			return vbs_skip_body_of_list(job);
+		}
+	}
+	else
+	{
+		if (pv->type == VBS_DICT)
+		{
+			return _dump_to_tail(job, len, 1, ob);
+		}
+		else if (pv->type == VBS_LIST)
+		{
+			return _dump_to_tail(job, len, 0, ob);
+		}
+	}
+
+	return vbs_print_data(pv, ob);
 }
 
 inline int vbs_unpack_print_one(vbs_unpacker_t *job, iobuf_t *ob)
@@ -570,16 +611,7 @@ inline int vbs_unpack_print_one(vbs_unpacker_t *job, iobuf_t *ob)
 	if (r < 0)
 		return r;
 
-	if (val.type == VBS_DICT)
-	{
-		return _dump_to_tail(job, len, 1, ob);
-	}
-	else if (val.type == VBS_LIST)
-	{
-		return _dump_to_tail(job, len, 0, ob);
-	}
-
-	return vbs_print_data(&val, ob);
+	return _do_unpack_print(job, ob, &val, len);
 }
 
 int vbs_unpack_print_all(vbs_unpacker_t *job, iobuf_t *ob)
@@ -681,7 +713,7 @@ int vbs_xfmt(iobuf_t *ob, const xfmt_spec_t *spec, void *p)
 
 int main()
 {
-	char buf[1024];
+	uint8_t buf[1024];
 	int i, r;
 	iobuf_t ob;
 	ostk_t *ostk = ostk_create(4096);
@@ -702,6 +734,7 @@ int main()
 
 		r |= vbs_pack_head_of_dict(&pk);
 
+		r |= vbs_pack_descriptor(&pk, VBS_HIDDEN_DESCRIPTOR);
 		r |= vbs_pack_integer(&pk, LONG_MIN);
 		r |= vbs_pack_cstr(&pk, "abcdefghijklmnopqrstuvwxyz");
 		r |= vbs_pack_bool(&pk, 1);
@@ -775,7 +808,7 @@ int main()
 	}
 	printf("decode: r=%d p=%p end=%p\n", r, uk.cur, uk.end);
 
-	printf("sizeof(vbs_data_t) = %d\n", sizeof(vbs_data_t));
+	printf("sizeof(vbs_data_t) = %zd\n", sizeof(vbs_data_t));
 	return 0;
 }
 

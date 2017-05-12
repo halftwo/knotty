@@ -19,6 +19,7 @@
 extern "C" {
 #endif
 
+#define VBS_HIDDEN_DESCRIPTOR	1
 
 /* Return 0 if success. 
    Return -1 if error.
