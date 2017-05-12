@@ -35,6 +35,7 @@ protected:
 	xstr_t _u;	// SHA1(PAD(A) | PAD(B))
 	xstr_t _M1;	// SHA1(PAD(A) | PAD(B) | PAD(S))
 	xstr_t _M2;	// SHA1(PAD(A) | M1 | PAD(S))
+	xstr_t _K;	// SHA1(PAD(S))
 
 	mpi_t _alloc_mpi();
 	mpi_t _random_mpi();
@@ -64,6 +65,7 @@ public:
 	virtual xstr_t compute_S() = 0;
 	xstr_t compute_M1();
 	xstr_t compute_M2();
+	xstr_t compute_K();
 };
 
 

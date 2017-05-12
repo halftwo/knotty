@@ -19,7 +19,8 @@ OBJS_C = strbuf.o obpool.o bit.o xnet.o xbase64.o xbase85.o xbase32.o \
 	iobuf.o uuid.o unix_user.o rope.o escape.o \
 	httpcode.o httpmisc.o urandom.o gzipper.o lz4.o xxhash.o \
 	decContext.o decSingle.o decDouble.o decQuad.o decimal64.o \
-	unit_prefix.o hamming12.o hamming7.o golay24.o
+	unit_prefix.o hamming12.o hamming7.o golay24.o \
+	hmac_sha1.o 
 	
 
 OBJS_CXX = XRefCount.o xptr.o XLock.o XError.o XEvent.o StringHashSet.o \

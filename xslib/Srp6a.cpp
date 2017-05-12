@@ -110,6 +110,7 @@ void Srp6aBase::_init()
 	_u = xstr_null;
 	_M1 = xstr_null;
 	_M2 = xstr_null;
+	_K = xstr_null;
 }
 
 bool Srp6aBase::set_hash(const char *hash)
@@ -331,6 +332,20 @@ xstr_t Srp6aBase::compute_M2()
 		ostk_free(_ostk, buf);
 	}
 	return _M2;
+}
+
+xstr_t Srp6aBase::compute_K()
+{
+	if (_K.len == 0)
+	{
+		compute_S();
+		_K = _alloc_digest();
+
+		/* Compute: K = SHA1(PAD(S)) 
+		 */
+		_hash_func(_K.data, _S.data, _S.len);
+	}
+	return _K;
 }
 
 Srp6aServer::Srp6aServer()
