@@ -65,6 +65,8 @@ protected:
 		void close();
 		void finish_child();
 
+		void writeDescriptor(int16_t descriptor) { vbs_pack_descriptor(_pk, descriptor); }
+
 		void raw(const void *buf, size_t size)	{ vbs_pack_raw(_pk, buf, size); }
 
 		void write(short v) 			{ vbs_pack_integer(_pk, v); }
@@ -145,37 +147,37 @@ public:
 	void flush();
 
 	template <typename ValueType>
-	void v(const ValueType& v);
+	void v(const ValueType& v, int16_t descriptor=0);
 
 	void vfmt(xfmt_callback_function cb, const char *fmt, ...);
 	void vfmt(xfmt_callback_function cb, const char *fmt, va_list ap);
 
-	void vstring(const xstr_t& xstr);
-	void vstring(const char *str, size_t len);
-	void vstring(const rope_t *rope);
-	void vstring(const struct iovec *iov, int count);
+	void vstring(const xstr_t& xstr, int16_t descriptor=0);
+	void vstring(const char *str, size_t len, int16_t descriptor=0);
+	void vstring(const rope_t *rope, int16_t descriptor=0);
+	void vstring(const struct iovec *iov, int count, int16_t descriptor=0);
 
-	void vblob(const xstr_t& blob);
-	void vblob(const void *data, size_t len);
-	void vblob(const rope_t *rope);
-	void vblob(const struct iovec *iov, int count);
+	void vblob(const xstr_t& blob, int16_t descriptor=0);
+	void vblob(const void *data, size_t len, int16_t descriptor=0);
+	void vblob(const rope_t *rope, int16_t descriptor=0);
+	void vblob(const struct iovec *iov, int count, int16_t descriptor=0);
 
-	void vstanza(const unsigned char *buf, size_t size);
+	void vstanza(const unsigned char *buf, size_t size, int16_t descriptor=0);
 
 	void vnull();
 
-	VListWriter vlist();
+	VListWriter vlist(int16_t descriptor=0);
 
 	template <typename ListType>
-	VListWriter vlist(const ListType& values);
+	VListWriter vlist(const ListType& values, int16_t descriptor=0);
 
-	VDictWriter vdict();
+	VDictWriter vdict(int16_t descriptor=0);
 
 	template <typename DictType>
-	VDictWriter vdict(const DictType& dict);
+	VDictWriter vdict(const DictType& dict, int16_t descriptor=0);
 
-	void vstrhead(size_t len);
-	void vblobhead(size_t len);
+	void vstrhead(size_t len, int16_t descriptor=0);
+	void vblobhead(size_t len, int16_t descriptor=0);
 
 	// Called after vstrhead() or vblobhead();
 	void raw(const void *buf, size_t size);
@@ -194,7 +196,7 @@ public:
 	void flush();
 
 	template <typename KeyType, typename ValueType>
-	void kv(const KeyType& key, const ValueType& value);
+	void kv(const KeyType& key, const ValueType& value, int16_t descriptor=0);
 
 	template <typename KeyType>
 	void kvfmt(const KeyType& key, xfmt_callback_function cb, const char *fmt, ...);
@@ -203,52 +205,52 @@ public:
 	void kvfmt(const KeyType& key, xfmt_callback_function cb, const char *fmt, va_list ap);
 
 	template <typename KeyType>
-	void kvstring(const KeyType& key, const xstr_t& xstr);
+	void kvstring(const KeyType& key, const xstr_t& xstr, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvstring(const KeyType& key, const char *str, size_t len);
+	void kvstring(const KeyType& key, const char *str, size_t len, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvstring(const KeyType& key, const rope_t *rope);
+	void kvstring(const KeyType& key, const rope_t *rope, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvstring(const KeyType& key, const struct iovec *iov, int count);
+	void kvstring(const KeyType& key, const struct iovec *iov, int count, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvblob(const KeyType& key, const xstr_t& blob);
+	void kvblob(const KeyType& key, const xstr_t& blob, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvblob(const KeyType& key, const void *data, size_t len);
+	void kvblob(const KeyType& key, const void *data, size_t len, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvblob(const KeyType& key, const rope_t *rope);
+	void kvblob(const KeyType& key, const rope_t *rope, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvblob(const KeyType& key, const struct iovec *iov, int count);
+	void kvblob(const KeyType& key, const struct iovec *iov, int count, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvstanza(const KeyType& key, const unsigned char *buf, size_t size);
+	void kvstanza(const KeyType& key, const unsigned char *buf, size_t size, int16_t descriptor=0);
 
 	template <typename KeyType>
 	void kvnull(const KeyType& key);
 
 	template <typename KeyType>
-	VListWriter kvlist(const KeyType& key);
+	VListWriter kvlist(const KeyType& key, int16_t descriptor=0);
 
 	template <typename KeyType, typename ListType>
-	VListWriter kvlist(const KeyType& key, const ListType& values);
+	VListWriter kvlist(const KeyType& key, const ListType& values, int16_t descriptor=0);
 
 	template <typename KeyType>
-	VDictWriter kvdict(const KeyType& key);
+	VDictWriter kvdict(const KeyType& key, int16_t descriptor=0);
 
 	template <typename KeyType, typename DictType>
-	VDictWriter kvdict(const KeyType& key, const DictType& dict);
+	VDictWriter kvdict(const KeyType& key, const DictType& dict, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvstrhead(const KeyType& key, size_t len);
+	void kvstrhead(const KeyType& key, size_t len, int16_t descriptor=0);
 
 	template <typename KeyType>
-	void kvblobhead(const KeyType& key, size_t len);
+	void kvblobhead(const KeyType& key, size_t len, int16_t descriptor=0);
 
 	// Called after kvstrhead() or kvblobhead();
 	void raw(const void *buf, size_t size);
@@ -263,10 +265,13 @@ inline void VListWriter::flush()
 }
 
 template <typename ValueType>
-inline void VListWriter::v(const ValueType& v)
+inline void VListWriter::v(const ValueType& v, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->write(v);
 }
 
@@ -287,66 +292,84 @@ inline void VListWriter::vfmt(xfmt_callback_function cb, const char *fmt, va_lis
 	_entity->writeFormat(cb, fmt, ap);
 }
 
-inline void VListWriter::vstring(const xstr_t& xstr)
+inline void VListWriter::vstring(const xstr_t& xstr, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->write(xstr);
 }
 
-inline void VListWriter::vstring(const char *str, size_t len)
+inline void VListWriter::vstring(const char *str, size_t len, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeString(str, len);
 }
 
-inline void VListWriter::vstring(const rope_t *rope)
+inline void VListWriter::vstring(const rope_t *rope, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeString(rope);
 }
 
-inline void VListWriter::vstring(const struct iovec *iov, int count)
+inline void VListWriter::vstring(const struct iovec *iov, int count, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeString(iov, count);
 }
 
-inline void VListWriter::vblob(const xstr_t& blob)
+inline void VListWriter::vblob(const xstr_t& blob, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlob(blob.data, blob.len);
 }
 
-inline void VListWriter::vblob(const void *data, size_t len)
+inline void VListWriter::vblob(const void *data, size_t len, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlob(data, len);
 }
 
-inline void VListWriter::vblob(const rope_t *rope)
+inline void VListWriter::vblob(const rope_t *rope, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlob(rope);
 }
 
-inline void VListWriter::vblob(const struct iovec *iov, int count)
+inline void VListWriter::vblob(const struct iovec *iov, int count, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlob(iov, count);
 }
 
-inline void VListWriter::vstanza(const unsigned char *buf, size_t size)
+inline void VListWriter::vstanza(const unsigned char *buf, size_t size, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeStanza(buf, size);
 }
 
@@ -357,54 +380,66 @@ inline void VListWriter::vnull()
 	return _entity->writeNull();
 }
 
-inline VListWriter VListWriter::vlist()
+inline VListWriter VListWriter::vlist(int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	return VListWriter(_entity);
 }
 
 template <typename ListType>
-inline VListWriter VListWriter::vlist(const ListType& values)
+inline VListWriter VListWriter::vlist(const ListType& values, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	VListWriter lw(_entity);
 	::vlist_write_all(lw, values);
 	return lw;
 }
 
-inline VDictWriter VListWriter::vdict()
+inline VDictWriter VListWriter::vdict(int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	return VDictWriter(_entity);
 }
 
 template <typename DictType>
-inline VDictWriter VListWriter::vdict(const DictType& dict)
+inline VDictWriter VListWriter::vdict(const DictType& dict, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	VDictWriter dw(_entity);
 	::vdict_write_all(dw, dict);
 	return dw;
 }
 
 
-inline void VListWriter::vstrhead(size_t len)
+inline void VListWriter::vstrhead(size_t len, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeStrHead(len);
 }
 
-inline void VListWriter::vblobhead(size_t len)
+inline void VListWriter::vblobhead(size_t len, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlobHead(len);
 }
 
@@ -424,11 +459,13 @@ inline void VDictWriter::flush()
 }
 
 template <typename KeyType, typename ValueType>
-inline void VDictWriter::kv(const KeyType& key, const ValueType& value)
+inline void VDictWriter::kv(const KeyType& key, const ValueType& value, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->write(value);
 }
 
@@ -451,83 +488,101 @@ inline void VDictWriter::kvfmt(const KeyType& key, xfmt_callback_function cb, co
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvstring(const KeyType& key, const xstr_t& xstr)
+inline void VDictWriter::kvstring(const KeyType& key, const xstr_t& xstr, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->write(xstr);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvstring(const KeyType& key, const char *str, size_t len)
+inline void VDictWriter::kvstring(const KeyType& key, const char *str, size_t len, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeString(str, len);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvstring(const KeyType& key, const rope_t *rope)
+inline void VDictWriter::kvstring(const KeyType& key, const rope_t *rope, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeString(rope);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvstring(const KeyType& key, const struct iovec *iov, int count)
+inline void VDictWriter::kvstring(const KeyType& key, const struct iovec *iov, int count, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeString(iov, count);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvblob(const KeyType& key, const xstr_t& blob)
+inline void VDictWriter::kvblob(const KeyType& key, const xstr_t& blob, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlob(blob.data, blob.len);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvblob(const KeyType& key, const void *data, size_t len)
+inline void VDictWriter::kvblob(const KeyType& key, const void *data, size_t len, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlob(data, len);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvblob(const KeyType& key, const rope_t *rope)
+inline void VDictWriter::kvblob(const KeyType& key, const rope_t *rope, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlob(rope);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvblob(const KeyType& key, const struct iovec *iov, int count)
+inline void VDictWriter::kvblob(const KeyType& key, const struct iovec *iov, int count, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlob(iov, count);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvstanza(const KeyType& key, const unsigned char *buf, size_t size)
+inline void VDictWriter::kvstanza(const KeyType& key, const unsigned char *buf, size_t size, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeStanza(buf, size);
 }
 
@@ -541,21 +596,25 @@ inline void VDictWriter::kvnull(const KeyType& key)
 }
 
 template <typename KeyType>
-inline VListWriter VDictWriter::kvlist(const KeyType& key)
+inline VListWriter VDictWriter::kvlist(const KeyType& key, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	return VListWriter(_entity);
 }
 
 template <typename KeyType, typename ListType>
-inline VListWriter VDictWriter::kvlist(const KeyType& key, const ListType& values)
+inline VListWriter VDictWriter::kvlist(const KeyType& key, const ListType& values, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
 
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	VListWriter lw(_entity);
 	::vlist_write_all(lw, values);
 	return lw;
@@ -563,41 +622,49 @@ inline VListWriter VDictWriter::kvlist(const KeyType& key, const ListType& value
 
 
 template <typename KeyType>
-inline VDictWriter VDictWriter::kvdict(const KeyType& key)
+inline VDictWriter VDictWriter::kvdict(const KeyType& key, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	return VDictWriter(_entity);
 }
 
 template <typename KeyType, typename DictType>
-inline VDictWriter VDictWriter::kvdict(const KeyType& key, const DictType& dict)
+inline VDictWriter VDictWriter::kvdict(const KeyType& key, const DictType& dict, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
 	
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	VDictWriter dw(_entity);
 	::vdict_write_all(dw, dict);
 	return dw;
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvstrhead(const KeyType& key, size_t len)
+inline void VDictWriter::kvstrhead(const KeyType& key, size_t len, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeStrHead(len);
 }
 
 template <typename KeyType>
-inline void VDictWriter::kvblobhead(const KeyType& key, size_t len)
+inline void VDictWriter::kvblobhead(const KeyType& key, size_t len, int16_t descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
 	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
 	_entity->writeBlobHead(len);
 }
 
