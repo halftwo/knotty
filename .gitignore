@@ -1,5 +1,6 @@
 *.o
 *.a
+a.out
 include
 3rd_party/lua
 3rd_party/lua-5.1.5/
