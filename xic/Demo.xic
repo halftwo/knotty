@@ -3,7 +3,7 @@
 Tester or Demo
 ===============
 
-=> time {}
+=> time { ?time^%i; }
 <= { time^%i; utc^%s; local^%s; }
 
 => echo { ... }

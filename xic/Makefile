@@ -44,8 +44,11 @@ DemoServer: DemoServer.cpp DemoServant.o
 DemoServerSt: DemoServerSt.cpp DemoServant.o
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LIBS) -lst
 
-DemoClientSt: DemoClientSt.cpp
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $< $(LIBS) -lst
+DemoClient: DemoClient.cpp DemoClientImp.o
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LIBS)
+
+DemoClientSt: DemoClientSt.cpp DemoClientImp.o
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LIBS) -lst
 
 shadow_file: ShadowBox.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DTEST_SHADOW -o $@ $< $(LIBS)

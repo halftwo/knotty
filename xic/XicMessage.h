@@ -201,21 +201,21 @@ class MsgWriter
 {
 public:
 	template<typename Value>
-	void param(const char *key, const Value& v)
+	void param(const char *key, const Value& v, int descriptor=0)
 	{
-		_dw.kv(key, v);
+		_dw.kv(key, v, descriptor);
 	}
 
 	template<typename Value>
-	void param(const xstr_t& key, const Value& v)
+	void param(const xstr_t& key, const Value& v, int descriptor=0)
 	{
-		_dw.kv(key, v);
+		_dw.kv(key, v, descriptor);
 	}
 
 	template<typename Value>
-	void param(const std::string& key, const Value& v)
+	void param(const std::string& key, const Value& v, int descriptor=0)
 	{
-		_dw.kv(key, v);
+		_dw.kv(key, v, descriptor);
 	}
 
 	void paramFormat(const char *key, xfmt_callback_function cb/*NULL*/, const char *fmt, ...) XS_C_PRINTF(4, 5)
@@ -226,49 +226,49 @@ public:
 		va_end(ap);
 	}
 
-	void paramString(const char *key, const xstr_t& xstr)
+	void paramString(const char *key, const xstr_t& xstr, int descriptor=0)
 	{
-		_dw.kvstring(key, xstr);
+		_dw.kvstring(key, xstr, descriptor);
 	}
 
-	void paramString(const char *key, const char *str, size_t len)
+	void paramString(const char *key, const char *str, size_t len, int descriptor=0)
 	{
-		_dw.kvstring(key, str, len);
+		_dw.kvstring(key, str, len, descriptor);
 	}
 
-	void paramString(const char *key, const rope_t *rope)
+	void paramString(const char *key, const rope_t *rope, int descriptor=0)
 	{
-		_dw.kvstring(key, rope);
+		_dw.kvstring(key, rope, descriptor);
 	}
 
-	void paramString(const char *key, const struct iovec *iov, int count)
+	void paramString(const char *key, const struct iovec *iov, int count, int descriptor=0)
 	{
-		_dw.kvstring(key, iov, count);
+		_dw.kvstring(key, iov, count, descriptor);
 	}
 
-	void paramBlob(const char *key, const void *data, size_t len)
+	void paramBlob(const char *key, const void *data, size_t len, int descriptor=0)
 	{
-		_dw.kvblob(key, data, len);
+		_dw.kvblob(key, data, len, descriptor);
 	}
 
-	void paramBlob(const char *key, const rope_t *rope)
+	void paramBlob(const char *key, const rope_t *rope, int descriptor=0)
 	{
-		_dw.kvblob(key, rope);
+		_dw.kvblob(key, rope, descriptor);
 	}
 
-	void paramBlob(const char *key, const struct iovec *iov, int count)
+	void paramBlob(const char *key, const struct iovec *iov, int count, int descriptor=0)
 	{
-		_dw.kvblob(key, iov, count);
+		_dw.kvblob(key, iov, count, descriptor);
 	}
 
-	void paramBlob(const char *key, const xstr_t& blob)
+	void paramBlob(const char *key, const xstr_t& blob, int descriptor=0)
 	{
-		_dw.kvblob(key, blob.data, blob.len);
+		_dw.kvblob(key, blob.data, blob.len, descriptor);
 	}
 
-	void paramStanza(const char *key, const unsigned char *buf, size_t len)
+	void paramStanza(const char *key, const unsigned char *buf, size_t len, int descriptor=0)
 	{
-		_dw.kvstanza(key, buf, len);
+		_dw.kvstanza(key, buf, len, descriptor);
 	}
 
 	void paramNull(const char *key)
@@ -276,36 +276,36 @@ public:
 		_dw.kvnull(key);
 	}
 
-	VListWriter paramVList(const char *key)
+	VListWriter paramVList(const char *key, int descriptor=0)
 	{
-		return _dw.kvlist(key);
+		return _dw.kvlist(key, descriptor);
 	}
 
 	template <typename ListType>
-	VListWriter paramVList(const char *key, const ListType& values)
+	VListWriter paramVList(const char *key, const ListType& values, int descriptor=0)
 	{
-		return _dw.kvlist(key, values);
+		return _dw.kvlist(key, values, descriptor);
 	}
 
-	VDictWriter paramVDict(const char *key)
+	VDictWriter paramVDict(const char *key, int descriptor=0)
 	{
-		return _dw.kvdict(key);
+		return _dw.kvdict(key, descriptor);
 	}
 
 	template <typename DictType>
-	VDictWriter paramVDict(const char *key, const DictType& dict)
+	VDictWriter paramVDict(const char *key, const DictType& dict, int descriptor=0)
 	{
-		return _dw.kvdict(key, dict);
+		return _dw.kvdict(key, dict, descriptor);
 	}
 
-	void paramStrHead(const char *key, size_t len)
+	void paramStrHead(const char *key, size_t len, int descriptor=0)
 	{
-		_dw.kvstrhead(key, len);
+		_dw.kvstrhead(key, len, descriptor);
 	}
 
-	void paramBlobHead(const char *key, size_t len)
+	void paramBlobHead(const char *key, size_t len, int descriptor=0)
 	{
-		_dw.kvblobhead(key, len);
+		_dw.kvblobhead(key, len, descriptor);
 	}
 
 	void raw(const void *buf, size_t len)
@@ -472,9 +472,9 @@ public:
 	}
 
 	template<typename Value>
-	AnswerWriter& operator()(const char *key, const Value& v)
+	AnswerWriter& operator()(const char *key, const Value& v, int descriptor=0)
 	{
-		this->param(key, v);
+		this->param(key, v, descriptor);
 		return *this;
 	}
 

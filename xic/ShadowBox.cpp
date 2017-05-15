@@ -66,6 +66,15 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 		throw XERROR_FMT(XError, "Invalid syntax in line %d", lineno);
 
 	key = ostk_xstr_dup(_ostk, &key);
+	if (xstr_char_equal(&key, 0, '!'))
+	{
+		// temporarily change the section to SCT_VERIFIER for this item
+		section = SCT_VERIFIER;
+		xstr_advance(&key, 1);
+		if (key.len == 0)
+			throw XERROR_FMT(XError, "Invalid syntax in line %d", lineno);
+	}
+
 	if (section == SCT_SRP6A)
 	{
 		xstr_t hid, b_, g_;
@@ -78,7 +87,7 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 
 		if (value.len == 0)
 		{
-			// key = hash:{key2}
+			// !key = hash:{key2}
 			if (b_.len <= 2 || b_.data[0] != '{' || b_.data[b_.len-1] != '}')
 				throw XERROR_FMT(XError, "Invalid syntax in line %d", lineno);
 
@@ -95,7 +104,7 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 			return;
 		}
 
-		// key = hash:bits:g:N
+		// !key = hash:bits:g:N
 		xstr_t end;
 		int bits = xstr_to_long(&b_, &end, 10);
 		if (bits < 512 || bits > 1024*32 || end.len)

@@ -651,9 +651,9 @@ static inline int _unpack_int(vbs_unpacker_t *job, intmax_t *p_value)
 }
 
 
-inline size_t vbs_size_of_descriptor(int16_t descriptor)
+inline size_t vbs_size_of_descriptor(int descriptor)
 {
-	if (descriptor > 0)
+	if (descriptor > 0 && descriptor <= VBS_DESCRIPTOR_MAX)
 	{
 		size_t n = 1;
 		--descriptor;
@@ -724,9 +724,9 @@ inline size_t vbs_head_size_of_dict(size_t len)
 	return _tag_size(len);
 }
 
-inline size_t vbs_buffer_of_descriptor(unsigned char *buf, int16_t descriptor)
+inline size_t vbs_buffer_of_descriptor(unsigned char *buf, int descriptor)
 {
-	if (descriptor > 0)
+	if (descriptor > 0 && descriptor <= VBS_DESCRIPTOR_MAX)
 	{
 		unsigned char *p = buf;
 		--descriptor;
@@ -891,7 +891,7 @@ size_t vbs_size_of_dict(const vbs_dict_t *vd)
 	}
 }
 
-int vbs_pack_descriptor(vbs_packer_t *job, int16_t descriptor)
+int vbs_pack_descriptor(vbs_packer_t *job, int descriptor)
 {
 	unsigned char tmpbuf[TMPBUF_SIZE];
 	size_t n = vbs_buffer_of_descriptor(tmpbuf, descriptor);

@@ -449,10 +449,10 @@ static int _print_hidden(const vbs_data_t *pv, iobuf_t *ob)
 		r = iobuf_puts(ob, "~%n~");
 		break;
 	case VBS_DICT:
-		r = iobuf_puts(ob, "~%D~");
+		r = iobuf_puts(ob, "~{}~");
 		break;
 	case VBS_LIST:
-		r = iobuf_puts(ob, "~%L~");
+		r = iobuf_puts(ob, "~[]~");
 		break;
 	default:
 		r = -1;
@@ -577,13 +577,13 @@ static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *
 	{
 		if (pv->type == VBS_DICT)
 		{
-			if (iobuf_puts(ob, "~%D~") < 0)
+			if (iobuf_puts(ob, "~{}~") < 0)
 				return -1;
 			return vbs_skip_body_of_dict(job);
 		}
 		else if (pv->type == VBS_LIST)
 		{
-			if (iobuf_puts(ob, "~%L~") < 0)
+			if (iobuf_puts(ob, "~[]~") < 0)
 				return -1;
 			return vbs_skip_body_of_list(job);
 		}
@@ -734,7 +734,6 @@ int main()
 
 		r |= vbs_pack_head_of_dict(&pk);
 
-		r |= vbs_pack_descriptor(&pk, VBS_HIDDEN_DESCRIPTOR);
 		r |= vbs_pack_integer(&pk, LONG_MIN);
 		r |= vbs_pack_cstr(&pk, "abcdefghijklmnopqrstuvwxyz");
 		r |= vbs_pack_bool(&pk, 1);
@@ -764,6 +763,7 @@ int main()
 		r |= vbs_pack_tail(&pk);
 
 		r |= vbs_pack_cstr(&pk, "D");
+		r |= vbs_pack_descriptor(&pk, VBS_HIDDEN_DESCRIPTOR);
 		r |= vbs_pack_head_of_list(&pk);
 		r |= vbs_pack_head_of_dict(&pk);
 		r |= vbs_pack_tail(&pk);

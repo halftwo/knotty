@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"20170511.1900"
+#define SHADOW_GEN_VERSION	"20170515.1900"
 
 void display_version(const char *program)
 {
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
 	char buf[8192];
 	len = xbase64_encode(&url_xbase64, buf, salt.data, salt.len, XBASE64_NO_PADDING);
 	fprintf(stdout, "\n[verifier]\n");
-	fprintf(stdout, "\n%s = SRP6a:%.*s:%.*s:\n", identity, XSTR_P(&paramId), len, buf);
+	fprintf(stdout, "\n!%s = SRP6a:%.*s:%.*s:\n", identity, XSTR_P(&paramId), len, buf);
 
 	len = xbase64_encode(&url_xbase64, buf, v.data, v.len, XBASE64_NO_PADDING);
 	for (i = 0; i < len; i += 64)

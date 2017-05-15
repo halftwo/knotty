@@ -98,13 +98,12 @@ struct vbs_data_t
 {
 	vbs_type_t 		type;
 
-	int16_t			descriptor;
-
 	unsigned int		is_owner:1;	/* Only applicable to STRING or BLOB */
-	/*
-	   The d_xstr.data or d_blob.data memory is owned by myself.
+	/* The d_xstr.data or d_blob.data memory is owned by myself.
 	   If it is allocated, don't forget to free it when appropriate.
  	 */
+
+	int16_t			descriptor;
 
 	union
 	{
@@ -415,7 +414,7 @@ vbs_data_t *vbs_dict_get_data(const vbs_dict_t *d, const char *key);
 
 
 
-size_t vbs_buffer_of_descriptor(unsigned char *buf, int16_t descriptor);
+size_t vbs_buffer_of_descriptor(unsigned char *buf, int descriptor);
 
 size_t vbs_buffer_of_integer(unsigned char *buf, intmax_t value);
 size_t vbs_buffer_of_floating(unsigned char *buf, double value);
@@ -432,7 +431,7 @@ size_t vbs_head_buffer_of_dict(unsigned char *buf, size_t bodylen);	/* bodylen i
 #define vbs_byte_of_tail()	((unsigned char)VBS_TAIL)
 
 
-size_t vbs_size_of_descriptor(int16_t descriptor);
+size_t vbs_size_of_descriptor(int descriptor);
 
 size_t vbs_size_of_integer(intmax_t value);
 size_t vbs_size_of_floating(double value);
@@ -481,7 +480,7 @@ static inline void vbs_packer_init(vbs_packer_t *job, ssize_t (*write)(void *, c
 /* Return 0 if success. 
    Return a negative number if error.
 */
-int vbs_pack_descriptor(vbs_packer_t *job, int16_t descriptor);
+int vbs_pack_descriptor(vbs_packer_t *job, int descriptor);
 int vbs_pack_integer(vbs_packer_t *job, intmax_t value);
 int vbs_pack_uinteger(vbs_packer_t *job, uintmax_t value);
 int vbs_pack_lstr(vbs_packer_t *job, const void *str, size_t len);

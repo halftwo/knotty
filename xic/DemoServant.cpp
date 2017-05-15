@@ -45,7 +45,7 @@ XIC_METHOD(DemoServant, time)
 
         localtime_r(&t, &tm);
         strftime(buf, sizeof(buf), "%Y%m%d-%H%M%S", &tm);
-        aw.param("local", buf);
+        aw.param("local", buf, VBS_HIDDEN_DESCRIPTOR);
 
         return aw;
 }

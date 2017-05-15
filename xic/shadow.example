@@ -169,7 +169,7 @@ P8k256 = SHA256:{P8192}
 
 ## complicated
 
-complex = SRP6a:P8k256:1kQ88Kpn6OytWU6uMR4HJdrKDt5sBlqr:
+!complex = SRP6a:P8k256:1kQ88Kpn6OytWU6uMR4HJdrKDt5sBlqr:
         gwxOoNDSmSYlmGM3mJ148-vL6Mn3FNpCvXNmMbsngJT_sOBjBZhGNKo7PbEc41K9
         4SJDxYnCp0v9HuJLu4kgk_70Jvg4I9vVzbmdNiv6VjOw7ehfNPDrwAWe7F8ErLsB
         EG3FX0xbuZQbduO43sBCMaBqAFDiKjtT7XRHfirZH3cQvuJWnBndzHRMopoAPCBC
@@ -195,7 +195,7 @@ complex = SRP6a:P8k256:1kQ88Kpn6OytWU6uMR4HJdrKDt5sBlqr:
 
 ## world
 
-hello = SRP6a:*:JZZrCmj6LCLucPfkh_5yleMIJcZEy3WMTitGlkpv:
+!hello = SRP6a:*:JZZrCmj6LCLucPfkh_5yleMIJcZEy3WMTitGlkpv:
         n-S7O-eOSdbRMkkTpllk-ARyFzDPLxsDrA-DRhmg35Swtiago8DmWqe9NjyAcZ65
         yuDwWZnJU0Z6mW2oHIVDUMhc7U6LzDPOJabrT5qCH3UGldDefcjmRgE1_0bsKZd6
         XXvsiN5c_pkDoG9t6oSZj93Umu4GV5huu-K2bAnYpDA

@@ -530,6 +530,7 @@ int PtConnection::disconnect()
 		}
 	}
 
+	_engine->check_stop();
 	return 0;
 }
 
@@ -2042,25 +2043,32 @@ void PtEngine::waitForShutdown()
 	xic::readyToServe(_setting);
 
 	_timer->waitForCancel();
+
+	_proxyMap.clear();
 }
 
 int PtEngine::check_stop()
 {
-	int numFd = 0;
-	if (_srvDispatcher)
-		numFd += _srvDispatcher->countFd();
-	if (_cliDispatcher)
-		numFd += _cliDispatcher->countFd();
+	if (_stopped)
+	{
+		int numFd = 0;
+		if (_srvDispatcher)
+			numFd += _srvDispatcher->countFd();
+		if (_cliDispatcher)
+			numFd += _cliDispatcher->countFd();
 
-	if (numFd > 0)
-		return 919;	// random less than 1000 milliseconds
+		if (numFd > 0)
+			return 919;	// random less than 1000 milliseconds
 
-	_timer->cancel();
+		_timer->cancel();
+		return 0;
+	}
 	return 0;
 }
 
 void PtEngine::shutdown()
 {
+	ProxyMap proxyMap;
 	AdapterMap adapterMap;
 	ConnectionList incomingCons;
 	ConnectionMap conMap;
@@ -2070,7 +2078,7 @@ void PtEngine::shutdown()
 		if (_stopped)
 			return;
 		_stopped = true;
-		_proxyMap.clear();
+		_proxyMap.swap(proxyMap);
 		_adapterMap.swap(adapterMap);
 		_incomingCons.swap(incomingCons);
 		_conMap.swap(conMap);

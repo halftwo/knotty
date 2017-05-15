@@ -479,6 +479,7 @@ int StConnection::disconnect()
 		}
 	}
 
+	_engine->check_stop();
 	return 0;
 }
 
@@ -1784,21 +1785,23 @@ void StEngine::waitForShutdown()
 	if (!_stopped)
 		st_cond_wait(_runCond);
 
-	_adapterMap.clear();
-	_proxyMap.clear();
-	_conMap.clear();
-
 	_timer->waitForCancel();
+
+	_proxyMap.clear();
 }
 
 int StEngine::check_stop()
 {
-	int numThr = _srvPool->_thrNum + _cliPool->_thrNum;
-	if (numThr > 0)
-		return 919;	// random less than 1000 milliseconds
+	if (_stopped)
+	{
+		int numThr = _srvPool->_thrNum + _cliPool->_thrNum;
+		if (numThr > 0)
+			return 919;	// random less than 1000 milliseconds
 
-	st_cond_broadcast(_runCond);
-	_timer->cancel();
+		st_cond_broadcast(_runCond);
+		_timer->cancel();
+		return 0;
+	}
 	return 0;
 }
 
@@ -1812,7 +1815,6 @@ void StEngine::shutdown()
 	ConnectionList incomingCons;
 	ConnectionMap conMap;
 
-	_proxyMap.clear();
 	_adapterMap.swap(adapterMap);
 	_incomingCons.swap(incomingCons);
 	_conMap.swap(conMap);
