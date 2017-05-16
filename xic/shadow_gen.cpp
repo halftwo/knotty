@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"20170515.1900"
+#define SHADOW_GEN_VERSION	"20170516.2300"
 
 void display_version(const char *program)
 {
@@ -91,16 +91,31 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	int rc;
 	bool random_id = false;
 	xstr_t xs = XSTR_C(identity);
-	int rc = xstr_find_not_in_bset(&xs, 0, &id_bset);
-	if (rc >= 0)
+
+	if (xstr_equal_cstr(&xs, "%"))
+	{
+		random_id = true;
+	}
+	else if ((rc = xstr_find_in_bset(&xs, 0, &alpha_bset)) != 0)
+	{
+		fprintf(stderr, "ERROR: the first char of identity must be a letter\n");
+		exit(1);
+	}
+	else if ((rc = xstr_find_not_in_bset(&xs, 0, &id_bset)) >= 0)
 	{
 		if (xs.data[rc] == '%' && rc == xs.len - 1)
+		{
 			random_id = true;
+		}
 		else
 		{
-			fprintf(stderr, "ERROR: the identity contains invalid char '%c'\n", xs.data[rc]);
+			if (xs.data[rc] == '%')
+				fprintf(stderr, "ERROR: char '%c' can only be the last char of identity", xs.data[rc]);
+			else
+				fprintf(stderr, "ERROR: invalid char '%c' in identity, which can only contain letters, digits and ones of \"@._-\"\n", xs.data[rc]);
 			exit(1);
 		}
 	}
