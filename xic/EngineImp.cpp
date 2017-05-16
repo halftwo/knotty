@@ -40,6 +40,8 @@
 #define DEFAULT_ACM_CLIENT	300
 #define MAX_SAMPLE		INT_MAX
 
+#define CHUNK_SIZE		4096
+
 using namespace xic;
 
 
@@ -116,6 +118,34 @@ void xic::adjustTSC(uint64_t frequency)
 {
 	slow_srv_tsc = xic_slow_server * frequency / 1000;
 	slow_cli_tsc = xic_slow_client * frequency / 1000;
+}
+
+struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count)
+{
+	int iov_count = 0;
+	struct iovec *body_iov = msg->body_iovec(&iov_count);
+
+	ostk_t *ostk = msg->ostk();
+	struct iovec *iov = OSTK_ALLOC(ostk, struct iovec, iov_count + 2);
+	memcpy(&iov[1], body_iov, iov_count * sizeof(struct iovec));
+
+	XicMessage::Header *hdr = OSTK_ALLOC_ONE(ostk, XicMessage::Header);
+	hdr->magic = 'X';
+	hdr->version = 'I';
+	hdr->msgType = msg->msgType();
+	hdr->flags = 0;
+	hdr->bodySize = xnet_m32(msg->bodySize());
+
+	iov[0].iov_base = hdr;
+	iov[0].iov_len = sizeof(XicMessage::Header);
+	++iov_count;
+	*count = iov_count;
+	return iov;
+}
+
+void xic::free_msg_iovec(const XicMessagePtr& msg, struct iovec *iov)
+{
+	ostk_free(msg->ostk(), iov);
 }
 
 class PassThroughCompletion: public Completion
@@ -654,23 +684,18 @@ AnswerPtr xic::except2answer(const std::exception& ex, const xstr_t& method, con
 
 HelloMessagePtr HelloMessage::create()
 {
-	static char buf[sizeof(HelloMessage)];
-	static HelloMessagePtr kmsg = HelloMessagePtr(new(buf) HelloMessage());
-	return kmsg;
+	ostk_t *ostk = ostk_create(CHUNK_SIZE);
+	void *p = ostk_alloc(ostk, sizeof(HelloMessage));
+	return new(p) HelloMessage(ostk);
 }
 
-HelloMessage::HelloMessage()
+HelloMessage::HelloMessage(ostk_t *ostk)
 {
-	static XicMessage::Header hdr = { 'X', 'I', 'H', 0 , 0 };
-	static struct iovec iov[1] = { {&hdr, sizeof(hdr)} };
-	_ostk = NULL;
-	_body = xstr_null;
-	_iov = iov;
-	_iov_count = 1;
+	_ostk = ostk;
 	_msgType = 'H';
 }
 
-struct iovec* HelloMessage::get_iovec(int* count)
+struct iovec* HelloMessage::body_iovec(int* count)
 {
 	*count = _iov_count;
 	return _iov;
@@ -678,23 +703,18 @@ struct iovec* HelloMessage::get_iovec(int* count)
 
 ByeMessagePtr ByeMessage::create()
 {
-	static char buf[sizeof(ByeMessage)];
-	static ByeMessagePtr kmsg = ByeMessagePtr(new(buf) ByeMessage());
-	return kmsg;
+	ostk_t *ostk = ostk_create(CHUNK_SIZE);
+	void *p = ostk_alloc(ostk, sizeof(ByeMessage));
+	return new(p) ByeMessage(ostk);
 }
 
-ByeMessage::ByeMessage()
+ByeMessage::ByeMessage(ostk_t *ostk)
 {
-	static XicMessage::Header hdr = { 'X', 'I', 'B', 0 , 0 };
-	static struct iovec iov[1] = { {&hdr, sizeof(hdr)} };
-	_ostk = NULL;
-	_body = xstr_null;
-	_iov = iov;
-	_iov_count = 1;
+	_ostk = ostk;
 	_msgType = 'B';
 }
 
-struct iovec* ByeMessage::get_iovec(int* count)
+struct iovec* ByeMessage::body_iovec(int* count)
 {
 	*count = _iov_count;
 	return _iov;
@@ -1188,11 +1208,11 @@ void ConnectionI::handle_quest(CurrentI& current)
 			answer->setTxid(txid);
 
 			// NB: The check for message size should be after calling answer->setTxid().
-			if (answer->body_size() > xic_message_size)
+			if (answer->bodySize() > xic_message_size)
 			{
 				XERROR_VAR_FMT(ServantException, ex,
 					"Huge sized answer responded from servant, size=%u>%u",
-					answer->body_size(), xic_message_size);
+					answer->bodySize(), xic_message_size);
 
 				if (xic_dlog_warning)
 				{
@@ -1351,8 +1371,9 @@ void ConnectionI::handle_check(const CheckPtr& check)
 					_service.c_str(), _proto.c_str(), host.c_str(), _peer_port);
 			}
 
-			_srp6aClient = new Srp6aClient();
-			_srp6aClient->set_identity(identity, password);
+			Srp6aClientPtr srp6aClient = new Srp6aClient();
+			_srp6a = srp6aClient;
+			srp6aClient->set_identity(identity, password);
 
 			CheckWriter cw("SRP6a1");
 			cw.param("I", identity);
@@ -1370,12 +1391,13 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			xstr_t s = args.wantBlob("s");
 			xstr_t B = args.wantBlob("B");
 
-			_srp6aClient->set_hash(hash);
-			_srp6aClient->set_parameters(g, N, N.len * 8);
-			_srp6aClient->set_salt(s);
-			_srp6aClient->set_B(B);
-			xstr_t A = _srp6aClient->gen_A();
-			xstr_t M1 = _srp6aClient->compute_M1();
+			Srp6aClientPtr srp6aClient = Srp6aClientPtr::cast(_srp6a);
+			srp6aClient->set_hash(hash);
+			srp6aClient->set_parameters(g, N, N.len * 8);
+			srp6aClient->set_salt(s);
+			srp6aClient->set_B(B);
+			xstr_t A = srp6aClient->gen_A();
+			xstr_t M1 = srp6aClient->compute_M1();
 
 			CheckWriter cw("SRP6a3");
 			cw.paramBlob("A", A);
@@ -1389,12 +1411,13 @@ void ConnectionI::handle_check(const CheckPtr& check)
 				throw XERROR_FMT(XError, "Unexpected command of Check message [%.*s]", XSTR_P(&cmd));
 
 			xstr_t M2 = args.wantBlob("M2");
-			xstr_t M2_mine = _srp6aClient->compute_M2();
+			Srp6aClientPtr srp6aClient = Srp6aClientPtr::cast(_srp6a);
+			xstr_t M2_mine = srp6aClient->compute_M2();
 			if (!xstr_equal(&M2, &M2_mine))
 				throw XERROR_FMT(XError, "srp6a M2 not equal");
 
 			_ck_state = CK_FINISH;
-			_srp6aClient.reset();
+			_srp6a.reset();
 		}
 	}
 
@@ -1411,18 +1434,20 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			if (!_shadowBox->getVerifier(identity, method, paramId, salt, verifier))
 				throw XERROR_FMT(XError, "No such identity [%.*s]", XSTR_P(&identity));
 
-			_srp6aServer = _shadowBox->newSrp6aServer(paramId);
-			ENFORCE(_srp6aServer);
+			
+			Srp6aServerPtr srp6aServer = _shadowBox->newSrp6aServer(paramId);
+			ENFORCE(srp6aServer);
+			_srp6a = srp6aServer;
 
-			_srp6aServer->set_v(verifier);
-			xstr_t B = _srp6aServer->gen_B();
+			srp6aServer->set_v(verifier);
+			xstr_t B = srp6aServer->gen_B();
 
 			CheckWriter cw("SRP6a2");
-			cw.param("hash", _srp6aServer->hash_name());
+			cw.param("hash", srp6aServer->hash_name());
 			cw.paramBlob("s", salt);
 			cw.paramBlob("B", B);
-			cw.paramBlob("g", _srp6aServer->get_g());
-			cw.paramBlob("N", _srp6aServer->get_N());
+			cw.paramBlob("g", srp6aServer->get_g());
+			cw.paramBlob("N", srp6aServer->get_N());
 			send_kmsg(cw.take());
 			_ck_state = CK_S3;
 		}
@@ -1434,12 +1459,13 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			xstr_t A = args.wantBlob("A");
 			xstr_t M1 = args.wantBlob("M1");
 
-			_srp6aServer->set_A(A);
-			xstr_t M1_mine = _srp6aServer->compute_M1();
+			Srp6aServerPtr srp6aServer = Srp6aServerPtr::cast(_srp6a);
+			srp6aServer->set_A(A);
+			xstr_t M1_mine = srp6aServer->compute_M1();
 			if (!xstr_equal(&M1, &M1_mine))
 				throw XERROR_FMT(XError, "srp6a M1 not equal");
 
-			xstr_t M2 = _srp6aServer->compute_M2();
+			xstr_t M2 = srp6aServer->compute_M2();
 			CheckWriter cw("SRP6a4");
 			cw.paramBlob("M2", M2);
 			send_kmsg(cw.take());
@@ -1448,7 +1474,7 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			_ck_state = CK_FINISH;
 			_state = ST_ACTIVE;
 			_shadowBox.reset();
-			_srp6aServer.reset();
+			_srp6a.reset();
 			checkFinished();
 		}
 	}
@@ -1597,11 +1623,11 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 		a->setTxid(_txid);
 
 		// NB: The check for message size should be after calling answer->setTxid().
-		if (a->body_size() > xic_message_size)
+		if (a->bodySize() > xic_message_size)
 		{
 			XERROR_VAR_FMT(ServantException, ex,
 				"Huge sized answer responded from servant, size=%u>%u",
-				a->body_size(), xic_message_size);
+				a->bodySize(), xic_message_size);
 
 			if (xic_dlog_warning)
 			{

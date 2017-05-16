@@ -18,30 +18,18 @@
 namespace xic
 {
 
-static XicMessage::Header _default_header = { 'X', 'I', 0, 0, (uint32_t)-1 };
-
-
 static int _do_unpack_args(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie, bool ctx)
 {
-	ssize_t len;
-	unsigned char *begin, *end;
-
+	int kind;
 	vbs_dict_init(dict);
-	if (vbs_unpack_head_of_dict_with_length(job, &len) < 0)
+	if (vbs_unpack_head_of_dict_with_kind(job, &kind) < 0)
 		return -1;
 
-	begin = job->cur - 1;
-	end = job->cur + len;
-
+	unsigned char *begin = job->cur - vbs_head_size_of_dict(kind);
 	while (true)
 	{
 		if (vbs_unpack_if_tail(job))
 		{
-			if (len > 0)
-			{
-				if (job->cur != end)
-					return -1;
-			}
 			dict->_raw.data = begin;
 			dict->_raw.len = job->cur - begin;
 			return 0;
@@ -91,9 +79,9 @@ void unpack_args(ostk_t *ostk, xstr_t* xs, vbs_dict_t *dict, bool ctx)
 
 
 XicMessage::XicMessage()
-	: _ostk(NULL), _txid(0), _fixed(false), _msgType(0), 
+	: _ostk(NULL), _txid(0), _msgType(0), 
 	_cleanup_num(0), _cleanup_stack(NULL), _body(xstr_null), 
-	_iov_count(0), _body_iov_count(0), _iov(NULL), _body_iov(NULL), _body_size(0)
+	_iov(NULL), _iov_count(0), _body_size(0)
 {
 }
 
@@ -155,33 +143,14 @@ int XicMessage::cleanup_pop(bool execute)
 	return -1;
 }
 
-uint32_t XicMessage::body_size()
+uint32_t XicMessage::bodySize()
 {
 	if (!_iov)
 	{
 		int dummy;
-		get_iovec(&dummy);
+		body_iovec(&dummy);
 	}
 	return _body_size;
-}
-
-struct iovec* XicMessage::body_iovec(int* count)
-{
-	if (!_body_iov)
-	{
-		if (!_iov)
-		{
-			int dummy;
-			get_iovec(&dummy);
-		}
-
-		_body_iov = (struct iovec *)ostk_alloc(_ostk, _iov_count * sizeof(_body_iov[0]));
-		memcpy(_body_iov, _iov, _iov_count * sizeof(_body_iov[0]));
-		_body_iov_count = xnet_adjust_iovec(&_body_iov, _iov_count, sizeof(XicMessage::Header));
-	}
-
-	*count = _body_iov_count;
-	return _body_iov;
 }
 
 XicMessagePtr XicMessage::create(uint8_t msgType, size_t bodySize)
@@ -472,16 +441,14 @@ void Quest::unpack_body()
 	xstr_init(&_p_xstr, uk.cur, uk.end - uk.cur);
 }
 
-struct iovec* Quest::get_iovec(int* count)
+struct iovec* Quest::body_iovec(int* count)
 {
 	if (!_iov)
 	{
 		xbuf_t xb;
-		xb.capacity = sizeof(XicMessage::Header) + 10 + 10 + 10 + _service.len + _method.len;
+		xb.capacity = 10 + 10 + 10 + 2 + _service.len + _method.len;
 		xb.data = (unsigned char *)ostk_alloc(_ostk, xb.capacity);
-		xb.len = sizeof(XicMessage::Header);
-		XicMessage::Header *hdr = (XicMessage::Header *)xb.data;
-		*hdr = _default_header;
+		xb.len = 0;
 		vbs_packer_t pk = VBS_PACKER_INIT(xbuf_xio.write, &xb, 0);
 
 		vbs_pack_integer(&pk, _txid);
@@ -499,7 +466,9 @@ struct iovec* Quest::get_iovec(int* count)
 		}
 		else
 		{
-			_iov_count += 1;
+			/* Empty context {} */
+			vbs_pack_head_of_dict(&pk);
+			vbs_pack_tail(&pk);
 		}
 
 		if (_p_xstr.len)
@@ -511,47 +480,37 @@ struct iovec* Quest::get_iovec(int* count)
 
 		_iov = (struct iovec *)ostk_alloc(_ostk, _iov_count * sizeof(_iov[0]));
 
-		hdr->bodySize = xb.len - sizeof(XicMessage::Header);
+		int bodySize = xb.len;
 		_iov[0].iov_base = xb.data;
 		_iov[0].iov_len = xb.len;
 
 		int idx = 1;
 		if (_c_xstr.len)
 		{
-			hdr->bodySize += _c_xstr.len;
+			bodySize += _c_xstr.len;
 			_iov[idx].iov_base = _c_xstr.data;
 			_iov[idx].iov_len = _c_xstr.len;
 			++idx;
 		}
 		else if (_c_rope && _c_rope->length)
 		{
-			hdr->bodySize += _c_rope->length;
+			bodySize += _c_rope->length;
 			rope_iovec(_c_rope, &_iov[idx]);
 			idx += _c_rope->block_count;
-		}
-		else
-		{
-			hdr->bodySize += vbs_packed_empty_dict.len;
-			_iov[idx].iov_base = vbs_packed_empty_dict.data;
-			_iov[idx].iov_len = vbs_packed_empty_dict.len;
-			++idx;
 		}
 
 		if (_p_xstr.len)
 		{
-			hdr->bodySize += _p_xstr.len;
+			bodySize += _p_xstr.len;
 			_iov[idx].iov_base = _p_xstr.data;
 			_iov[idx].iov_len = _p_xstr.len;
 		}
 		else if (_p_rope && _p_rope->length)
 		{
-			hdr->bodySize += _p_rope->length;
+			bodySize += _p_rope->length;
 			rope_iovec(_p_rope, &_iov[idx]);
 		}
-		_body_size = hdr->bodySize;
-
-		hdr->msgType = _msgType;
-		xnet_msb32(&hdr->bodySize);
+		_body_size = bodySize;
 	}
 
 	*count = _iov_count;
@@ -700,16 +659,14 @@ void Answer::unpack_body()
 	xstr_init(&_p_xstr, uk.cur, uk.end - uk.cur);
 }
 
-struct iovec* Answer::get_iovec(int* count)
+struct iovec* Answer::body_iovec(int* count)
 {
 	if (!_iov)
 	{
 		xbuf_t xb;
-		xb.capacity = sizeof(XicMessage::Header) + 10 + 10;
+		xb.capacity = 10 + 10;
 		xb.data = (unsigned char *)ostk_alloc(_ostk, xb.capacity);
-		xb.len = sizeof(XicMessage::Header);
-		XicMessage::Header *hdr = (XicMessage::Header *)xb.data;
-		*hdr = _default_header;
+		xb.len = 0;
 		vbs_packer_t pk = VBS_PACKER_INIT(xbuf_xio.write, &xb, 0);
 		vbs_pack_integer(&pk, _txid);
 		vbs_pack_integer(&pk, _status);
@@ -724,25 +681,22 @@ struct iovec* Answer::get_iovec(int* count)
 
 		_iov = (struct iovec *)ostk_alloc(_ostk, _iov_count * sizeof(_iov[0]));
 
-		hdr->bodySize = xb.len - sizeof(XicMessage::Header);
+		int bodySize = xb.len;
 		_iov[0].iov_base = xb.data;
 		_iov[0].iov_len = xb.len;
 
 		if (_p_xstr.len)
 		{
-			hdr->bodySize += _p_xstr.len;
+			bodySize += _p_xstr.len;
 			_iov[1].iov_base = _p_xstr.data;
 			_iov[1].iov_len = _p_xstr.len;
 		}
 		else if (_p_rope && _p_rope->length)
 		{
-			hdr->bodySize += _p_rope->length;
+			bodySize += _p_rope->length;
 			rope_iovec(_p_rope, &_iov[1]);
 		}
-		_body_size = hdr->bodySize;
-
-		hdr->msgType = _msgType;
-		xnet_msb32(&hdr->bodySize);
+		_body_size = bodySize;
 	}
 
 	*count = _iov_count;

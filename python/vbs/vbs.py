@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 #
 
-__version__ = "20160831.20160831"
+__version__ = "20170516.20170516"
 
 import sys
 import decimal
@@ -36,26 +36,28 @@ except ImportError:
     VBS_ERR_INCOMPLETE	= -2
     VBS_ERR_INVALID	= -1
 
-    VBS_TAIL 	= 0x01
-    VBS_LIST 	= 0x02
-    VBS_DICT 	= 0x03
-    VBS_NULL 	= 0x0F
-    VBS_BOOL 	= 0x18
-    VBS_BLOB 	= 0x1B
-    VBS_DECIMAL = 0x1C
-    VBS_FLOATING = 0x1E
-    VBS_STRING	= 0x20
-    VBS_INTEGER = 0x40
+    VBS_TAIL 	    = 0x01
+    VBS_LIST 	    = 0x02
+    VBS_DICT 	    = 0x03
+    VBS_NULL 	    = 0x0F
+    VBS_DESCRIPTOR 	= 0x10
+    VBS_BOOL 	    = 0x18
+    VBS_BLOB 	    = 0x1B
+    VBS_DECIMAL     = 0x1C
+    VBS_FLOATING    = 0x1E
+    VBS_STRING	    = 0x20
+    VBS_INTEGER     = 0x40
 
-    _CHR_TAIL 	= _itemtype(VBS_TAIL)
-    _CHR_LIST 	= _itemtype(VBS_LIST)
-    _CHR_DICT 	= _itemtype(VBS_DICT)
-    _CHR_NULL 	= _itemtype(VBS_NULL)
-    _CHR_BLOB	= _itemtype(VBS_BLOB)
-    _CHR_DECIMAL = _itemtype(VBS_DECIMAL)
-    _CHR_FLOATING = _itemtype(VBS_FLOATING)
-    _CHR_FALSE 	= _itemtype(VBS_BOOL + 0)
-    _CHR_TRUE 	= _itemtype(VBS_BOOL + 1)
+    _CHR_TAIL 	    = _itemtype(VBS_TAIL)
+    _CHR_LIST 	    = _itemtype(VBS_LIST)
+    _CHR_DICT 	    = _itemtype(VBS_DICT)
+    _CHR_NULL 	    = _itemtype(VBS_NULL)
+    _CHR_DESCRIPTOR = _itemtype(VBS_DESCRIPTOR)
+    _CHR_BLOB	    = _itemtype(VBS_BLOB)
+    _CHR_DECIMAL    = _itemtype(VBS_DECIMAL)
+    _CHR_FLOATING   = _itemtype(VBS_FLOATING)
+    _CHR_FALSE 	    = _itemtype(VBS_BOOL + 0)
+    _CHR_TRUE 	    = _itemtype(VBS_BOOL + 1)
 
     _FLT_ZERO	    = 1	# +0.0
     _FLT_INF	    = 2	# +inf
@@ -209,60 +211,79 @@ except ImportError:
 
 
     def _uk_tag(input):
-        c = input.read(1)
-        if c == b'':
-            raise StopIteration
+        descriptor = 0
+        while True:
+            c = input.read(1)
+            if c == b'':
+                raise StopIteration
 
-        x = ord(c)
-        num = 0
-        negative = 0
-        if x < 0x80:
-            tag = x
-            if (x >= VBS_STRING):
-                tag = (x & 0x60)
-                num = (x & 0x1F)
-                if (tag == 0x60):
-                    tag = VBS_INTEGER
-                    negative = 1
-                    
-            elif (x >= VBS_BOOL):
-                if (x != VBS_BLOB):
-                    tag = (x & ~0x1)
-                    negative = (x & 0x1)
+            x = ord(c)
+            num = 0
+            negative = 0
+            if x < 0x80:
+                tag = x
+                if (x >= VBS_STRING):
+                    tag = (x & 0x60)
+                    num = (x & 0x1F)
+                    if (tag == 0x60):
+                        tag = VBS_INTEGER
+                        negative = 1
+                        
+                elif (x >= VBS_BOOL):
+                    if (x != VBS_BLOB):
+                        tag = (x & ~0x1)
+                        negative = (x & 0x1)
 
-                if (x <= VBS_BOOL + 1):
-                    num = (x & 0x1)
-                
-        else:
-            shift = 0
-            while x >= 0x80:
-                num += (x & 0x7F) << shift
-                shift += 7
-                c = input.read(1)
-                if c == b'':
-                    raise ValueError
-                x = ord(c)
+                    if (x <= VBS_BOOL + 1):
+                        num = (x & 0x1)
 
-            tag = x
-            if (x >= VBS_STRING):
-                tag = (x & 0x60)
-                num += (x & 0x1F) << shift
-                if (tag == 0x60):
-                    tag = VBS_INTEGER
-                    negative = 1
-                    
-            elif (x >= VBS_BOOL):
-                if (x != VBS_BLOB):
-                    tag = (x & ~0x1)
-                    negative = (x & 0x1)
+                elif (x >= VBS_DESCRIPTOR):
+                    tag = VBS_DESCRIPTOR
+                    num = (x & 0x07)
+                    descriptor = num + 1
+                    continue
 
-                if (x <= VBS_BOOL + 1):
-                    num = (x & 0x1)
-        
-        if negative:
-            num = -num
+            else:
+                shift = 0
+                while x >= 0x80:
+                    num += (x & 0x7F) << shift
+                    shift += 7
+                    c = input.read(1)
+                    if c == b'':
+                        raise ValueError
+                    x = ord(c)
 
-        return tag, num
+                tag = x
+                if (x >= VBS_STRING):
+                    tag = (x & 0x60)
+                    num += (x & 0x1F) << shift
+                    if (tag == 0x60):
+                        tag = VBS_INTEGER
+                        negative = 1
+                        
+                elif (x >= VBS_BOOL):
+                    if (x != VBS_BLOB):
+                        tag = (x & ~0x1)
+                        negative = (x & 0x1)
+
+                    if (x <= VBS_BOOL + 1):
+                        num = (x & 0x1)
+
+                elif (x >= VBS_DESCRIPTOR):
+                    tag = VBS_DESCRIPTOR
+                    num += (x & 0x07) << shift
+                    descriptor = num + 1;
+                    if (descriptor > 65535):
+                        raise ValueError
+                    continue
+
+            if negative:
+                num = -num
+
+            return tag, num, descriptor
+
+        # Can't reach here
+        return 0, 0, 0
 
     class _ClosureUnpacked(BaseException):
         pass
@@ -331,7 +352,7 @@ except ImportError:
         return Decimal(s)
 
     def _uk_one(input, encoding, errors):
-        t, n = _uk_tag(input)
+        t, n, descriptor = _uk_tag(input)
         if t == VBS_INTEGER:
             return n
         elif t == VBS_STRING:
@@ -351,13 +372,13 @@ except ImportError:
         elif t == VBS_BOOL:
             return bool(n)
         elif t == VBS_FLOATING:
-            t1, n1 = _uk_tag(input)
-            if t1 != VBS_INTEGER:
+            t1, n1, d1 = _uk_tag(input)
+            if t1 != VBS_INTEGER or d1 != 0:
                 raise ValueError
             return _make_floating(n, n1)
         elif t == VBS_DECIMAL:
-            t1, n1 = _uk_tag(input)
-            if t1 != VBS_INTEGER:
+            t1, n1, d1 = _uk_tag(input)
+            if t1 != VBS_INTEGER or d1 != 0:
                 raise ValueError
             return _make_decimal(n, n1)
         elif t == VBS_LIST:

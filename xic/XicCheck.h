@@ -27,7 +27,7 @@ public:
 	CheckPtr clone();
 
 	virtual void unpack_body();
-	virtual struct iovec* get_iovec(int* count);
+	virtual struct iovec* body_iovec(int* count);
 
 	void setCommand(const xstr_t& command)	{ _command = ostk_xstr_dup(_ostk, &command); }
 	void setCommand(const char* command)	{ _command = ostk_xstr_dup_cstr(_ostk, command); }

@@ -918,8 +918,8 @@ static inline ssize_t x_putc(writer_t *w, char ch)
 }
 
 
-static int _vbs_unpack_to_list_tail(vbs_unpacker_t *job, ssize_t len, writer_t *wr, int flags);
-static int _vbs_unpack_to_dict_tail(vbs_unpacker_t *job, ssize_t len, writer_t *wr, int flags);
+static int _vbs_unpack_to_list_tail(vbs_unpacker_t *job, writer_t *wr, int flags);
+static int _vbs_unpack_to_dict_tail(vbs_unpacker_t *job, writer_t *wr, int flags);
 
 static uint32_t _escape_meta[8] = {
 	0xffffffff, /* 1111 1111 1111 1111  1111 1111 1111 1111 */
@@ -1130,10 +1130,9 @@ static int _vbs_to_json(vbs_unpacker_t *job, writer_t *wr, int flags, bool must_
 {
 	ssize_t r, n;
 	vbs_data_t v;
-	ssize_t len;
 	char buf[32];
 
-	if (vbs_unpack_primitive(job, &v, &len) < 0)
+	if (vbs_unpack_primitive(job, &v, NULL) < 0)
 		return -1;
 
 	if (must_string && v.type != VBS_STRING)
@@ -1164,10 +1163,10 @@ static int _vbs_to_json(vbs_unpacker_t *job, writer_t *wr, int flags, bool must_
 		r = x_write(wr, "null", 4);
 		break;
 	case VBS_DICT:
-		r = _vbs_unpack_to_dict_tail(job, len, wr, flags);
+		r = _vbs_unpack_to_dict_tail(job, wr, flags);
 		break;
 	case VBS_LIST:
-		r = _vbs_unpack_to_list_tail(job, len, wr, flags);
+		r = _vbs_unpack_to_list_tail(job, wr, flags);
 		break;
 	default:
 		r = -1;
@@ -1185,7 +1184,7 @@ ssize_t vbs_to_json(const void *vbs, size_t size, xio_write_function xio_write, 
 	return uk.cur - uk.buf;
 }
 
-static int _vbs_unpack_to_list_tail(vbs_unpacker_t *job, ssize_t len, writer_t *wr, int flags)
+static int _vbs_unpack_to_list_tail(vbs_unpacker_t *job, writer_t *wr, int flags)
 {
 	size_t n;
 
@@ -1213,7 +1212,7 @@ static int _vbs_unpack_to_list_tail(vbs_unpacker_t *job, ssize_t len, writer_t *
 	return 0;
 }
 
-static int _vbs_unpack_to_dict_tail(vbs_unpacker_t *job, ssize_t len, writer_t *wr, int flags)
+static int _vbs_unpack_to_dict_tail(vbs_unpacker_t *job, writer_t *wr, int flags)
 {
 	size_t n;
 

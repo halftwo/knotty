@@ -909,7 +909,7 @@ void StConnection::send_fiber()
 			do
 			{
 				int iov_cnt = 0;
-				struct iovec *iov = q.front()->get_iovec(&iov_cnt);
+				struct iovec *iov = get_msg_iovec(q.front(), &iov_cnt);
 
 				// NB: The 3rd argument of writev() in Linux 
 				// must be no more than 1024, or error occured.
@@ -922,6 +922,7 @@ void StConnection::send_fiber()
 					int left = xnet_adjust_iovec(&iov, count, n);
 					iov_cnt -= (count - left);
 				}
+				free_msg_iovec(q.front(), iov);
 
 				XicMessage* msg = q.front().get();
 				if (msg->isQuest() && msg->txid())
@@ -1032,7 +1033,7 @@ void StListener::accept_fiber()
 			CheckWriter cw("FORBIDDEN");
 			CheckPtr check = cw.take();
 			int iov_num;
-			struct iovec *iov = check->get_iovec(&iov_num);
+			struct iovec *iov = get_msg_iovec(check, &iov_num);
 			st_writev(sf, iov, iov_num, -1);
 			st_netfd_close(sf);
 			_engine->getTimer()->addTask(STimerTask::create(st_netfd_close, sf), 1000);

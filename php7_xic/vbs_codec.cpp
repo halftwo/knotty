@@ -2,6 +2,7 @@
 #include "vbs_Blob.h"
 #include "vbs_Dict.h"
 #include "vbs_Decimal.h"
+#include "vbs_Data.h"
 #include "xslib/decimal64.h"
 
 namespace vbs
@@ -218,6 +219,19 @@ void v_encode_r(vbs_packer_t *job, zval *val TSRMLS_DC)
 			vbs_pack_decimal64(job, dec);
 			break;
 		}
+		else if (Z_OBJCE_P(val) == vbs::classEntry_Data)
+		{
+			zval rv;
+			ZVAL_UNDEF(&rv);
+			zval *zv = zend_read_property(vbs::classEntry_Decimal, val, "r", sizeof("r") - 1, 0, &rv TSRMLS_CC);
+			int descriptor = Z_LVAL_P(zv);
+			vbs_pack_descriptor(job, descriptor);
+
+			ZVAL_UNDEF(&rv);
+			zv = zend_read_property(vbs::classEntry_Decimal, val, "d", sizeof("d") - 1, 0, &rv TSRMLS_CC);
+			v_encode_r(job, zv);
+			break;
+		}
 
 		/* fall through */
 	case IS_ARRAY:
@@ -312,8 +326,7 @@ static bool v_decode_array(vbs_unpacker_t *job, bool is_dict, zval *z TSRMLS_DC)
 		if (is_dict)
 		{
 			vbs_data_t dat;
-			ssize_t len;
-			if (vbs_unpack_primitive(job, &dat, &len) < 0)
+			if (vbs_unpack_primitive(job, &dat, NULL) < 0)
 				goto error;
 
 			if (dat.type == VBS_INTEGER)
@@ -369,11 +382,11 @@ error:
 bool v_decode_r(vbs_unpacker_t *job, zval *zz TSRMLS_DC)
 {
 	vbs_data_t dat;
-	ssize_t len;
+	int kind;
 
 	ZVAL_UNDEF(zz);
 
-	if (vbs_unpack_primitive(job, &dat, &len) < 0)
+	if (vbs_unpack_primitive(job, &dat, &kind) < 0)
 		return false;
 
 	if (dat.type == VBS_INTEGER)

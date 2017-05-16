@@ -54,5 +54,5 @@ shadow_file: ShadowBox.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DTEST_SHADOW -o $@ $< $(LIBS)
 
 clean:
-	$(RM) $(OBJS) $(LIBXIC) $(EXES)
+	$(RM) *.lo *.la $(OBJS) $(LIBXIC) $(EXES) 
 

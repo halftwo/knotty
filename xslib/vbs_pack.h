@@ -81,6 +81,7 @@ struct vbs_list_t
 	vbs_litem_t *first;
 	vbs_litem_t **last;
 	size_t count;
+	int kind;
 	xstr_t _raw;		/* Including the VBS_LIST and VBS_TAIL bytes */
 };
 
@@ -90,6 +91,7 @@ struct vbs_dict_t
 	vbs_ditem_t *first;
 	vbs_ditem_t **last;
 	size_t count;
+	int kind;
 	xstr_t _raw; 		/* Including the VBS_DICT and VBS_TAIL bytes */
 };
 
@@ -423,8 +425,8 @@ size_t vbs_buffer_of_decimal64(unsigned char *buf, decimal64_t value);
 size_t vbs_head_buffer_of_string(unsigned char *buf, size_t strlen);
 size_t vbs_head_buffer_of_blob(unsigned char *buf, size_t bloblen);
 
-size_t vbs_head_buffer_of_list(unsigned char *buf, size_t bodylen);	/* bodylen including the VBS_TAIL byte */
-size_t vbs_head_buffer_of_dict(unsigned char *buf, size_t bodylen);	/* bodylen including the VBS_TAIL byte */
+size_t vbs_head_buffer_of_list(unsigned char *buf, int kind);
+size_t vbs_head_buffer_of_dict(unsigned char *buf, int kind);
 
 #define vbs_byte_of_bool(value)	((unsigned char)((value) ? VBS_BOOL + 1 : VBS_BOOL))
 #define vbs_byte_of_null()	((unsigned char)VBS_NULL)
@@ -446,8 +448,8 @@ size_t vbs_size_of_blob(size_t bloblen);
 #define vbs_size_of_bool(value)		((size_t)1)
 #define vbs_size_of_null()		((size_t)1)
 
-size_t vbs_head_size_of_list(size_t bodylen);	/* bodylen including the VBS_TAIL byte */
-size_t vbs_head_size_of_dict(size_t bodylen);	/* bodylen including the VBS_TAIL byte */
+size_t vbs_head_size_of_list(int kind);
+size_t vbs_head_size_of_dict(int kind);
 
 size_t vbs_size_of_list(const vbs_list_t *list);
 size_t vbs_size_of_dict(const vbs_dict_t *dict);
@@ -492,11 +494,8 @@ int vbs_pack_decimal64(vbs_packer_t *job, decimal64_t value);
 int vbs_pack_bool(vbs_packer_t *job, bool value);
 int vbs_pack_null(vbs_packer_t *job);
 
-/* NB: The 2nd argument 'len' is the number of the encoded bytes 
- * including the VBS_TAIL byte, not the number of elements.
- */
-int vbs_pack_head_of_list_with_length(vbs_packer_t *job, size_t len);
-int vbs_pack_head_of_dict_with_length(vbs_packer_t *job, size_t len);
+int vbs_pack_head_of_list_with_kind(vbs_packer_t *job, int kind);
+int vbs_pack_head_of_dict_with_kind(vbs_packer_t *job, int kind);
 
 int vbs_pack_head_of_list(vbs_packer_t *job);
 int vbs_pack_head_of_dict(vbs_packer_t *job);
@@ -549,8 +548,8 @@ int vbs_unpack_decimal64(vbs_unpacker_t *job, decimal64_t *p_value);
 int vbs_unpack_bool(vbs_unpacker_t *job, bool *p_value);
 int vbs_unpack_null(vbs_unpacker_t *job);
 
-int vbs_unpack_head_of_list_with_length(vbs_unpacker_t *job, ssize_t *p_len);
-int vbs_unpack_head_of_dict_with_length(vbs_unpacker_t *job, ssize_t *p_len);
+int vbs_unpack_head_of_list_with_kind(vbs_unpacker_t *job, int *kind);
+int vbs_unpack_head_of_dict_with_kind(vbs_unpacker_t *job, int *kind);
 int vbs_unpack_head_of_list(vbs_unpacker_t *job);
 int vbs_unpack_head_of_dict(vbs_unpacker_t *job);
 int vbs_unpack_tail(vbs_unpacker_t *job);
@@ -591,14 +590,14 @@ vbs_type_t vbs_unpack_type(vbs_unpacker_t *job, intmax_t *p_number);
 
 /* Return the data type.
    Or a negative number on error.
-   The contents of list, dict or ext are not unpacked, 
-   only the tag of list, dict or ext. 
+   The contents of list or dict are not unpacked, 
+   only the tag of list or dict.
  */
-int vbs_unpack_primitive(vbs_unpacker_t *job, vbs_data_t *p_data, ssize_t *plen);
+int vbs_unpack_primitive(vbs_unpacker_t *job, vbs_data_t *p_data, int *kind/*NULL*/);
 
 /* Call following functions after vbs_unpack_primitive() */
-int vbs_unpack_body_of_list(vbs_unpacker_t *job, ssize_t len, vbs_list_t *list, const xmem_t *xm, void *xm_cookie);
-int vbs_unpack_body_of_dict(vbs_unpacker_t *job, ssize_t len, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie);
+int vbs_unpack_body_of_list(vbs_unpacker_t *job, int kind, vbs_list_t *list, const xmem_t *xm, void *xm_cookie);
+int vbs_unpack_body_of_dict(vbs_unpacker_t *job, int kind, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie);
 int vbs_skip_body_of_list(vbs_unpacker_t *job);
 int vbs_skip_body_of_dict(vbs_unpacker_t *job);
 

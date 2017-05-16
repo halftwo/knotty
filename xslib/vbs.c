@@ -505,29 +505,21 @@ int vbs_print_data(const vbs_data_t *pv, iobuf_t *ob)
 	return r < 0 ? -1 : 0;
 }
 
-static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv, ssize_t len);
+static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv);
 
-static int _dump_to_tail(vbs_unpacker_t *job, ssize_t bodylen, bool dict, iobuf_t *ob)
+static int _dump_to_tail(vbs_unpacker_t *job, bool dict, iobuf_t *ob)
 {
-	unsigned char *saved_end = job->end;
 	size_t n;
 	int rc = -1;
 
 	if (iobuf_putc(ob, dict ? '{' : '[') != 1)
 		goto error;
 
-	if (bodylen > 0)
-	{
-		if (*(job->cur + bodylen - 1) != VBS_TAIL)
-			goto error;
-		job->end = job->cur + bodylen;
-	}
-
 	for (n = 0; true; ++n)
 	{
 		vbs_data_t val;
-		ssize_t len;
-		int r = vbs_unpack_primitive(job, &val, &len);
+		int kind;
+		int r = vbs_unpack_primitive(job, &val, &kind);
 		if (r < 0)
 			goto error;
 
@@ -539,11 +531,6 @@ static int _dump_to_tail(vbs_unpacker_t *job, ssize_t bodylen, bool dict, iobuf_
 			if (iobuf_putc(ob, dict ? '}' : ']') != 1)
 				goto error;
 
-			if (bodylen > 0)
-			{
-				if (job->cur != job->end)
-					goto error;
-			}
 			break;
 		}
 
@@ -561,17 +548,16 @@ static int _dump_to_tail(vbs_unpacker_t *job, ssize_t bodylen, bool dict, iobuf_
 			}
 		}
 
-		r = _do_unpack_print(job, ob, &val, len);
+		r = _do_unpack_print(job, ob, &val);
 		if (r < 0)
 			goto error;
 	}
 	rc = 0;
 error:
-	job->end = saved_end;
 	return rc;
 }
 
-static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv, ssize_t len)
+static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv)
 {
 	if (pv->descriptor == VBS_HIDDEN_DESCRIPTOR)
 	{
@@ -592,11 +578,11 @@ static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *
 	{
 		if (pv->type == VBS_DICT)
 		{
-			return _dump_to_tail(job, len, 1, ob);
+			return _dump_to_tail(job, 1, ob);
 		}
 		else if (pv->type == VBS_LIST)
 		{
-			return _dump_to_tail(job, len, 0, ob);
+			return _dump_to_tail(job, 0, ob);
 		}
 	}
 
@@ -606,12 +592,11 @@ static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *
 inline int vbs_unpack_print_one(vbs_unpacker_t *job, iobuf_t *ob)
 {
 	vbs_data_t val;
-	ssize_t len;
-	int r = vbs_unpack_primitive(job, &val, &len);
+	int r = vbs_unpack_primitive(job, &val, NULL);
 	if (r < 0)
 		return r;
 
-	return _do_unpack_print(job, ob, &val, len);
+	return _do_unpack_print(job, ob, &val);
 }
 
 int vbs_unpack_print_all(vbs_unpacker_t *job, iobuf_t *ob)

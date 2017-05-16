@@ -2,6 +2,7 @@
 #define EngineImp_h_
 
 #include "Engine.h"
+#include "XicMessage.h"
 #include "XicCheck.h"
 #include "ServantI.h"
 #include "IpMatcher.h"
@@ -87,6 +88,9 @@ size_t getIps(const xstr_t& host, uint32_t ipv4s[], int *v4num, uint8_t ipv6s[][
 
 size_t cli_sample_locus(char *buf);
 
+struct iovec *get_msg_iovec(const XicMessagePtr& msg, int *count);
+void free_msg_iovec(const XicMessagePtr& msg, struct iovec *iov);
+
 
 AnswerPtr except2answer(const std::exception& ex, const xstr_t& method, const xstr_t& service,
 			const std::string& endpoint, bool local = false);
@@ -127,23 +131,21 @@ void parseEndpoint(const xstr_t& endpoint, xic::EndpointInfo& ei);
 
 class HelloMessage: public XicMessage
 {
-	HelloMessage();
+	HelloMessage(ostk_t *ostk);
 public:
 	static HelloMessagePtr create();
-	virtual void xref_destroy()			{}
 	virtual void unpack_body()			{}
-	virtual struct iovec* get_iovec(int* count);
+	virtual struct iovec* body_iovec(int* count);
 };
 
 
 class ByeMessage: public XicMessage
 {
-	ByeMessage();
+	ByeMessage(ostk_t *ostk);
 public:
 	static ByeMessagePtr create();
-	virtual void xref_destroy()			{}
 	virtual void unpack_body()			{}
-	virtual struct iovec* get_iovec(int* count);
+	virtual struct iovec* body_iovec(int* count);
 };
 
 
@@ -292,8 +294,7 @@ protected:
 	uint16_t _peer_port;
 
 	ShadowBoxPtr _shadowBox;
-	Srp6aServerPtr _srp6aServer;
-	Srp6aClientPtr _srp6aClient;
+	XPtr<Srp6aBase> _srp6a;
 
 	typedef std::deque<XicMessagePtr> MessageQueue;
 	MessageQueue _kq;	// prioritized for check msgs

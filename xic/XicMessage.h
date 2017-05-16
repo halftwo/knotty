@@ -60,11 +60,9 @@ public:
 	bool isQuest() const				{ return _msgType == 'Q'; }
 	bool isAnswer() const				{ return _msgType == 'A'; }
 
-	uint32_t body_size();
-	struct iovec* body_iovec(int* count);
-
+	uint32_t bodySize();
 	virtual void unpack_body() 			= 0;
-	virtual struct iovec* get_iovec(int* count) 	= 0;
+	virtual struct iovec* body_iovec(int* count)	= 0;
 
 	int cleanup_push(void (*cleanup)(void *), void *arg);
 	int cleanup_pop(bool execute = true);
@@ -85,15 +83,12 @@ protected:
 
 	ostk_t* _ostk;
 	int64_t _txid;
-	bool _fixed;
 	uint8_t _msgType;
 	int _cleanup_num;
 	struct cleanup_t *_cleanup_stack;
 	xstr_t _body;
-	int _iov_count;
-	int _body_iov_count;
-	struct iovec* _iov;
-	struct iovec* _body_iov;
+	struct iovec* _iov;	// not include header
+	int _iov_count;		// not include header
 	uint32_t _body_size;	// when send out
 };
 
@@ -114,7 +109,7 @@ public:
 	QuestPtr clone();
 
 	virtual void unpack_body();
-	virtual struct iovec* get_iovec(int* count);
+	virtual struct iovec* body_iovec(int* count);
 	void reset_iovec();
 
 	void setTxid(int64_t txid)		{ _txid = txid; }
@@ -172,7 +167,7 @@ public:
 	AnswerPtr clone();
 
 	virtual void unpack_body();
-	virtual struct iovec* get_iovec(int* count);
+	virtual struct iovec* body_iovec(int* count);
 
 	void setTxid(int64_t txid)		{ _txid = txid; }
 	void setStatus(int status)		{ _status = status; }

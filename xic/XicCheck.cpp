@@ -15,9 +15,6 @@
 namespace xic
 {
 
-static XicMessage::Header _default_header = { 'X', 'I', 0, 0, (uint32_t)-1 };
-
-
 Check::Check(ostk_t *ostk)
 {
 	_ostk = ostk;
@@ -148,16 +145,14 @@ void Check::unpack_body()
 	xstr_init(&_p_xstr, uk.cur, uk.end - uk.cur);
 }
 
-struct iovec* Check::get_iovec(int* count)
+struct iovec* Check::body_iovec(int* count)
 {
 	if (!_iov)
 	{
 		xbuf_t xb;
-		xb.capacity = sizeof(XicMessage::Header) + 10 + _command.len;
+		xb.capacity = 10 + _command.len;
 		xb.data = (unsigned char *)ostk_alloc(_ostk, xb.capacity);
-		xb.len = sizeof(XicMessage::Header);
-		XicMessage::Header *hdr = (XicMessage::Header *)xb.data;
-		*hdr = _default_header;
+		xb.len = 0;
 		vbs_packer_t pk = VBS_PACKER_INIT(xbuf_xio.write, &xb, 0);
 		vbs_pack_xstr(&pk, &_command);
 
@@ -171,25 +166,22 @@ struct iovec* Check::get_iovec(int* count)
 
 		_iov = (struct iovec *)ostk_alloc(_ostk, _iov_count * sizeof(_iov[0]));
 
-		hdr->bodySize = xb.len - sizeof(XicMessage::Header);
+		int bodySize = xb.len;
 		_iov[0].iov_base = xb.data;
 		_iov[0].iov_len = xb.len;
 
 		if (_p_xstr.len)
 		{
-			hdr->bodySize += _p_xstr.len;
+			bodySize += _p_xstr.len;
 			_iov[1].iov_base = _p_xstr.data;
 			_iov[1].iov_len = _p_xstr.len;
 		}
 		else if (_p_rope && _p_rope->length)
 		{
-			hdr->bodySize += _p_rope->length;
+			bodySize += _p_rope->length;
 			rope_iovec(_p_rope, &_iov[1]);
 		}
-		_body_size = hdr->bodySize;
-
-		hdr->msgType = _msgType;
-		xnet_msb32(&hdr->bodySize);
+		_body_size = bodySize;
 	}
 
 	*count = _iov_count;

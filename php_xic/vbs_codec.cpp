@@ -305,8 +305,7 @@ static bool v_decode_array(vbs_unpacker_t *job, bool is_dict, zval *z TSRMLS_DC)
 		if (is_dict)
 		{
 			vbs_data_t dat;
-			ssize_t len;
-			if (vbs_unpack_primitive(job, &dat, &len) < 0)
+			if (vbs_unpack_primitive(job, &dat, NULL) < 0)
 				goto error;
 
 			if (dat.type == VBS_INTEGER)
@@ -366,9 +365,9 @@ error:
 bool v_decode_r(vbs_unpacker_t *job, zval **zz TSRMLS_DC)
 {
 	vbs_data_t dat;
-	ssize_t len;
+	int kind;
 
-	if (vbs_unpack_primitive(job, &dat, &len) < 0)
+	if (vbs_unpack_primitive(job, &dat, &kind) < 0)
 		return false;
 
 	ALLOC_INIT_ZVAL(*zz);

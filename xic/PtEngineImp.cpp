@@ -544,13 +544,13 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 
 	try
 	{
+		XicMessage::Header hdr;
+		char *p;
+
 		iobuf_bstate_clear(&_ib);
 		LOC_BEGIN(&_iloc);
 		while (true)
 		{
-			XicMessage::Header hdr;
-			char *p;
-
 			LOC_ANCHOR
 			{
 				ssize_t rc = iobuf_peek(&_ib, sizeof(hdr), &p);
@@ -726,10 +726,10 @@ void PtConnection::send_kmsg(const XicMessagePtr& msg)
 
 void PtConnection::_send_qmsg(Lock& lock, const XicMessagePtr& msg)
 {
-	if (msg->body_size() > xic_message_size)
+	if (msg->bodySize() > xic_message_size)
 	{
 		throw XERROR_FMT(MessageSizeException, "Huge packet bodySize %lu>%u",
-			(unsigned long)msg->body_size(), xic_message_size);
+			(unsigned long)msg->bodySize(), xic_message_size);
 	}
 
 	_recent_active = true;
@@ -1057,7 +1057,7 @@ again:
 		}
 
 		_wMsg = !_kq.empty() ? _kq.front() : _wq.front();
-		_ov = _wMsg->get_iovec(&_ov_num);
+		_ov = get_msg_iovec(_wMsg, &_ov_num);
 
 		LOC_ANCHOR
 		{
@@ -1090,6 +1090,7 @@ again:
 				LOC_PAUSE(0);
 			}
 		}
+		free_msg_iovec(_wMsg, _ov);
 		_ov = NULL;
 
 		XicMessagePtr msg;
@@ -1190,7 +1191,7 @@ void PtListener::event_on_fd(const XEvent::DispatcherPtr& dispatcher, int events
 			cw.param("reason", "ip not allowed");
 			CheckPtr check = cw.take();
 			int iov_num;
-			struct iovec *iov = check->get_iovec(&iov_num);
+			struct iovec *iov = get_msg_iovec(check, &iov_num);
 			::writev(sock, iov, iov_num);
 			_engine->getTimer()->addTask(XTimerTask::create(::close, sock), 1000);
 			continue;

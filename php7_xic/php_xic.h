@@ -3,13 +3,13 @@
 
 #include "util.h"
 
-#define PHP_XIC_EDITION     20161218
-#define PHP_XIC_REVISION    20161228
+#define PHP_XIC_EDITION     20170516
+#define PHP_XIC_REVISION    20170516
 #define PHP_XIC_RELEASE     1830
 
 #define PHP_XIC_VERSION     XS_TOSTR(PHP_XIC_EDITION)"."XS_TOSTR(PHP_XIC_REVISION)"."XS_TOSTR(PHP_XIC_RELEASE)
 
-#define XIC_SO_VERSION		"1.0.0"
+#define XIC_SO_VERSION		"1.1.0"
 
 
 extern zend_module_entry xic_module_entry;
@@ -49,11 +49,15 @@ PHP_RSHUTDOWN_FUNCTION(xic);
    proto string xic_Exception::getRaiser();
    proto array xic_Exception::getDetail();
 
-   proto string vbs_Blob::toString();
+   proto string v_Blob::toString();
 
-   proto array vbs_Dict::toArray();
+   proto array v_Dict::toArray();
 
-   proto string vbs_Decimal::toString();
+   proto string v_Decimal::toString();
+
+   proto v_Data vbs_data(mixed $dat, int $descriptor);
+   proto mixed v_Data()::getData();
+   proto int v_Data()::getDescriptor();
 */
 
 
@@ -87,6 +91,11 @@ PHP_FUNCTION(vbs_dict);
 /* proto vbs_Decimal vbs_decimal(string $str);
  */
 PHP_FUNCTION(vbs_decimal);
+
+
+/* proto vbs_Decimal vbs_data(mixed $data, int descriptor);
+ */
+PHP_FUNCTION(vbs_data);
 
 
 /* proto string vbs_encode(mixed $arg);

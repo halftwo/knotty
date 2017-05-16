@@ -10,6 +10,7 @@
 #include "vbs_Blob.h"
 #include "vbs_Dict.h"
 #include "vbs_Decimal.h"
+#include "vbs_Data.h"
 #include "vbs_codec.h"
 #include "smart_write.h"
 #include "ext/standard/info.h"
@@ -31,6 +32,11 @@ static int le_xic;
   NB, We are providing a php extension (module) instead of a zend extension.
 */
 static char phpxic_version[] = "$PHPXIC: " XIC_SO_VERSION "-" PHP_XIC_VERSION " module_api=" XS_TOSTR(ZEND_MODULE_API_NO) " " __DATE__ " " __TIME__ " $";
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_data, 0, 0, 1)
+	ZEND_ARG_INFO(0, data)
+	ZEND_ARG_INFO(0, descriptor)
+ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_encode, 0, 0, 1)
 	ZEND_ARG_INFO(0, value)
@@ -75,6 +81,7 @@ zend_function_entry xic_functions[] = {
 	PHP_FE(vbs_blob, NULL)
 	PHP_FE(vbs_dict, NULL)
 	PHP_FE(vbs_decimal, NULL)
+	PHP_FE(vbs_data, arginfo_vbs_data)
 	PHP_FE(vbs_encode, arginfo_vbs_encode)
 	PHP_FE(vbs_decode, arginfo_vbs_decode)
 	PHP_FE(vbs_encode_write, arginfo_vbs_encode_write)
@@ -272,6 +279,29 @@ PHP_FUNCTION(vbs_decimal)
 		{
 			raise_Exception(0 TSRMLS_CC, "Wrong parameters for vbs_decimal(string $s)");
 		}
+	}
+	catch (std::exception& ex)
+	{
+		raise_Exception(0 TSRMLS_CC, "%s", ex.what());
+	}
+}
+
+PHP_FUNCTION(vbs_data)
+{
+	zval *dat;
+	zend_long descriptor = 0;
+
+	try {
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zl", &dat, &descriptor) != SUCCESS)
+		{
+			raise_Exception(0 TSRMLS_CC, "Wrong parameters for vbs_data(mixed $data, int $descriptor)");
+		}
+		else if (descriptor < 0 || descriptor > VBS_DESCRIPTOR_MAX)
+		{
+			raise_Exception(0 TSRMLS_CC, "descriptor of vbs_data should be a positive integer not greater than %d", VBS_DESCRIPTOR_MAX);
+		}
+
+		vbs::create_Data(return_value, dat, descriptor TSRMLS_CC);
 	}
 	catch (std::exception& ex)
 	{
@@ -540,6 +570,7 @@ PHP_MINIT_FUNCTION(xic)
 	vbs::init_Blob(TSRMLS_C);
 	vbs::init_Dict(TSRMLS_C);
 	vbs::init_Decimal(TSRMLS_C);
+	vbs::init_Data(TSRMLS_C);
 
 	return SUCCESS;
 }

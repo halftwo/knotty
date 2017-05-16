@@ -181,7 +181,23 @@ bool Connection::_read_hello_or_check(int* timeout, ostk_t *ostk, xstr_t *comman
 void Connection::_send_check_message(int *timeout, const xic::CheckPtr& check)
 {
 	int iov_num;
-	struct iovec *iov = check->get_iovec(&iov_num);
+	struct iovec *body_iov = check->body_iovec(&iov_num);
+
+	ostk_t *ostk = check->ostk();
+	struct iovec *iov = OSTK_ALLOC(ostk, struct iovec, iov_num + 2);
+	memcpy(&iov[1],	body_iov, iov_num);
+
+	XicMessage::Header *hdr = OSTK_ALLOC_ONE(ostk, XicMessage::Header);
+	hdr->magic = 'X';
+	hdr->version = 'I';
+	hdr->msgType = 'C';
+	hdr->flags = 0;
+	hdr->bodySize = xnet_m32(check->bodySize());
+
+	iov[0].iov_base = hdr;
+	iov[0].iov_len = sizeof(XicMessage::Header);
+	++iov_num;
+
 	int rc = xnet_writev_resid(_fd, &iov, &iov_num, timeout);
 	if (rc < 0)
 	{
