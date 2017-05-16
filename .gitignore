@@ -1,5 +1,7 @@
 *.o
 *.a
+*.lo
+*.la
 a.out
 include
 3rd_party/lua
