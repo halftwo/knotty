@@ -124,7 +124,7 @@ static int _copy_list(vbs_list_t *dst, const vbs_list_t *src, const xmem_t *xm, 
 {
 	vbs_litem_t *se;
 
-	vbs_list_init(dst);
+	vbs_list_init(dst, src->kind);
 	for (se = src->first; se; se = se->next)
 	{
 		vbs_litem_t *de = (vbs_litem_t *)xm->alloc(xm_cookie, sizeof(*de));
@@ -141,7 +141,7 @@ static int _copy_dict(vbs_dict_t *dst, const vbs_dict_t *src, const xmem_t *xm, 
 {
 	vbs_ditem_t *se;
 
-	vbs_dict_init(dst);
+	vbs_dict_init(dst, src->kind);
 	for (se = src->first; se; se = se->next)
 	{
 		vbs_ditem_t *de = (vbs_ditem_t *)xm->alloc(xm_cookie, sizeof(*de));
@@ -717,7 +717,7 @@ int main()
 		xbuf_rewind(&xb);
 		vbs_packer_init(&pk, xbuf_xio.write, &xb, -1);
 
-		r |= vbs_pack_head_of_dict(&pk);
+		r |= vbs_pack_head_of_dict0(&pk);
 
 		r |= vbs_pack_integer(&pk, LONG_MIN);
 		r |= vbs_pack_cstr(&pk, "abcdefghijklmnopqrstuvwxyz");
@@ -725,7 +725,7 @@ int main()
 		r |= vbs_pack_floating(&pk, 123456789e-300);
 		r |= vbs_pack_null(&pk);
 
-		r |= vbs_pack_head_of_dict(&pk);
+		r |= vbs_pack_head_of_dict0(&pk);
 
 		r |= vbs_pack_cstr(&pk, "min_subnormal_double");
 		r |= vbs_pack_floating(&pk, 4.9406564584124654e-324); /* Min subnormal positive double */
@@ -742,26 +742,26 @@ int main()
 		decDoubleFromString(&dec, "123400.00E370", &ctx);
 
 		r |= vbs_pack_cstr(&pk, "C");
-		r |= vbs_pack_head_of_list(&pk);
+		r |= vbs_pack_head_of_list0(&pk);
 		r |= vbs_pack_integer(&pk, 3);
 		r |= vbs_pack_decimal64(&pk, dec);
 		r |= vbs_pack_tail(&pk);
 
 		r |= vbs_pack_cstr(&pk, "D");
 		r |= vbs_pack_descriptor(&pk, VBS_HIDDEN_DESCRIPTOR);
-		r |= vbs_pack_head_of_list(&pk);
-		r |= vbs_pack_head_of_dict(&pk);
+		r |= vbs_pack_head_of_list0(&pk);
+		r |= vbs_pack_head_of_dict0(&pk);
 		r |= vbs_pack_tail(&pk);
 		r |= vbs_pack_tail(&pk);
 
 		r |= vbs_pack_cstr(&pk, "E");
 		r |= vbs_pack_cstr(&pk, "hello, world!");
 
-		r |= vbs_pack_head_of_dict(&pk);
+		r |= vbs_pack_head_of_dict0(&pk);
 		r |= vbs_pack_integer(&pk, 1);
 		r |= vbs_pack_integer(&pk, 2);
 		r |= vbs_pack_tail(&pk);
-		r |= vbs_pack_head_of_dict(&pk);
+		r |= vbs_pack_head_of_dict0(&pk);
 		r |= vbs_pack_cstr(&pk, "what?");
 		r |= vbs_pack_blob(&pk, "heihei^~`;[]{}\x7f\xff, ", 18);
 		r |= vbs_pack_tail(&pk);

@@ -669,7 +669,7 @@ AnswerPtr xic::except2answer(const std::exception& ex, const xstr_t& method, con
 		if (local)
 			aw.param("_local", true);
 
-		VDictWriter dw = aw.paramVDict("detail");
+		VDictWriter dw = aw.paramVDict("detail", 0);
 		dw.kv("what", ex.what());
 		if (e)
 		{
@@ -1698,7 +1698,7 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 		else if (xstr_equal(&method, &x00stat))
 		{
 			AnswerWriter aw;
-			VDictWriter dw = aw.paramVDict("counter");
+			VDictWriter dw = aw.paramVDict("counter", 0);
 
 			int64_t notFound = xatomic64_get(&mtab->notFound);
 			dw.kv("__METHOD_NOT_FOUND__", notFound);
@@ -1710,7 +1710,7 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 				dw.kv(node->name, ncall);
 			}
 
-			VListWriter lw = aw.paramVList("marks");
+			VListWriter lw = aw.paramVList("marks", 0);
 			while ((node = mtab->next(node)) != NULL)
 			{
 				if (node->mark)
@@ -1727,7 +1727,7 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 			mtab->mark(m, on);
 
 			AnswerWriter aw;
-			VListWriter lw = aw.paramVList("marks");
+			VListWriter lw = aw.paramVList("marks", 0);
 			while ((node = mtab->next(node)) != NULL)
 			{
 				if (node->mark)
@@ -1829,7 +1829,7 @@ XIC_METHOD(EngineI, suicide)
 
 static void xaw_dlog(AnswerWriter& aw, const char *name)
 {
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "dlog");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "dlog", 0);
 	dw.kv("sq", xic_dlog_sq);
 	dw.kv("sa", xic_dlog_sa);
 	dw.kv("sae", xic_dlog_sae);
@@ -1842,7 +1842,7 @@ static void xaw_dlog(AnswerWriter& aw, const char *name)
 
 static void xaw_allow(AnswerWriter& aw, const char *name)
 {
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "allow");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "allow", 0);
 	std::stringstream ss;
 	xic_allow_ips->dump(ostream_xio.write, (std::ostream*)&ss);
 	dw.kv("ips", ss.str());
@@ -1850,13 +1850,13 @@ static void xaw_allow(AnswerWriter& aw, const char *name)
 
 static void xaw_xlog(AnswerWriter& aw, const char *name)
 {
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "xlog");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "xlog", 0);
 	dw.kv("level", xlog_level);
 }
 
 static void xaw_timeout(AnswerWriter& aw, const char *name)
 {
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "timeout");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "timeout", 0);
 	dw.kv("connect", xic_timeout_connect);
 	dw.kv("close", xic_timeout_close);
 	dw.kv("message", xic_timeout_message);
@@ -1864,28 +1864,28 @@ static void xaw_timeout(AnswerWriter& aw, const char *name)
 
 static void xaw_acm(AnswerWriter& aw, const char *name)
 {
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "acm");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "acm", 0);
 	dw.kv("server", xic_acm_server);
 	dw.kv("client", xic_acm_client);
 }
 
 static void xaw_slow(AnswerWriter& aw, const char *name)
 {
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "slow");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "slow", 0);
 	dw.kv("server", xic_slow_server);
 	dw.kv("client", xic_slow_client);
 }
 
 static void xaw_sample(AnswerWriter& aw, const char *name)
 {
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "sample");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "sample", 0);
 	dw.kv("server", xic_sample_server);
 	dw.kv("client", xic_sample_client);
 }
 
 static void xaw_except(AnswerWriter& aw, const char *name)
 {
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "except");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "except", 0);
 	dw.kv("server", xic_except_server);
 	dw.kv("client", xic_except_client);
 }
@@ -1894,7 +1894,7 @@ static void xaw_rlimit(AnswerWriter& aw, const char *name)
 {
 	struct rlimit rlim;
 	int64_t x;
-	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "rlimit");
+	VDictWriter dw = aw.paramVDict(name && name[0] ? name : "rlimit", 0);
 	x = getrlimit(RLIMIT_CORE, &rlim) == 0 ? rlim.rlim_cur : -2;
 	dw.kv("core", x);
 	x = getrlimit(RLIMIT_NOFILE, &rlim) == 0 ? rlim.rlim_cur : -2;

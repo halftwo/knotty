@@ -61,7 +61,7 @@ public:
 	{
 		_check->setCommand(command);
 		vbs_packer_init(&_args_packer, rope_xio.write, _check->args_rope(), -1);
-		_dw.setPacker(&_args_packer);
+		_dw.setPacker(&_args_packer, 0);
 	}
 
 	CheckWriter(const xstr_t& command)
@@ -69,7 +69,7 @@ public:
 	{
 		_check->setCommand(command);
 		vbs_packer_init(&_args_packer, rope_xio.write, _check->args_rope(), -1);
-		_dw.setPacker(&_args_packer);
+		_dw.setPacker(&_args_packer, 0);
 	}
 
 	~CheckWriter()

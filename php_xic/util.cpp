@@ -221,7 +221,7 @@ std::string get_default_ctx()
 		vbs_packer_t pk;
 		std::ostringstream os;
 		vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
-		vbs_pack_head_of_dict(&pk);
+		vbs_pack_head_of_dict0(&pk);
 		vbs_pack_lstr(&pk, "CALLER", 6);
 		vbs_pack_lstr(&pk, Z_STRVAL_P(caller), Z_STRLEN_P(caller));
 		vbs_pack_tail(&pk);

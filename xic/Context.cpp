@@ -88,7 +88,7 @@ void ContextBuilder::_init()
 {
 	_ostk = ostk_create(512);
 	_dict = (vbs_dict_t *)ostk_alloc(_ostk, sizeof(*_dict));
-	vbs_dict_init(_dict);
+	vbs_dict_init(_dict, 0);
 }
 
 ContextBuilder::~ContextBuilder()
@@ -235,7 +235,7 @@ void ContextPacker::init()
 	if (!_pk.write)
 	{
 		vbs_packer_init(&_pk, rope_xio.write, _q->context_rope(), 1);
-		vbs_pack_head_of_dict(&_pk);
+		vbs_pack_head_of_dict0(&_pk);
 	}
 }
 

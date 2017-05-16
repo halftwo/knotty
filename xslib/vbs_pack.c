@@ -1027,7 +1027,7 @@ int vbs_pack_null(vbs_packer_t *job)
 	return 0;
 }
 
-int vbs_pack_head_of_list_with_kind(vbs_packer_t *job, int kind)
+int vbs_pack_head_of_list(vbs_packer_t *job, int kind)
 {
 	unsigned char tmpbuf[TMPBUF_SIZE];
 	size_t n = vbs_head_buffer_of_list(tmpbuf, kind);
@@ -1046,47 +1046,11 @@ int vbs_pack_head_of_list_with_kind(vbs_packer_t *job, int kind)
 	return 0;
 }
 
-int vbs_pack_head_of_dict_with_kind(vbs_packer_t *job, int kind)
+int vbs_pack_head_of_dict(vbs_packer_t *job, int kind)
 {
 	unsigned char tmpbuf[TMPBUF_SIZE];
 	size_t n = vbs_head_buffer_of_dict(tmpbuf, kind);
 	if (job->write(job->cookie, tmpbuf, n) != n)
-	{
-		job->error = __LINE__;
-		return -1;
-	}
-
-	job->depth++;
-	if (job->max_depth >= 0 && job->depth > job->max_depth)
-	{
-		job->error = __LINE__;
-		return -1;
-	}
-	return 0;
-}
-
-int vbs_pack_head_of_list(vbs_packer_t *job)
-{
-	unsigned char byte = VBS_LIST;
-	if (job->write(job->cookie, &byte, 1) != 1)
-	{
-		job->error = __LINE__;
-		return -1;
-	}
-
-	job->depth++;
-	if (job->max_depth >= 0 && job->depth > job->max_depth)
-	{
-		job->error = __LINE__;
-		return -1;
-	}
-	return 0;
-}
-
-int vbs_pack_head_of_dict(vbs_packer_t *job)
-{
-	unsigned char byte = VBS_DICT;
-	if (job->write(job->cookie, &byte, 1) != 1)
 	{
 		job->error = __LINE__;
 		return -1;
@@ -1172,7 +1136,7 @@ int vbs_pack_list(vbs_packer_t *job, const vbs_list_t *vl)
 	{
 		const vbs_litem_t *ent;
 
-		if (vbs_pack_head_of_list_with_kind(job, vl->kind) < 0)
+		if (vbs_pack_head_of_list(job, vl->kind) < 0)
 			return -1;
 
 		for (ent = vl->first; ent; ent = ent->next)
@@ -1205,7 +1169,7 @@ int vbs_pack_dict(vbs_packer_t *job, const vbs_dict_t *vd)
 	{
 		const vbs_ditem_t *ent;
 
-		if (vbs_pack_head_of_dict_with_kind(job, vd->kind) < 0)
+		if (vbs_pack_head_of_dict(job, vd->kind) < 0)
 			return -1;
 
 		for (ent = vd->first; ent; ent = ent->next)
@@ -1402,11 +1366,12 @@ static inline int _unpack_verify_type(vbs_unpacker_t *job, int type, int *kind)
 		return -1;
 	}
 
-	*kind = num;
+	if (kind)
+		*kind = num;
 	return 0;
 }
 
-inline int vbs_unpack_head_of_list_with_kind(vbs_unpacker_t *job, int *kind)
+inline int vbs_unpack_head_of_list(vbs_unpacker_t *job, int *kind)
 {
 	if (_unpack_verify_type(job, VBS_LIST, kind) < 0)
 		return -1;
@@ -1420,7 +1385,7 @@ inline int vbs_unpack_head_of_list_with_kind(vbs_unpacker_t *job, int *kind)
 	return 0;
 }
 
-inline int vbs_unpack_head_of_dict_with_kind(vbs_unpacker_t *job, int *kind)
+inline int vbs_unpack_head_of_dict(vbs_unpacker_t *job, int *kind)
 {
 	if (_unpack_verify_type(job, VBS_DICT, kind) < 0)
 		return -1;
@@ -1432,18 +1397,6 @@ inline int vbs_unpack_head_of_dict_with_kind(vbs_unpacker_t *job, int *kind)
 		return -1;
 	}
 	return 0;
-}
-
-int vbs_unpack_head_of_list(vbs_unpacker_t *job)
-{
-	int kind;
-	return vbs_unpack_head_of_list_with_kind(job, &kind);
-}
-
-int vbs_unpack_head_of_dict(vbs_unpacker_t *job)
-{
-	int kind;
-	return vbs_unpack_head_of_dict_with_kind(job, &kind);
 }
 
 static inline int _unpack_verify_simple_type(vbs_unpacker_t *job, int type)
@@ -1809,8 +1762,8 @@ int vbs_unpack_uint64(vbs_unpacker_t *job, uint64_t *p_value)
 	return UNAPCK_UINT(job, p_value, x, UINT64_MAX);
 }
 
-static int _unpack_body_of_list(vbs_unpacker_t *job, int kind, vbs_list_t *list, const xmem_t *xm, void *xm_cookie);
-static int _unpack_body_of_dict(vbs_unpacker_t *job, int kind, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie);
+static int _unpack_body_of_list(vbs_unpacker_t *job, vbs_list_t *list, const xmem_t *xm, void *xm_cookie);
+static int _unpack_body_of_dict(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie);
 
 static inline int _unpack_data(vbs_unpacker_t *job, vbs_data_t *pv, const xmem_t *xm, void *xm_cookie)
 {
@@ -1821,14 +1774,14 @@ static inline int _unpack_data(vbs_unpacker_t *job, vbs_data_t *pv, const xmem_t
 	if (pv->type == VBS_LIST)
 	{
 		pv->d_list = (vbs_list_t *)xm->alloc(xm_cookie, sizeof(*pv->d_list));
-		vbs_list_init(pv->d_list);
-		return _unpack_body_of_list(job, kind, pv->d_list, xm, xm_cookie);
+		vbs_list_init(pv->d_list, kind);
+		return _unpack_body_of_list(job, pv->d_list, xm, xm_cookie);
 	}
 	else if (pv->type == VBS_DICT)
 	{
 		pv->d_dict = (vbs_dict_t *)xm->alloc(xm_cookie, sizeof(*pv->d_dict));
-		vbs_dict_init(pv->d_dict);
-		return _unpack_body_of_dict(job, kind, pv->d_dict, xm, xm_cookie);
+		vbs_dict_init(pv->d_dict, kind);
+		return _unpack_body_of_dict(job, pv->d_dict, xm, xm_cookie);
 	}
 	else if (pv->type == VBS_TAIL)
 	{
@@ -1839,12 +1792,11 @@ static inline int _unpack_data(vbs_unpacker_t *job, vbs_data_t *pv, const xmem_t
 	return 0;
 }
 
-static int _unpack_body_of_list(vbs_unpacker_t *job, int kind, vbs_list_t *list, const xmem_t *xm, void *xm_cookie)
+static int _unpack_body_of_list(vbs_unpacker_t *job, vbs_list_t *list, const xmem_t *xm, void *xm_cookie)
 {
 	int rc = -1;
-	uint8_t *begin = job->cur - _tag_size(kind);
+	uint8_t *begin = job->cur - _tag_size(list->kind);
 
-	list->kind = kind;
 	while (true)
 	{
 		vbs_litem_t *ent;
@@ -1872,17 +1824,16 @@ error:
 	return rc;
 }
 
-int vbs_unpack_body_of_list(vbs_unpacker_t *job, int kind, vbs_list_t *list, const xmem_t *xm, void *xm_cookie)
+int vbs_unpack_body_of_list(vbs_unpacker_t *job, vbs_list_t *list, const xmem_t *xm, void *xm_cookie)
 {
-	return _unpack_body_of_list(job, kind, list, xm ? xm : &stdc_xmem, xm_cookie);
+	return _unpack_body_of_list(job, list, xm ? xm : &stdc_xmem, xm_cookie);
 }
 
-int _unpack_body_of_dict(vbs_unpacker_t *job, int kind, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie)
+int _unpack_body_of_dict(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie)
 {
-	uint8_t *begin = job->cur - _tag_size(kind);
+	uint8_t *begin = job->cur - _tag_size(dict->kind);
 	int rc = -1;
 
-	dict->kind = kind;
 	while (true)
 	{
 		vbs_ditem_t *ent;
@@ -1912,23 +1863,23 @@ error:
 	return rc;
 }
 
-int vbs_unpack_body_of_dict(vbs_unpacker_t *job, int kind, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie)
+int vbs_unpack_body_of_dict(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie)
 {
-	return _unpack_body_of_dict(job, kind, dict, xm ? xm : &stdc_xmem, xm_cookie);
+	return _unpack_body_of_dict(job, dict, xm ? xm : &stdc_xmem, xm_cookie);
 }
 
 int vbs_unpack_list(vbs_unpacker_t *job, vbs_list_t *list, const xmem_t *xm, void *xm_cookie)
 {
 	int kind;
 
-	vbs_list_init(list);
-	if (vbs_unpack_head_of_list_with_kind(job, &kind) < 0)
+	if (vbs_unpack_head_of_list(job, &kind) < 0)
 		return -1;
 
 	if (!xm)
 		xm = &stdc_xmem;
 
-	if (_unpack_body_of_list(job, kind, list, xm, xm_cookie) < 0)
+	vbs_list_init(list, kind);
+	if (_unpack_body_of_list(job, list, xm, xm_cookie) < 0)
 	{
 		vbs_release_list(list, xm, xm_cookie);
 		return -1;
@@ -1940,14 +1891,14 @@ int vbs_unpack_dict(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, voi
 {
 	int kind;
 
-	vbs_dict_init(dict);
-	if (vbs_unpack_head_of_dict_with_kind(job, &kind) < 0)
+	if (vbs_unpack_head_of_dict(job, &kind) < 0)
 		return -1;
 
 	if (!xm)
 		xm = &stdc_xmem;
 
-	if (_unpack_body_of_dict(job, kind, dict, xm, xm_cookie) < 0)
+	vbs_dict_init(dict, kind);
+	if (_unpack_body_of_dict(job, dict, xm, xm_cookie) < 0)
 	{
 		vbs_release_dict(dict, xm, xm_cookie);
 		return -1;

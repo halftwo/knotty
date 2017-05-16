@@ -1,7 +1,7 @@
 ##
 ##
 
-OBJS = XicMessage.o XicCheck.o XicException.o Context.o \
+LIBXIC_OBJS = XicMessage.o XicCheck.o XicException.o Context.o \
 	ServantI.o EngineImp.o VData.o VWriter.o \
 	PtEngineImp.o StEngineImp.o STimer.o \
 	IpMatcher.o SecretBox.o ShadowBox.o
@@ -20,12 +20,12 @@ CPPFLAGS = -I. -I.. -I../include
 LIBS = -rdynamic -pthread -L../lib -lxic -ldlog -lxs -lrt
 
 
-all: $(OBJS) $(LIBXIC) $(EXES)
+all: $(LIBXIC_OBJS) $(LIBXIC) $(EXES)
 
 $(EXES): $(LIBXIC)
 
-$(LIBXIC): $(OBJS)
-	$(AR) -rcs $@ $(OBJS)
+$(LIBXIC): $(LIBXIC_OBJS)
+	$(AR) -rcs $@ $(LIBXIC_OBJS)
 
 
 .c.o:
@@ -54,5 +54,5 @@ shadow_file: ShadowBox.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DTEST_SHADOW -o $@ $< $(LIBS)
 
 clean:
-	$(RM) *.lo *.la $(OBJS) $(LIBXIC) $(EXES) 
+	$(RM) *.lo *.la DemoServant.o DemoClientImp.o $(LIBXIC_OBJS) $(LIBXIC) $(EXES) 
 

@@ -512,7 +512,7 @@ static int _parse_array_body_to_vbs_binary(json_parser_t *parser, void *ctx)
 	size_t n;
 	bool comma = true;
 
-	if (vbs_pack_head_of_list((vbs_packer_t *)parser->cookie) < 0)
+	if (vbs_pack_head_of_list0((vbs_packer_t *)parser->cookie) < 0)
 		return -1;
 
 	for (n = 0; true; ++n)
@@ -539,7 +539,7 @@ static int _parse_object_body_to_vbs_binary(json_parser_t *parser, void *ctx)
 	size_t n;
 	bool comma = true;
 
-	if (vbs_pack_head_of_dict((vbs_packer_t *)parser->cookie) < 0)
+	if (vbs_pack_head_of_dict0((vbs_packer_t *)parser->cookie) < 0)
 		return -1;
 
 	for (n = 0; true; ++n)
@@ -679,7 +679,7 @@ static int _parse_array_body_to_vbs_data(json_parser_t *parser, void *ctx)
 	pv->d_list = (vbs_list_t *)x_alloc(mm, sizeof(*pv->d_list));
 	if (!pv->d_list)
 		return -1;
-	vbs_list_init(pv->d_list);
+	vbs_list_init(pv->d_list, 0);
 	return _unpack_array_body_as_list(parser, pv->d_list);
 }
 
@@ -731,7 +731,7 @@ static int _parse_object_body_to_vbs_data(json_parser_t *parser, void *ctx)
 	pv->d_dict = (vbs_dict_t *)x_alloc(mm, sizeof(*pv->d_dict));
 	if (!pv->d_dict)
 		return -1;
-	vbs_dict_init(pv->d_dict);
+	vbs_dict_init(pv->d_dict, 0);
 	return _unpack_object_body_as_dict(parser, pv->d_dict);
 }
 
@@ -855,7 +855,7 @@ ssize_t json_unpack_vbs_list(const void *json, size_t size, vbs_list_t *list, co
 	if (!xm)
 		mm.xm = &stdc_xmem;
 
-	vbs_list_init(list);
+	vbs_list_init(list, 0);
 	_init_parser(&parser, json, size, &mm);
 
 	type = _parse_primitive(&parser, &data);
@@ -882,7 +882,7 @@ ssize_t json_unpack_vbs_dict(const void *json, size_t size, vbs_dict_t *dict, co
 	if (!xm)
 		mm.xm = &stdc_xmem;
 
-	vbs_dict_init(dict);
+	vbs_dict_init(dict, 0);
 	_init_parser(&parser, json, size, &mm);
 
 	type = _parse_primitive(&parser, &data);

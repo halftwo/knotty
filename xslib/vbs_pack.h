@@ -209,11 +209,12 @@ static inline void vbs_data_set_dict(vbs_data_t *dat, vbs_dict_t *dict)
 	dat->d_dict = dict;
 }
 
-static inline void vbs_list_init(vbs_list_t *list)
+static inline void vbs_list_init(vbs_list_t *list, int kind)
 {
 	list->first = NULL;
 	list->last = &list->first;
 	list->count = 0;
+	list->kind = kind > 0 ? kind : 0;
 	list->_raw = xstr_null;
 }
 
@@ -246,11 +247,12 @@ static inline vbs_litem_t *vbs_list_pop_front(vbs_list_t *list)
 }
 
 
-static inline void vbs_dict_init(vbs_dict_t *dict)
+static inline void vbs_dict_init(vbs_dict_t *dict, int kind)
 {
 	dict->first = NULL;
 	dict->last = &dict->first;
 	dict->count = 0;
+	dict->kind = kind > 0 ? kind : 0;
 	dict->_raw = xstr_null;
 }
 
@@ -483,6 +485,7 @@ static inline void vbs_packer_init(vbs_packer_t *job, ssize_t (*write)(void *, c
    Return a negative number if error.
 */
 int vbs_pack_descriptor(vbs_packer_t *job, int descriptor);
+
 int vbs_pack_integer(vbs_packer_t *job, intmax_t value);
 int vbs_pack_uinteger(vbs_packer_t *job, uintmax_t value);
 int vbs_pack_lstr(vbs_packer_t *job, const void *str, size_t len);
@@ -494,12 +497,12 @@ int vbs_pack_decimal64(vbs_packer_t *job, decimal64_t value);
 int vbs_pack_bool(vbs_packer_t *job, bool value);
 int vbs_pack_null(vbs_packer_t *job);
 
-int vbs_pack_head_of_list_with_kind(vbs_packer_t *job, int kind);
-int vbs_pack_head_of_dict_with_kind(vbs_packer_t *job, int kind);
-
-int vbs_pack_head_of_list(vbs_packer_t *job);
-int vbs_pack_head_of_dict(vbs_packer_t *job);
+int vbs_pack_head_of_list(vbs_packer_t *job, int kind);
+int vbs_pack_head_of_dict(vbs_packer_t *job, int kind);
 int vbs_pack_tail(vbs_packer_t *job);
+
+#define vbs_pack_head_of_list0(job)	vbs_pack_head_of_list(job, 0)
+#define vbs_pack_head_of_dict0(job)	vbs_pack_head_of_dict(job, 0)
 
 
 int vbs_pack_data(vbs_packer_t *job, const vbs_data_t *data);
@@ -548,10 +551,8 @@ int vbs_unpack_decimal64(vbs_unpacker_t *job, decimal64_t *p_value);
 int vbs_unpack_bool(vbs_unpacker_t *job, bool *p_value);
 int vbs_unpack_null(vbs_unpacker_t *job);
 
-int vbs_unpack_head_of_list_with_kind(vbs_unpacker_t *job, int *kind);
-int vbs_unpack_head_of_dict_with_kind(vbs_unpacker_t *job, int *kind);
-int vbs_unpack_head_of_list(vbs_unpacker_t *job);
-int vbs_unpack_head_of_dict(vbs_unpacker_t *job);
+int vbs_unpack_head_of_list(vbs_unpacker_t *job, int *kind/*NULL*/);
+int vbs_unpack_head_of_dict(vbs_unpacker_t *job, int *kind/*NULL*/);
 int vbs_unpack_tail(vbs_unpacker_t *job);
 
 int vbs_unpack_int8(vbs_unpacker_t *job, int8_t *p_value);
@@ -596,8 +597,8 @@ vbs_type_t vbs_unpack_type(vbs_unpacker_t *job, intmax_t *p_number);
 int vbs_unpack_primitive(vbs_unpacker_t *job, vbs_data_t *p_data, int *kind/*NULL*/);
 
 /* Call following functions after vbs_unpack_primitive() */
-int vbs_unpack_body_of_list(vbs_unpacker_t *job, int kind, vbs_list_t *list, const xmem_t *xm, void *xm_cookie);
-int vbs_unpack_body_of_dict(vbs_unpacker_t *job, int kind, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie);
+int vbs_unpack_body_of_list(vbs_unpacker_t *job, vbs_list_t *list, const xmem_t *xm, void *xm_cookie);
+int vbs_unpack_body_of_dict(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie);
 int vbs_skip_body_of_list(vbs_unpacker_t *job);
 int vbs_skip_body_of_dict(vbs_unpacker_t *job);
 

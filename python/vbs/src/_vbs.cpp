@@ -179,7 +179,7 @@ static int _pack_tuple(vbs_packer_t *job, PyObject *obj, bool enclosed, const ch
 {
 	int rc;
 
-	if (enclosed && (rc = vbs_pack_head_of_list(job)) < 0)
+	if (enclosed && (rc = vbs_pack_head_of_list0(job)) < 0)
 		return -1;
 
 	Py_ssize_t num = PyTuple_GET_SIZE(obj);
@@ -205,7 +205,7 @@ static int _pack_list(vbs_packer_t *job, PyObject *obj, bool enclosed, const cha
 {
 	int rc;
 
-	if (enclosed && (rc = vbs_pack_head_of_list(job)) < 0)
+	if (enclosed && (rc = vbs_pack_head_of_list0(job)) < 0)
 		return -1;
 
 	Py_ssize_t num = PyList_GET_SIZE(obj);
@@ -237,7 +237,7 @@ static int _encode_set(vbs_packer_t *job, PyObject *obj, const char *encoding, c
 
 	ON_BLOCK_EXIT(pyobj_decref, iter);
 
-	if ((rc = vbs_pack_head_of_list(job)) < 0)
+	if ((rc = vbs_pack_head_of_list0(job)) < 0)
 		return -1;
 
 	while ((element = PyIter_Next(iter)) != NULL)
@@ -259,7 +259,7 @@ static int _encode_dict(vbs_packer_t *job, PyObject *obj, const char *encoding, 
 {
 	int rc;
 
-	if ((rc = vbs_pack_head_of_dict(job)) < 0)
+	if ((rc = vbs_pack_head_of_dict0(job)) < 0)
 		return -1;
 
 	PyObject *key = NULL;
@@ -593,8 +593,8 @@ static PyObject* _decode_dict(vbs_unpacker_t *job, const char *encoding, const c
 static PyObject* _decode_one(vbs_unpacker_t *job, const char *encoding, const char *errors)
 {
 	vbs_data_t dat;
-	ssize_t len;
-	int rc = vbs_unpack_primitive(job, &dat, &len);
+	int kind;
+	int rc = vbs_unpack_primitive(job, &dat, &kind);
 	if (rc < 0)
 	{
 		PyErr_SetString(PyExc_Exception, "vbs_unpack_primitive() failed");

@@ -271,26 +271,26 @@ public:
 		_dw.kvnull(key);
 	}
 
-	VListWriter paramVList(const char *key, int descriptor=0)
+	VListWriter paramVList(const char *key, int kind, int descriptor=0)
 	{
-		return _dw.kvlist(key, descriptor);
+		return _dw.kvlist(key, kind, descriptor);
 	}
 
 	template <typename ListType>
-	VListWriter paramVList(const char *key, const ListType& values, int descriptor=0)
+	VListWriter paramVList(const char *key, const ListType& values, int kind, int descriptor=0)
 	{
-		return _dw.kvlist(key, values, descriptor);
+		return _dw.kvlist(key, values, kind, descriptor);
 	}
 
-	VDictWriter paramVDict(const char *key, int descriptor=0)
+	VDictWriter paramVDict(const char *key, int kind, int descriptor=0)
 	{
-		return _dw.kvdict(key, descriptor);
+		return _dw.kvdict(key, kind, descriptor);
 	}
 
 	template <typename DictType>
-	VDictWriter paramVDict(const char *key, const DictType& dict, int descriptor=0)
+	VDictWriter paramVDict(const char *key, const DictType& dict, int kind, int descriptor=0)
 	{
-		return _dw.kvdict(key, dict, descriptor);
+		return _dw.kvdict(key, dict, kind, descriptor);
 	}
 
 	void paramStrHead(const char *key, size_t len, int descriptor=0)
@@ -332,7 +332,7 @@ public:
 		_quest->setMethod(method);
 		_quest->setTxid(twoway ? -1 : 0);
 		vbs_packer_init(&_args_packer, rope_xio.write, _quest->args_rope(), -1);
-		_dw.setPacker(&_args_packer);
+		_dw.setPacker(&_args_packer, 0);
 	}
 
 	QuestWriter(const xstr_t& method, bool twoway = true)
@@ -341,7 +341,7 @@ public:
 		_quest->setMethod(method);
 		_quest->setTxid(twoway ? -1 : 0);
 		vbs_packer_init(&_args_packer, rope_xio.write, _quest->args_rope(), -1);
-		_dw.setPacker(&_args_packer);
+		_dw.setPacker(&_args_packer, 0);
 	}
 
 	~QuestWriter()
@@ -428,7 +428,7 @@ public:
 		: _answer(Answer::create())
 	{
 		vbs_packer_init(&_args_packer, rope_xio.write, _answer->args_rope(), -1);
-		_dw.setPacker(&_args_packer);
+		_dw.setPacker(&_args_packer, 0);
 	}
 
 	AnswerWriter(AnswerWriter::Status status)
@@ -437,7 +437,7 @@ public:
 		if (status)
 			_answer->setStatus(status);
 		vbs_packer_init(&_args_packer, rope_xio.write, _answer->args_rope(), -1);
-		_dw.setPacker(&_args_packer);
+		_dw.setPacker(&_args_packer, 0);
 	}
 
 	~AnswerWriter()

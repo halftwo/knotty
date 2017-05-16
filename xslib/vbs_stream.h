@@ -48,11 +48,8 @@ int vbs_stream_unpack_null(vbs_stream_unpacker_t *job);
 int vbs_stream_unpack_head_of_string(vbs_stream_unpacker_t *job, ssize_t *p_len);
 int vbs_stream_unpack_head_of_blob(vbs_stream_unpacker_t *job, ssize_t *p_len);
 
-int vbs_stream_unpack_head_of_list_with_length(vbs_stream_unpacker_t *job, ssize_t *p_len);
-int vbs_stream_unpack_head_of_dict_with_length(vbs_stream_unpacker_t *job, ssize_t *p_len);
-
-int vbs_stream_unpack_head_of_list(vbs_stream_unpacker_t *job);
-int vbs_stream_unpack_head_of_dict(vbs_stream_unpacker_t *job);
+int vbs_stream_unpack_head_of_list(vbs_stream_unpacker_t *job, int *kind);
+int vbs_stream_unpack_head_of_dict(vbs_stream_unpacker_t *job, int *kind);
 int vbs_stream_unpack_tail(vbs_stream_unpacker_t *job);
 
 

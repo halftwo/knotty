@@ -76,7 +76,7 @@ RemoteException::Detail::Data *RemoteException::Detail::Data::create()
 	RemoteException::Detail::Data *d = (RemoteException::Detail::Data*)ostk_hold(ostk, sizeof(*d));
 	OREF_INIT(d);
 	d->_ostk = ostk;
-	vbs_dict_init(&d->_dict);
+	vbs_dict_init(&d->_dict, 0);
 	return d;
 }
 

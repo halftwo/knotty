@@ -169,48 +169,48 @@ void VComWriter::_close()
 	}
 }
 
-VListWriter::VListWriter(Entity *entity)
+VListWriter::VListWriter(Entity *entity, int kind)
 	: VComWriter(entity->_pk)
 {
 	entity->child = _entity;
 	OREF_INC(_entity);
-	vbs_pack_head_of_list(_entity->_pk);
+	vbs_pack_head_of_list(_entity->_pk, kind);
 }
 
-VListWriter::VListWriter(vbs_packer_t* pk)
+VListWriter::VListWriter(vbs_packer_t* pk, int kind)
 	: VComWriter(pk)
 {
-	vbs_pack_head_of_list(pk);
+	vbs_pack_head_of_list(pk, kind);
 }
 
-void VListWriter::setPacker(vbs_packer_t* pk)
+void VListWriter::setPacker(vbs_packer_t* pk, int kind)
 {
 	if (_entity)
 		_close();
 	_entity = Entity::create(pk);
-	vbs_pack_head_of_list(pk);
+	vbs_pack_head_of_list(pk, kind);
 }
 
-VDictWriter::VDictWriter(Entity *entity)
+VDictWriter::VDictWriter(Entity *entity, int kind)
 	: VComWriter(entity->_pk)
 {
 	entity->child = _entity;
 	OREF_INC(_entity);
-	vbs_pack_head_of_dict(entity->_pk);
+	vbs_pack_head_of_dict(entity->_pk, kind);
 }
 
-VDictWriter::VDictWriter(vbs_packer_t* pk)
+VDictWriter::VDictWriter(vbs_packer_t* pk, int kind)
 	: VComWriter(pk)
 {
-	vbs_pack_head_of_dict(pk);
+	vbs_pack_head_of_dict(pk, kind);
 }
 
-void VDictWriter::setPacker(vbs_packer_t* pk)
+void VDictWriter::setPacker(vbs_packer_t* pk, int kind)
 {
 	if (_entity)
 		_close();
 	_entity = Entity::create(pk);
-	vbs_pack_head_of_dict(pk);
+	vbs_pack_head_of_dict(pk, kind);
 }
 
 } // namespace xic

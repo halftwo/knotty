@@ -219,7 +219,7 @@ static int _do_format(vbs_packer_t *job, context_t *ctx, enum box_state box)
 			if (ps != PS_VALUE)
 				goto error;
 			++ps;
-			if (vbs_pack_head_of_dict(job) < 0)
+			if (vbs_pack_head_of_dict0(job) < 0)
 				goto error;
 			ps = PS_KEY;
 			if (box_depth < BOX_STACK_DEPTH)
@@ -247,7 +247,7 @@ static int _do_format(vbs_packer_t *job, context_t *ctx, enum box_state box)
 			if (ps != PS_VALUE)
 				goto error;
 			++ps;
-			if (vbs_pack_head_of_list(job) < 0)
+			if (vbs_pack_head_of_list0(job) < 0)
 				goto error;
 			ps = PS_VALUE;
 			if (box_depth < BOX_STACK_DEPTH)

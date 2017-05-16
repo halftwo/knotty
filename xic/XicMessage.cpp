@@ -21,10 +21,10 @@ namespace xic
 static int _do_unpack_args(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie, bool ctx)
 {
 	int kind;
-	vbs_dict_init(dict);
-	if (vbs_unpack_head_of_dict_with_kind(job, &kind) < 0)
+	if (vbs_unpack_head_of_dict(job, &kind) < 0)
 		return -1;
 
+	vbs_dict_init(dict, kind);
 	unsigned char *begin = job->cur - vbs_head_size_of_dict(kind);
 	while (true)
 	{
@@ -363,7 +363,7 @@ const vbs_dict_t* Quest::context_dict()
 		}
 		else
 		{
-			vbs_dict_init(&_c_dict);
+			vbs_dict_init(&_c_dict, 0);
 		}
 	}
 	return &_c_dict;
@@ -467,7 +467,7 @@ struct iovec* Quest::body_iovec(int* count)
 		else
 		{
 			/* Empty context {} */
-			vbs_pack_head_of_dict(&pk);
+			vbs_pack_head_of_dict0(&pk);
 			vbs_pack_tail(&pk);
 		}
 

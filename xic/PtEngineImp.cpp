@@ -2143,15 +2143,15 @@ void PtEngine::_info(AnswerWriter& aw)
 
 	VListWriter lw;
 
-	lw = aw.paramVList("adapters");
+	lw = aw.paramVList("adapters", 0);
 	for (AdapterMap::iterator iter = _adapterMap.begin(); iter != _adapterMap.end(); ++iter)
 	{
 		PtAdapterPtr& adapter = iter->second;
 
-		VDictWriter dw = lw.vdict();
+		VDictWriter dw = lw.vdict(0);
 		dw.kv("endpoints", adapter->endpoints());
 		std::vector<std::string> services = adapter->getServices();
-		VListWriter llw = dw.kvlist("services");
+		VListWriter llw = dw.kvlist("services", 0);
 		size_t size = services.size();
 		for (size_t i = 0; i < size; ++i)
 		{
@@ -2160,7 +2160,7 @@ void PtEngine::_info(AnswerWriter& aw)
 		dw.kv("catchall", bool(adapter->getDefaultServant()));
 	}
 
-	lw = aw.paramVList("proxies");
+	lw = aw.paramVList("proxies", 0);
 	for (ProxyMap::iterator iter = _proxyMap.begin(); iter != _proxyMap.end(); ++iter)
 	{
 		lw.v(iter->second->str());

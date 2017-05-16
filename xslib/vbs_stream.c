@@ -192,40 +192,29 @@ int vbs_stream_unpack_head_of_blob(vbs_stream_unpacker_t *job, ssize_t *p_len)
 	return _unpack_simple_head(job, VBS_BLOB, p_len);
 }
 
-static inline int _unpack_composite_head(vbs_stream_unpacker_t *job, vbs_type_t type, ssize_t *p_len)
+static inline int _unpack_composite_head(vbs_stream_unpacker_t *job, vbs_type_t type, int *kind)
 {
 	intmax_t num;
-	if (type != vbs_stream_unpack_type(job, &num) || num < 0 || num > SSIZE_MAX)
+	if (type != vbs_stream_unpack_type(job, &num) || num < 0 || num > INT_MAX)
 		return -1;
 
-	*p_len = num;
 	job->uk.depth++;
 	if (job->uk.max_depth && job->uk.depth > job->uk.max_depth)
 		return -1;
 
+	if (kind)
+		*kind = num;
 	return 0;
 }
 
-int vbs_stream_unpack_head_of_list_with_length(vbs_stream_unpacker_t *job, ssize_t *p_len)
+int vbs_stream_unpack_head_of_list(vbs_stream_unpacker_t *job, int *kind)
 {
-	return _unpack_composite_head(job, VBS_LIST, p_len);
+	return _unpack_composite_head(job, VBS_LIST, kind);
 }
 
-int vbs_stream_unpack_head_of_dict_with_length(vbs_stream_unpacker_t *job, ssize_t *p_len)
+int vbs_stream_unpack_head_of_dict(vbs_stream_unpacker_t *job, int *kind)
 {
-	return _unpack_composite_head(job, VBS_DICT, p_len);
-}
-
-int vbs_stream_unpack_head_of_list(vbs_stream_unpacker_t *job)
-{
-	ssize_t len;
-	return _unpack_composite_head(job, VBS_LIST, &len);
-}
-
-int vbs_stream_unpack_head_of_dict(vbs_stream_unpacker_t *job)
-{
-	ssize_t len;
-	return _unpack_composite_head(job, VBS_DICT, &len);
+	return _unpack_composite_head(job, VBS_DICT, kind);
 }
 
 int vbs_stream_unpack_tail(vbs_stream_unpacker_t *job)
