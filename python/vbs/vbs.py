@@ -288,7 +288,7 @@ except ImportError:
     class _ClosureUnpacked(BaseException):
         pass
 
-    def _uk_until_closure(input, isdict, encoding, errors):
+    def _uk_until_tail(input, isdict, encoding, errors):
         if isdict:
             r = {}
             while True:
@@ -382,9 +382,9 @@ except ImportError:
                 raise ValueError
             return _make_decimal(n, n1)
         elif t == VBS_LIST:
-            return _uk_until_closure(input, False, encoding, errors)
+            return _uk_until_tail(input, False, encoding, errors)
         elif t == VBS_DICT:
-            return _uk_until_closure(input, True, encoding, errors)
+            return _uk_until_tail(input, True, encoding, errors)
         elif t == VBS_TAIL:
             raise _ClosureUnpacked
         elif t == VBS_NULL:

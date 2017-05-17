@@ -16,14 +16,16 @@ public class Vbs
 	public static final byte VBS_TAIL 	= 0x01;
 	public static final byte VBS_LIST 	= 0x02;
 	public static final byte VBS_DICT 	= 0x03;
-	public static final byte VBS_EXT 	= 0x0E;
 	public static final byte VBS_NULL 	= 0x0F;
+	public static final byte VBS_DESCRIPTOR	= 0x10;
 	public static final byte VBS_BOOL 	= 0x18;
 	public static final byte VBS_BLOB 	= 0x1B;
 	public static final byte VBS_DECIMAL 	= 0x1C;
 	public static final byte VBS_FLOATING 	= 0x1E;
 	public static final byte VBS_STRING 	= 0x20;
 	public static final byte VBS_INTEGER	= 0x40;
+
+	public static final int VBS_DESCRIPTOR_MAX = 32767;
 
 	private static final int FLT_ZERO_ZERO	= 0;	// 0.0 for backward compatibility
 	private static final int FLT_ZERO	= 1;	// +0.0
@@ -383,104 +385,139 @@ public class Vbs
 	private static class TagInfo
 	{
 		byte type;
+		int descriptor;
 		long num;
 	};
 
 	private static int _unpack_tag(DecodeCtx ctx, TagInfo info)
 	{
-		long num = 0;
-		byte type = 0;
-		boolean negative = false;
-		long x;
+		int descriptor = 0;
 
-		if (ctx.i >= ctx.buf.length)
-			return -2;
-
-		x = (long)ctx.buf[ctx.i++];
-		if (x >= 0)
+		while (true)
 		{
-			if (x >= VBS_STRING)
-			{
-				type = (byte)(x & 0x60);
-				num = (long)(x & 0x1F);
-				if (type == 0x60)
-				{
-					type = VBS_INTEGER;
-					negative = true;
-				}
-			}
-			else if (x >= VBS_BOOL)
-			{
-				type = (byte)x;
-				if (x <= VBS_BOOL + 1)
-				{
-					num = (x & 0x1);
-				}
-
-				if (x != VBS_BLOB)
-				{
-					type &= ~0x1;
-				}
-
-				/* negative has no effect when num == 0.
-				 */
-			}
-			else 
-				type = (byte)x;
-		}
-		else
-		{
-			int left, shift = 7;
+			long num = 0;
+			byte type = 0;
+			boolean negative = false;
+			long x;
 
 			if (ctx.i >= ctx.buf.length)
 				return -2;
 
-			num = (long)(x & 0x7F);
-			for (x = ctx.buf[ctx.i++]; x < 0; x = ctx.buf[ctx.i++], shift += 7)
+			x = (long)ctx.buf[ctx.i++];
+			if (x >= 0)
 			{
+				if (x >= VBS_STRING)
+				{
+					type = (byte)(x & 0x60);
+					num = (long)(x & 0x1F);
+					if (type == 0x60)
+					{
+						type = VBS_INTEGER;
+						negative = true;
+					}
+				}
+				else if (x >= VBS_BOOL)
+				{
+					type = (byte)x;
+					if (x <= VBS_BOOL + 1)
+					{
+						num = (x & 0x1);
+					}
+
+					if (x != VBS_BLOB)
+					{
+						type &= ~0x1;
+					}
+
+					/* negative has no effect when num == 0.
+					 */
+				}
+				else if (x >= VBS_DESCRIPTOR)
+				{
+					num = (x & 0x07);
+					descriptor = (int)num + 1;
+					continue;
+				}
+				else 
+				{
+					type = (byte)x;
+				}
+			}
+			else
+			{
+				int left, shift = 7;
+
 				if (ctx.i >= ctx.buf.length)
 					return -2;
-				x &= 0x7F;
-				left = 64 - shift;
-				if (left <= 0 || (left < 7 && x >= (1<<left)))
-					return -1;
-				num |= ((long)x) << shift;
-			}
 
-			if (x >= VBS_STRING)
-			{
-				type = (byte)(x & 0x60);
-				x &= 0x1F;
-				if (x != 0)
+				num = (long)(x & 0x7F);
+				for (x = ctx.buf[ctx.i++]; x < 0; x = ctx.buf[ctx.i++], shift += 7)
 				{
+					if (ctx.i >= ctx.buf.length)
+						return -2;
+					x &= 0x7F;
 					left = 64 - shift;
 					if (left <= 0 || (left < 7 && x >= (1<<left)))
 						return -1;
 					num |= ((long)x) << shift;
 				}
-				if (type == 0x60)
-				{
-					type = VBS_INTEGER;
-					negative = true;
-				}
-			}
-			else if (x >= VBS_BOOL)
-			{
-				type = (byte)x;
-				if (x != VBS_BLOB)
-				{
-					type &= ~0x1;
-					if ((x & 0x1) != 0)
-						negative = true;
-				}
-			}
-			else 
-				type = (byte)x;
-		}
 
-		info.type = type;
-		info.num = negative ? -num : num;
-		return 0;
+				if (x >= VBS_STRING)
+				{
+					type = (byte)(x & 0x60);
+					x &= 0x1F;
+					if (x != 0)
+					{
+						left = 64 - shift;
+						if (left <= 0 || (left < 7 && x >= (1<<left)))
+							return -1;
+						num |= ((long)x) << shift;
+					}
+					if (type == 0x60)
+					{
+						type = VBS_INTEGER;
+						negative = true;
+					}
+				}
+				else if (x >= VBS_BOOL)
+				{
+					type = (byte)x;
+					if (x != VBS_BLOB)
+					{
+						type &= ~0x1;
+						if ((x & 0x1) != 0)
+							negative = true;
+					}
+				}
+				else if (x >= VBS_DESCRIPTOR)
+				{
+					x &= 0x07;
+					if (x != 0)
+					{
+						left = 64 - shift;
+						if (left <= 0 || (left < 7 && x >= (1<<left)))
+							return -1;
+						num |= ((long)x) << shift;
+					}
+
+					if (num >= VBS_DESCRIPTOR_MAX)
+					{
+						return -1;
+					}
+					descriptor = (int)num + 1;
+					continue;
+				}
+				else 
+				{
+					type = (byte)x;
+				}
+			}
+
+			info.type = type;
+			info.descriptor = descriptor;
+			info.num = negative ? -num : num;
+			return 0;
+		}
 	}
 
 	private static int _decode_integer(DecodeCtx ctx, TagInfo info)
@@ -582,12 +619,6 @@ public class Vbs
 			}
 		case VBS_TAIL:
 			return TAIL_OBJECT;
-		case VBS_EXT:
-			// TODO: what to do?
-			if (info.num > ctx.buf.length - ctx.i)
-				return null;
-			ctx.i += info.num;
-			return new Object();
 		case VBS_NULL:
 			return null;
 		}

@@ -154,108 +154,61 @@ void aes_ccm_start(aes_ccm_t *ac, bool encrypt, const uint8_t *nonce, const uint
 	memset(ac->A, 0, sizeof(ac->A));
 	ac->A[0] = ac->counter_size - 1;
 	memcpy(&ac->A[1], nonce, 15 - ac->counter_size);
-	encrypt_stream_block(ac, 0);
 }
 
 ssize_t aes_ccm_update(aes_ccm_t *ac, const uint8_t *in, uint8_t *out, size_t length)
 {
 	ssize_t k = ac->pos % 16;
 	ssize_t len = length;
+	const uint8_t **auth_ptr = (ac->encrypt) ? &in : (const uint8_t **)&out;
 
 	if (ac->pos + len > ac->total)
 		return -1;
 
-	if (ac->encrypt)
+	if (k)
 	{
-		if (k)
+		ssize_t n = 16 - k;
+		if (len < n)
 		{
-			ssize_t n = 16 - k;
-			if (len < n)
-			{
-				xor_inplace(ac->X + k, in, len);
-				xor_2string(out, ac->S + k, in, len);
-				ac->pos += len;
-				return len;
-			}
-
-			/* X_i+1 := E( K, X_i XOR B_i ) */
-			xor_inplace(ac->X + k, in, n);
-			rijndael_encrypt(ac->ctx, ac->X, ac->X);
-
-			xor_2string(out, ac->S + k, in, n);
-
-			ac->pos += n;
-			in += n;
-			out += n;
-			len -= n;
-			encrypt_stream_block(ac, ac->pos);
-		}
-
-		while (len >= 16)
-		{
-			/* X_i+1 := E( K, X_i XOR B_i ) */
-			xor_inplace(ac->X, in, 16);
-			rijndael_encrypt(ac->ctx, ac->X, ac->X);
-
-			xor_2string(out, ac->S, in, 16);
-
-			ac->pos += 16;
-			in += 16;
-			out += 16;
-			len -= 16;
-			encrypt_stream_block(ac, ac->pos);
-		}
-
-		if (len > 0)
-		{
-			xor_inplace(ac->X, in, len);
-			xor_2string(out, ac->S, in, len);
+			xor_2string(out, ac->S + k, in, len);
+			xor_inplace(ac->X + k, *auth_ptr, len);
 			ac->pos += len;
+			return len;
 		}
+
+		xor_2string(out, ac->S + k, in, n);
+		/* X_i+1 := E( K, X_i XOR B_i ) */
+		xor_inplace(ac->X + k, *auth_ptr, n);
+		rijndael_encrypt(ac->ctx, ac->X, ac->X);
+
+		ac->pos += n;
+		in += n;
+		out += n;
+		len -= n;
 	}
-	else
+
+	while (len >= 16)
 	{
-		if (k)
-		{
-			ssize_t n = 16 - k;
-			if (len < n)
-			{
-				xor_2string(out, ac->S + k, in, len);
-				xor_inplace(ac->X + k, out, len);
-				ac->pos += len;
-				return len;
-			}
+		/* S_i := E( K, A_i ) */
+		encrypt_stream_block(ac, ac->pos);
+		xor_2string(out, ac->S, in, 16);
+		/* X_i+1 := E( K, X_i XOR B_i ) */
+		xor_inplace(ac->X, *auth_ptr, 16);
+		rijndael_encrypt(ac->ctx, ac->X, ac->X);
 
-			xor_2string(out, ac->S + k, in, n);
-			xor_inplace(ac->X + k, out, n);
-			rijndael_encrypt(ac->ctx, ac->X, ac->X);
+		ac->pos += 16;
+		in += 16;
+		out += 16;
+		len -= 16;
+	}
 
-			ac->pos += n;
-			in += n;
-			out += n;
-			len -= n;
-			encrypt_stream_block(ac, ac->pos);
-		}
-
-		while (len >= 16)
-		{
-			xor_2string(out, ac->S, in, 16);
-			xor_inplace(ac->X, out, 16);
-			rijndael_encrypt(ac->ctx, ac->X, ac->X);
-
-			ac->pos += 16;
-			in += 16;
-			out += 16;
-			len -= 16;
-			encrypt_stream_block(ac, ac->pos);
-		}
-
-		if (len > 0)
-		{
-			xor_2string(out, ac->S, in, len);
-			xor_inplace(ac->X, out, len);
-			ac->pos += len;
-		}
+	if (len > 0)
+	{
+		/* S_i := E( K, A_i ) */
+		encrypt_stream_block(ac, ac->pos);
+		xor_2string(out, ac->S, in, len);
+		xor_inplace(ac->X, *auth_ptr, len);
+		ac->pos += len;
 	}
 
 	return length;
@@ -269,6 +222,7 @@ ssize_t aes_ccm_finish(aes_ccm_t *ac, uint8_t *mac)
 		if (ac->pos % 16)
 			rijndael_encrypt(ac->ctx, ac->X, ac->X);
 
+		/* S_0 := E( K, A_0 ) */
 		encrypt_stream_block(ac, -1);
 	}
 	else if (ac->pos != -1)
@@ -348,8 +302,8 @@ int main(int argc, char **argv)
 
 	/* Test performance */
 	aes_ccm_config(&ac, &ctx, 8, 4);
-	aes_ccm_start(&ac, true, nonce, packet, 8, 32*1000*1000);
-	for (i = 0; i < 1000*1000; ++i)
+	aes_ccm_start(&ac, true, nonce, packet, 8, 32*1024*1024);
+	for (i = 0; i < 1024*1024; ++i)
 		aes_ccm_update(&ac, packet, cipher, 32);
 	aes_ccm_finish(&ac, mac);
 

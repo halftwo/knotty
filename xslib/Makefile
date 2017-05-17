@@ -2,8 +2,8 @@
 ##
 
 EDITION  = 20161031
-REVISION = 20170215
-RELEASE  = 1800
+REVISION = 20170518
+RELEASE  = 1000
 
 XSLIB_VERSION = $(EDITION).$(REVISION).$(RELEASE)
 
@@ -20,7 +20,7 @@ OBJS_C = strbuf.o obpool.o bit.o xnet.o xbase64.o xbase85.o xbase32.o \
 	httpcode.o httpmisc.o urandom.o gzipper.o lz4.o xxhash.o \
 	decContext.o decSingle.o decDouble.o decQuad.o decimal64.o \
 	unit_prefix.o hamming12.o hamming7.o golay24.o \
-	hmac_sha1.o 
+	hmac_sha1.o aes_ccm.o 
 	
 
 OBJS_CXX = XRefCount.o xptr.o XLock.o XError.o XEvent.o StringHashSet.o \
