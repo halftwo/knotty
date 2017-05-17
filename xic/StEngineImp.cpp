@@ -1960,15 +1960,15 @@ void StEngine::_info(AnswerWriter& aw)
 
 	VListWriter lw;
 
-	lw = aw.paramVList("adapters", 0);
+	lw = aw.paramVList("adapters");
 	for (AdapterMap::iterator iter = _adapterMap.begin(); iter != _adapterMap.end(); ++iter)
 	{
 		StAdapterPtr& adapter = iter->second;
 
-		VDictWriter dw = lw.vdict(0);
+		VDictWriter dw = lw.vdict();
 		dw.kv("endpoints", adapter->endpoints());
 		std::vector<std::string> services = adapter->getServices();
-		VListWriter llw = dw.kvlist("services", 0);
+		VListWriter llw = dw.kvlist("services");
 		size_t size = services.size();
 		for (size_t i = 0; i < size; ++i)
 		{
@@ -1977,7 +1977,7 @@ void StEngine::_info(AnswerWriter& aw)
 		dw.kv("catchall", bool(adapter->getDefaultServant()));
 	}
 
-	lw = aw.paramVList("proxies", 0);
+	lw = aw.paramVList("proxies");
 	for (ProxyMap::iterator iter = _proxyMap.begin(); iter != _proxyMap.end(); ++iter)
 	{
 		lw.v(iter->second->str());

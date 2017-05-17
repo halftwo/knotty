@@ -166,15 +166,23 @@ public:
 
 	void vnull();
 
-	VListWriter vlist(int kind, int descriptor=0);
+	VListWriter vlist(int descriptor=0);
+	VListWriter vlistKind(int kind, int descriptor=0);
 
 	template <typename ListType>
-	VListWriter vlist(const ListType& values, int kind, int descriptor=0);
+	VListWriter vlist(const ListType& values, int descriptor=0);
 
-	VDictWriter vdict(int kind, int descriptor=0);
+	template <typename ListType>
+	VListWriter vlistKind(const ListType& values, int kind, int descriptor=0);
+
+	VDictWriter vdict(int descriptor=0);
+	VDictWriter vdictKind(int kind, int descriptor=0);
 
 	template <typename DictType>
-	VDictWriter vdict(const DictType& dict, int kind, int descriptor=0);
+	VDictWriter vdict(const DictType& dict, int descriptor=0);
+
+	template <typename DictType>
+	VDictWriter vdictKind(const DictType& dict, int kind, int descriptor=0);
 
 	void vstrhead(size_t len, int descriptor=0);
 	void vblobhead(size_t len, int descriptor=0);
@@ -235,16 +243,28 @@ public:
 	void kvnull(const KeyType& key);
 
 	template <typename KeyType>
-	VListWriter kvlist(const KeyType& key, int kind, int descriptor=0);
+	VListWriter kvlist(const KeyType& key, int descriptor=0);
 
 	template <typename KeyType, typename ListType>
-	VListWriter kvlist(const KeyType& key, const ListType& values, int kind, int descriptor=0);
+	VListWriter kvlist(const KeyType& key, const ListType& values, int descriptor=0);
 
 	template <typename KeyType>
-	VDictWriter kvdict(const KeyType& key, int kind, int descriptor=0);
+	VListWriter kvlistKind(const KeyType& key, int kind, int descriptor=0);
+
+	template <typename KeyType, typename ListType>
+	VListWriter kvlistKind(const KeyType& key, const ListType& values, int kind, int descriptor=0);
+
+	template <typename KeyType>
+	VDictWriter kvdict(const KeyType& key, int descriptor=0);
 
 	template <typename KeyType, typename DictType>
-	VDictWriter kvdict(const KeyType& key, const DictType& dict, int kind, int descriptor=0);
+	VDictWriter kvdict(const KeyType& key, const DictType& dict, int descriptor=0);
+
+	template <typename KeyType>
+	VDictWriter kvdictKind(const KeyType& key, int kind, int descriptor=0);
+
+	template <typename KeyType, typename DictType>
+	VDictWriter kvdictKind(const KeyType& key, const DictType& dict, int kind, int descriptor=0);
 
 	template <typename KeyType>
 	void kvstrhead(const KeyType& key, size_t len, int descriptor=0);
@@ -380,7 +400,29 @@ inline void VListWriter::vnull()
 	return _entity->writeNull();
 }
 
-inline VListWriter VListWriter::vlist(int kind, int descriptor)
+inline VListWriter VListWriter::vlist(int descriptor)
+{
+	if (_entity->child)
+		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
+	return VListWriter(_entity, 0);
+}
+
+template <typename ListType>
+inline VListWriter VListWriter::vlist(const ListType& values, int descriptor)
+{
+	if (_entity->child)
+		_entity->finish_child();
+
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
+	VListWriter lw(_entity, 0);
+	::vlist_write_all(lw, values);
+	return lw;
+}
+
+inline VListWriter VListWriter::vlistKind(int kind, int descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
@@ -390,7 +432,7 @@ inline VListWriter VListWriter::vlist(int kind, int descriptor)
 }
 
 template <typename ListType>
-inline VListWriter VListWriter::vlist(const ListType& values, int kind, int descriptor)
+inline VListWriter VListWriter::vlistKind(const ListType& values, int kind, int descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
@@ -402,7 +444,29 @@ inline VListWriter VListWriter::vlist(const ListType& values, int kind, int desc
 	return lw;
 }
 
-inline VDictWriter VListWriter::vdict(int kind, int descriptor)
+inline VDictWriter VListWriter::vdict(int descriptor)
+{
+	if (_entity->child)
+		_entity->finish_child();
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
+	return VDictWriter(_entity, 0);
+}
+
+template <typename DictType>
+inline VDictWriter VListWriter::vdict(const DictType& dict, int descriptor)
+{
+	if (_entity->child)
+		_entity->finish_child();
+
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
+	VDictWriter dw(_entity, 0);
+	::vdict_write_all(dw, dict);
+	return dw;
+}
+
+inline VDictWriter VListWriter::vdictKind(int kind, int descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
@@ -412,7 +476,7 @@ inline VDictWriter VListWriter::vdict(int kind, int descriptor)
 }
 
 template <typename DictType>
-inline VDictWriter VListWriter::vdict(const DictType& dict, int kind, int descriptor)
+inline VDictWriter VListWriter::vdictKind(const DictType& dict, int kind, int descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
@@ -596,7 +660,32 @@ inline void VDictWriter::kvnull(const KeyType& key)
 }
 
 template <typename KeyType>
-inline VListWriter VDictWriter::kvlist(const KeyType& key, int kind, int descriptor)
+inline VListWriter VDictWriter::kvlist(const KeyType& key, int descriptor)
+{
+	if (_entity->child)
+		_entity->finish_child();
+	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
+	return VListWriter(_entity, 0);
+}
+
+template <typename KeyType, typename ListType>
+inline VListWriter VDictWriter::kvlist(const KeyType& key, const ListType& values, int descriptor)
+{
+	if (_entity->child)
+		_entity->finish_child();
+	_entity->write(key);
+
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
+	VListWriter lw(_entity, 0);
+	::vlist_write_all(lw, values);
+	return lw;
+}
+
+template <typename KeyType>
+inline VListWriter VDictWriter::kvlistKind(const KeyType& key, int kind, int descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
@@ -607,7 +696,7 @@ inline VListWriter VDictWriter::kvlist(const KeyType& key, int kind, int descrip
 }
 
 template <typename KeyType, typename ListType>
-inline VListWriter VDictWriter::kvlist(const KeyType& key, const ListType& values, int kind, int descriptor)
+inline VListWriter VDictWriter::kvlistKind(const KeyType& key, const ListType& values, int kind, int descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
@@ -622,7 +711,32 @@ inline VListWriter VDictWriter::kvlist(const KeyType& key, const ListType& value
 
 
 template <typename KeyType>
-inline VDictWriter VDictWriter::kvdict(const KeyType& key, int kind, int descriptor)
+inline VDictWriter VDictWriter::kvdict(const KeyType& key, int descriptor)
+{
+	if (_entity->child)
+		_entity->finish_child();
+	_entity->write(key);
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
+	return VDictWriter(_entity, 0);
+}
+
+template <typename KeyType, typename DictType>
+inline VDictWriter VDictWriter::kvdict(const KeyType& key, const DictType& dict, int descriptor)
+{
+	if (_entity->child)
+		_entity->finish_child();
+	_entity->write(key);
+	
+	if (descriptor > 0)
+		_entity->writeDescriptor(descriptor);
+	VDictWriter dw(_entity, 0);
+	::vdict_write_all(dw, dict);
+	return dw;
+}
+
+template <typename KeyType>
+inline VDictWriter VDictWriter::kvdictKind(const KeyType& key, int kind, int descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();
@@ -633,7 +747,7 @@ inline VDictWriter VDictWriter::kvdict(const KeyType& key, int kind, int descrip
 }
 
 template <typename KeyType, typename DictType>
-inline VDictWriter VDictWriter::kvdict(const KeyType& key, const DictType& dict, int kind, int descriptor)
+inline VDictWriter VDictWriter::kvdictKind(const KeyType& key, const DictType& dict, int kind, int descriptor)
 {
 	if (_entity->child)
 		_entity->finish_child();

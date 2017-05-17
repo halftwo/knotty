@@ -271,26 +271,48 @@ public:
 		_dw.kvnull(key);
 	}
 
-	VListWriter paramVList(const char *key, int kind, int descriptor=0)
+	VListWriter paramVList(const char *key, int descriptor=0)
 	{
-		return _dw.kvlist(key, kind, descriptor);
+		return _dw.kvlist(key, descriptor);
 	}
 
 	template <typename ListType>
-	VListWriter paramVList(const char *key, const ListType& values, int kind, int descriptor=0)
+	VListWriter paramVList(const char *key, const ListType& values, int descriptor=0)
 	{
-		return _dw.kvlist(key, values, kind, descriptor);
+		return _dw.kvlist(key, values, descriptor);
 	}
 
-	VDictWriter paramVDict(const char *key, int kind, int descriptor=0)
+	VListWriter paramVListKind(const char *key, int kind, int descriptor=0)
 	{
-		return _dw.kvdict(key, kind, descriptor);
+		return _dw.kvlistKind(key, kind, descriptor);
+	}
+
+	template <typename ListType>
+	VListWriter paramVListKind(const char *key, const ListType& values, int kind, int descriptor=0)
+	{
+		return _dw.kvlistKind(key, values, kind, descriptor);
+	}
+
+	VDictWriter paramVDict(const char *key, int descriptor=0)
+	{
+		return _dw.kvdict(key, descriptor);
 	}
 
 	template <typename DictType>
-	VDictWriter paramVDict(const char *key, const DictType& dict, int kind, int descriptor=0)
+	VDictWriter paramVDict(const char *key, const DictType& dict, int descriptor=0)
 	{
-		return _dw.kvdict(key, dict, kind, descriptor);
+		return _dw.kvdict(key, dict, descriptor);
+	}
+
+	VDictWriter paramVDictKind(const char *key, int kind, int descriptor=0)
+	{
+		return _dw.kvdictKind(key, kind, descriptor);
+	}
+
+	template <typename DictType>
+	VDictWriter paramVDictKind(const char *key, const DictType& dict, int kind, int descriptor=0)
+	{
+		return _dw.kvdictKind(key, dict, kind, descriptor);
 	}
 
 	void paramStrHead(const char *key, size_t len, int descriptor=0)
