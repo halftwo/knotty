@@ -18,16 +18,6 @@ void aes_ccm_config(aes_ccm_t *ac, const rijndael_context *ctx, size_t mac_size,
 }
 
 
-static inline void xor_block(uint8_t *dst, const uint8_t *src)
-{
-	uint32_t *d = (uint32_t *)dst;
-	uint32_t *s = (uint32_t *)src;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-}
-
 static inline void xor_inplace(uint8_t *d, const uint8_t *s, size_t n)
 {
 	assert(n <= 16);
