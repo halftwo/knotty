@@ -6,30 +6,20 @@
 
 static inline void xor_block(uint8_t *d, const uint8_t *s)
 {
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
+	*d++ ^= *s++; 	*d++ ^= *s++;
+	*d++ ^= *s++; 	*d++ ^= *s++;
+	*d++ ^= *s++; 	*d++ ^= *s++;
+	*d++ ^= *s++; 	*d++ ^= *s++;
 
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
-	*d++ ^= *s++;
+	*d++ ^= *s++; 	*d++ ^= *s++;
+	*d++ ^= *s++; 	*d++ ^= *s++;
+	*d++ ^= *s++; 	*d++ ^= *s++;
+	*d++ ^= *s++; 	*d++ ^= *s++;
 }
 
-void cmac_aes_start(cmac_aes_context *ca, const void *key, size_t key_size)
+void cmac_aes_start(cmac_aes_context *ca, const rijndael_context *aes)
 {
-	rijndael_setup_encrypt(&ca->aes, key, key_size);
+	ca->aes = aes;
 	memset(ca->X, 0, sizeof(ca->X));
 	ca->count = 0;
 }
@@ -44,7 +34,7 @@ void cmac_aes_update(cmac_aes_context *ca, const void *msg, size_t len)
 		return;
 
 	if (k == 0 && ca->count)
-		rijndael_encrypt(&ca->aes, ca->X, ca->X);
+		rijndael_encrypt(ca->aes, ca->X, ca->X);
 
 	for (i = 0; i < len && k < BLOCK_SIZE; ++i)
 		ca->X[k++] ^= *p++;
@@ -54,7 +44,7 @@ void cmac_aes_update(cmac_aes_context *ca, const void *msg, size_t len)
 
 	while (len >= BLOCK_SIZE)
 	{
-		rijndael_encrypt(&ca->aes, ca->X, ca->X);
+		rijndael_encrypt(ca->aes, ca->X, ca->X);
 		xor_block(ca->X, p);
 
 		p += BLOCK_SIZE;
@@ -64,7 +54,7 @@ void cmac_aes_update(cmac_aes_context *ca, const void *msg, size_t len)
 
 	if (len > 0)
 	{
-		rijndael_encrypt(&ca->aes, ca->X, ca->X);
+		rijndael_encrypt(ca->aes, ca->X, ca->X);
 		for (k = 0; k < len;)
 			ca->X[k++] ^= *p++;
 
@@ -98,13 +88,13 @@ static void gf_mulx2(uint8_t pad[BLOCK_SIZE])
 	pad[BLOCK_SIZE - 1] = (pad[BLOCK_SIZE - 1] << 2) ^ c_xor[t];
 }
 
-void cmac_aes_finish(cmac_aes_context *ca, uint8_t *mac, size_t mac_size)
+void cmac_aes_finish(cmac_aes_context *ca, uint8_t mac[16])
 {
 	uint8_t pad[BLOCK_SIZE];
 	ssize_t k = ca->count % BLOCK_SIZE;
 
 	memset(pad, 0, sizeof(pad));
-	rijndael_encrypt(&ca->aes, pad, pad);
+	rijndael_encrypt(ca->aes, pad, pad);
 
 	if (ca->count == 0 || k)
 	{
@@ -117,20 +107,17 @@ void cmac_aes_finish(cmac_aes_context *ca, uint8_t *mac, size_t mac_size)
 	}
 
 	xor_block(pad, ca->X);
-	rijndael_encrypt(&ca->aes, pad, pad);
+	rijndael_encrypt(ca->aes, pad, pad);
 
-	if (mac_size > sizeof(pad))
-		mac_size = sizeof(pad);
-	memcpy(mac, pad, mac_size);
+	memcpy(mac, pad, sizeof(pad));
 }
 
-void cmac_aes_checksum(const void *key, size_t key_size, const void *msg, size_t msg_len,
-			uint8_t *mac, size_t mac_size)
+void cmac_aes_checksum(const rijndael_context *aes, const void *msg, size_t msg_len, uint8_t mac[16])
 {
 	cmac_aes_context ca;
-	cmac_aes_start(&ca, key, key_size);
+	cmac_aes_start(&ca, aes);
 	cmac_aes_update(&ca, msg, msg_len);
-	cmac_aes_finish(&ca, mac, mac_size);
+	cmac_aes_finish(&ca, mac);
 }
 
 
@@ -142,6 +129,7 @@ void cmac_aes_checksum(const void *key, size_t key_size, const void *msg, size_t
 
 int main(int argc, char **argv)
 {
+	rijndael_context aes;
 	cmac_aes_context ca;
 
 	char *key_hex = "2B7E1516 28AED2A6 ABF71588 09CF4F3C";
@@ -163,16 +151,19 @@ int main(int argc, char **argv)
 	unhexlify_ignore_space(key, key_hex, -1);
 	unhexlify_ignore_space(msg, msg_hex, -1);
 
+	rijndael_setup_encrypt(&aes, key, sizeof(key));
+
 	for (i = 0; i < 3; ++i)
 	{
 		int k;
 		unhexlify_ignore_space(mac1, mac_hex[i], -1);
 
-		cmac_aes_start(&ca, key, sizeof(key));
+		cmac_aes_start(&ca, &aes);
 //		cmac_aes_update(&ca, msg, msg_len[i]);
 		for (k = 0; k < msg_len[i]; ++k)
 			cmac_aes_update(&ca, msg + k, 1);
-		cmac_aes_finish(&ca, mac2, sizeof(mac2));
+		cmac_aes_finish(&ca, mac2);
+
 		if (memcmp(mac1, mac2, sizeof(mac2)) != 0)
 		{
 			fprintf(stderr, "test failed\n");

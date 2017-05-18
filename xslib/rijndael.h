@@ -32,8 +32,8 @@ bool rijndael_setup_decrypt(rijndael_context *ctx, const uint8_t *key, size_t ke
  */
 
 
-void rijndael_encrypt(const rijndael_context *ctx, const uint8_t plain[16], uint8_t cipher[16]);
-void rijndael_decrypt(const rijndael_context *ctx, const uint8_t cipher[16], uint8_t plain[16]);
+void rijndael_encrypt(const rijndael_context *ctx, const uint8_t in[16], uint8_t out[16]);
+void rijndael_decrypt(const rijndael_context *ctx, const uint8_t in[16], uint8_t out[16]);
 
 
 /*
@@ -44,10 +44,10 @@ void rijndael_decrypt(const rijndael_context *ctx, const uint8_t cipher[16], uin
    extra bytes is discarded when decryption.
  */
 void rijndael_cbc_encrypt(const rijndael_context *ctx,
-		const uint8_t *plain, uint8_t *cipher, size_t len, uint8_t ivec[16]);
+		const uint8_t *in, uint8_t *out, size_t len, uint8_t ivec[16]);
 
 void rijndael_cbc_decrypt(const rijndael_context *ctx,
-		const uint8_t *cipher, uint8_t *plain, size_t len, uint8_t ivec[16]);
+		const uint8_t *in, uint8_t *out, size_t len, uint8_t ivec[16]);
 
 
 /*

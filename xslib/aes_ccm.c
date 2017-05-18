@@ -7,12 +7,12 @@
  * see: RFC3610
  */
 
-void aes_ccm_config(aes_ccm_t *ac, const rijndael_context *ctx, size_t mac_size, size_t counter_size)
+void aes_ccm_config(aes_ccm_context *ac, const rijndael_context *aes, size_t mac_size, size_t counter_size)
 {
 	assert(mac_size >= 4 && mac_size <= 16 && mac_size % 2 == 0);
 	assert(counter_size >= 2 && counter_size <= 8);
 
-	ac->ctx = ctx;
+	ac->aes = aes;
 	ac->mac_size = mac_size;
 	ac->counter_size = counter_size;
 }
@@ -66,7 +66,7 @@ static inline void xor_2string(uint8_t *d, const uint8_t *s1, const uint8_t *s2,
 	}
 }
 
-static inline void encrypt_stream_block(aes_ccm_t *ac, ssize_t pos)
+static inline void encrypt_stream_block(aes_ccm_context *ac, ssize_t pos)
 {
 	size_t i;
 	uint8_t *p;
@@ -76,12 +76,12 @@ static inline void encrypt_stream_block(aes_ccm_t *ac, ssize_t pos)
 		*p = counter & 0xff;
 		counter >>= 8;
 	}
-	rijndael_encrypt(ac->ctx, ac->A, ac->S);
+	rijndael_encrypt(ac->aes, ac->A, ac->S);
 }
 
 /* length of nonce is (15 - counter_size)
  */
-void aes_ccm_start(aes_ccm_t *ac, bool encrypt, const uint8_t *nonce, const uint8_t *aad, size_t aad_len, size_t msg_len)
+void aes_ccm_start(aes_ccm_context *ac, bool encrypt, const uint8_t *nonce, const uint8_t *aad, size_t aad_len, size_t msg_len)
 {
 	uint8_t flags;
 	size_t i;
@@ -107,7 +107,7 @@ void aes_ccm_start(aes_ccm_t *ac, bool encrypt, const uint8_t *nonce, const uint
 	assert(msg_len == 0);
 
 	/* X_1 = E(K, B_0) */
-	rijndael_encrypt(ac->ctx, ac->X, ac->X); 
+	rijndael_encrypt(ac->aes, ac->X, ac->X); 
 
 	if (aad_len)
 	{
@@ -121,13 +121,13 @@ void aes_ccm_start(aes_ccm_t *ac, bool encrypt, const uint8_t *nonce, const uint
 
 		/* X_2 = E(K, X_1 XOR B_1) */
 		xor_inplace(ac->X, buf, 2 + i);
-		rijndael_encrypt(ac->ctx, ac->X, ac->X);
+		rijndael_encrypt(ac->aes, ac->X, ac->X);
 
 		while (aad_len >= 16)
 		{
 			/* X_i+1 := E( K, X_i XOR B_i )  for i=1, ..., n */
 			xor_inplace(ac->X, aad, 16);
-			rijndael_encrypt(ac->ctx, ac->X, ac->X);
+			rijndael_encrypt(ac->aes, ac->X, ac->X);
 
 			aad += 16;
 			aad_len -= 16;
@@ -137,7 +137,7 @@ void aes_ccm_start(aes_ccm_t *ac, bool encrypt, const uint8_t *nonce, const uint
 		{
 			/* X_i+1 := E( K, X_i XOR B_i )  for i=1, ..., n */
 			xor_inplace(ac->X, aad, aad_len);
-			rijndael_encrypt(ac->ctx, ac->X, ac->X);
+			rijndael_encrypt(ac->aes, ac->X, ac->X);
 		}
 	}
 
@@ -146,7 +146,7 @@ void aes_ccm_start(aes_ccm_t *ac, bool encrypt, const uint8_t *nonce, const uint
 	memcpy(&ac->A[1], nonce, 15 - ac->counter_size);
 }
 
-ssize_t aes_ccm_update(aes_ccm_t *ac, const uint8_t *in, uint8_t *out, size_t length)
+ssize_t aes_ccm_update(aes_ccm_context *ac, const uint8_t *in, uint8_t *out, size_t length)
 {
 	ssize_t k = ac->pos % 16;
 	ssize_t len = length;
@@ -169,7 +169,7 @@ ssize_t aes_ccm_update(aes_ccm_t *ac, const uint8_t *in, uint8_t *out, size_t le
 		xor_2string(out, ac->S + k, in, n);
 		/* X_i+1 := E( K, X_i XOR B_i ) */
 		xor_inplace(ac->X + k, *auth_ptr, n);
-		rijndael_encrypt(ac->ctx, ac->X, ac->X);
+		rijndael_encrypt(ac->aes, ac->X, ac->X);
 
 		ac->pos += n;
 		in += n;
@@ -184,7 +184,7 @@ ssize_t aes_ccm_update(aes_ccm_t *ac, const uint8_t *in, uint8_t *out, size_t le
 		xor_2string(out, ac->S, in, 16);
 		/* X_i+1 := E( K, X_i XOR B_i ) */
 		xor_inplace(ac->X, *auth_ptr, 16);
-		rijndael_encrypt(ac->ctx, ac->X, ac->X);
+		rijndael_encrypt(ac->aes, ac->X, ac->X);
 
 		ac->pos += 16;
 		in += 16;
@@ -205,12 +205,12 @@ ssize_t aes_ccm_update(aes_ccm_t *ac, const uint8_t *in, uint8_t *out, size_t le
 }
 
 
-ssize_t aes_ccm_finish(aes_ccm_t *ac, uint8_t *mac)
+ssize_t aes_ccm_finish(aes_ccm_context *ac, uint8_t *mac)
 {
 	if (ac->pos == ac->total)
 	{
 		if (ac->pos % 16)
-			rijndael_encrypt(ac->ctx, ac->X, ac->X);
+			rijndael_encrypt(ac->aes, ac->X, ac->X);
 
 		/* S_0 := E( K, A_0 ) */
 		encrypt_stream_block(ac, -1);
@@ -232,8 +232,8 @@ ssize_t aes_ccm_finish(aes_ccm_t *ac, uint8_t *mac)
 
 int main(int argc, char **argv)
 {
-	aes_ccm_t ac;
-	rijndael_context ctx;
+	rijndael_context aes;
+	aes_ccm_context ac;
 	int i;
 
 	char *key_hex = "C0 C1 C2 C3  C4 C5 C6 C7  C8 C9 CA CB  CC CD CE CF";
@@ -254,9 +254,9 @@ int main(int argc, char **argv)
 	unhexlify_ignore_space(nonce, nonce_hex, -1);
 	unhexlify_ignore_space(packet, packet_hex, -1);
 
-	rijndael_setup_encrypt(&ctx, key, sizeof(key));
-	
-	aes_ccm_config(&ac, &ctx, 8, 2);
+	rijndael_setup_encrypt(&aes, key, sizeof(key));
+	aes_ccm_config(&ac, &aes, 8, 2);
+
 	aes_ccm_start(&ac, true, nonce, packet, 8, 31 - 8);
 
 	memcpy(cipher, packet, 8);
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
 	fprintf(stderr, "encrypt and descrypt success!\n");
 
 	/* Test performance */
-	aes_ccm_config(&ac, &ctx, 8, 4);
+	aes_ccm_config(&ac, &aes, 8, 4);
 	aes_ccm_start(&ac, true, nonce, packet, 8, 32*1024*1024);
 	for (i = 0; i < 1024*1024; ++i)
 		aes_ccm_update(&ac, packet, cipher, 32);
