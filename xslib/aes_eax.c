@@ -159,7 +159,17 @@ int main(int argc, char **argv)
 
 	if (memcmp(cipher, out, sizeof(cipher)) != 0)
 	{
-		fprintf(stderr, "test failed\n");
+		fprintf(stderr, "test encrypt failed\n");
+		exit(1);
+	}
+
+	aes_eax_start(&ax, &aes, false, nonce, sizeof(nonce), header, sizeof(header));
+	aes_eax_update(&ax, cipher, out, sizeof(msg));
+	aes_eax_finish(&ax, out + sizeof(msg));
+
+	if (memcmp(out, msg, sizeof(msg)) != 0 || memcmp(out+sizeof(msg), cipher+sizeof(msg), 16) != 0)
+	{
+		fprintf(stderr, "test decrypt failed\n");
 		exit(1);
 	}
 
