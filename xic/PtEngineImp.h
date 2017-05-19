@@ -74,9 +74,12 @@ class PtConnection: public ConnectionI, public XEvent::FdHandler, public XTimerT
 
 	loc_t _iloc;
 	int _ipos;
+	XicMessage::Header _iHeader;
 	XicMessagePtr _rMsg;
 	iobuf_t _ib;
 	unsigned char _ibuf[1024];
+
+	bool _flagCipher;
 
 	loc_t _oloc;
 	struct iovec *_ov;

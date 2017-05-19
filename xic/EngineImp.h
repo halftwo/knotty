@@ -8,6 +8,7 @@
 #include "IpMatcher.h"
 #include "SecretBox.h"
 #include "ShadowBox.h"
+#include "MyCipher.h"
 #include "xslib/rdtsc.h"
 #include "xslib/cxxstr.h"
 #include "xslib/CarpSequence.h"
@@ -73,6 +74,7 @@ extern bool xic_except_client;
 extern IpMatcherPtr xic_allow_ips;
 extern SecretBoxPtr xic_passport_secret;
 extern ShadowBoxPtr xic_passport_shadow;
+extern MyCipher::CipherSuite xic_cipher;
 
 extern EnginePtr xic_engine;
 
@@ -88,7 +90,7 @@ size_t getIps(const xstr_t& host, uint32_t ipv4s[], int *v4num, uint8_t ipv6s[][
 
 size_t cli_sample_locus(char *buf);
 
-struct iovec *get_msg_iovec(const XicMessagePtr& msg, int *count);
+struct iovec *get_msg_iovec(const XicMessagePtr& msg, int *count, const MyCipherPtr& cipher);
 void free_msg_iovec(const XicMessagePtr& msg, struct iovec *iov);
 
 
@@ -295,6 +297,7 @@ protected:
 
 	ShadowBoxPtr _shadowBox;
 	XPtr<Srp6aBase> _srp6a;
+	MyCipherPtr _cipher;
 
 	typedef std::deque<XicMessagePtr> MessageQueue;
 	MessageQueue _kq;	// prioritized for check msgs

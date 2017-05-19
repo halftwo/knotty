@@ -42,6 +42,7 @@
 
 #define CHUNK_SIZE		4096
 
+
 using namespace xic;
 
 
@@ -81,6 +82,7 @@ bool xic::xic_except_client = false;
 IpMatcherPtr xic::xic_allow_ips;
 SecretBoxPtr xic::xic_passport_secret;
 ShadowBoxPtr xic::xic_passport_shadow;
+MyCipher::CipherSuite xic::xic_cipher = MyCipher::AES128_EAX;
 
 EnginePtr xic::xic_engine;
 
@@ -120,26 +122,61 @@ void xic::adjustTSC(uint64_t frequency)
 	slow_cli_tsc = xic_slow_client * frequency / 1000;
 }
 
-struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count)
+struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count, const MyCipherPtr& myCipher)
 {
+	uint8_t msgType = msg->msgType();
+	MyCipher *cipher = (msgType == 'Q' || msgType == 'A') ? myCipher.get() : NULL;
+
 	int iov_count = 0;
 	struct iovec *body_iov = msg->body_iovec(&iov_count);
 
 	ostk_t *ostk = msg->ostk();
-	struct iovec *iov = OSTK_ALLOC(ostk, struct iovec, iov_count + 2);
-	memcpy(&iov[1], body_iov, iov_count * sizeof(struct iovec));
+	struct iovec *iov = OSTK_ALLOC(ostk, struct iovec, cipher ? 4 : (iov_count + 1));
 
 	XicMessage::Header *hdr = OSTK_ALLOC_ONE(ostk, XicMessage::Header);
 	hdr->magic = 'X';
 	hdr->version = 'I';
 	hdr->msgType = msg->msgType();
 	hdr->flags = 0;
-	hdr->bodySize = xnet_m32(msg->bodySize());
+	hdr->bodySize = msg->bodySize();
+
+	if (cipher)
+	{
+		hdr->flags |= XIC_FLAG_CIPHER;
+		hdr->bodySize += cipher->extraSize();
+	}
+	xnet_msb32(&hdr->bodySize);
 
 	iov[0].iov_base = hdr;
-	iov[0].iov_len = sizeof(XicMessage::Header);
-	++iov_count;
-	*count = iov_count;
+	iov[0].iov_len = sizeof(*hdr);
+
+	if (cipher)
+	{
+		uint8_t *secure = OSTK_ALLOC(ostk, uint8_t, msg->bodySize());
+		size_t secure_len = 0;
+		cipher->encryptStart(hdr, sizeof(*hdr));
+		for (int i = 0; i < iov_count; ++i)
+		{
+			cipher->encryptUpdate(body_iov[i].iov_base, secure + secure_len, body_iov[i].iov_len);
+			secure_len += body_iov[i].iov_len;
+		}
+		assert(secure_len == msg->bodySize());
+		cipher->encryptFinish();
+
+		iov[1].iov_base = cipher->oIV;
+		iov[1].iov_len = sizeof(cipher->oIV);
+		iov[2].iov_base = secure;
+		iov[2].iov_len = secure_len;
+		iov[3].iov_base = cipher->oMAC;
+		iov[3].iov_len = sizeof(cipher->oMAC);
+		*count = 4;
+	}
+	else
+	{
+		memcpy(&iov[1], body_iov, iov_count * sizeof(struct iovec));
+		*count = iov_count + 1;
+	}
+
 	return iov;
 }
 
@@ -287,6 +324,15 @@ void xic::prepareEngine(const SettingPtr& setting)
 		s = setting->getString("xic.passport.shadow");
 		if (!s.empty())
 			xic_passport_shadow = ShadowBox::createFromFile(s);
+
+		s = setting->getString("xic.cipher");
+		if (!s.empty())
+		{
+			MyCipher::CipherSuite cipher = MyCipher::get_cipher_id_from_name(s);
+			if (cipher < 0)
+				throw XERROR_FMT(XError, "Unknown xic.cipher value \"%s\"", s.c_str());
+			xic_cipher = cipher;
+		}
 
 		xic_acm_server = setting->getInt("xic.acm.server", DEFAULT_ACM_SERVER);
 		xic_acm_client = setting->getInt("xic.acm.client", DEFAULT_ACM_CLIENT);
@@ -1416,6 +1462,18 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			if (!xstr_equal(&M2, &M2_mine))
 				throw XERROR_FMT(XError, "srp6a M2 not equal");
 
+			xstr_t cipher = args.getXstr("CIPHER");
+			MyCipher::CipherSuite suite = (cipher.len == 0) ? MyCipher::CLEARTEXT
+					: MyCipher::get_cipher_id_from_name(make_string(cipher));
+			if (suite < 0)
+				throw XERROR_FMT(XError, "Unknown CIPHER \"%.*s\"", XSTR_P(&cipher));
+
+			if (suite > 0)
+			{
+				xstr_t K = srp6aClient->compute_K();
+				_cipher = new MyCipher(suite, K.data, K.len);
+			}
+
 			_ck_state = CK_FINISH;
 			_srp6a.reset();
 		}
@@ -1465,9 +1523,16 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			if (!xstr_equal(&M1, &M1_mine))
 				throw XERROR_FMT(XError, "srp6a M1 not equal");
 
+			if (xic_cipher > 0)
+			{
+				xstr_t K = srp6aServer->compute_K();
+				_cipher = new MyCipher(xic_cipher, K.data, K.len);
+			}
+
 			xstr_t M2 = srp6aServer->compute_M2();
 			CheckWriter cw("SRP6a4");
 			cw.paramBlob("M2", M2);
+			cw.param("CIPHER", MyCipher::get_cipher_name_from_id(xic_cipher));
 			send_kmsg(cw.take());
 			send_kmsg(HelloMessage::create());
 

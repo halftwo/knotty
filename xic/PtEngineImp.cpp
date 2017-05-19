@@ -544,7 +544,7 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 
 	try
 	{
-		XicMessage::Header hdr;
+		uint32_t bodySize = -1;
 		char *p;
 
 		iobuf_bstate_clear(&_ib);
@@ -553,7 +553,7 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 		{
 			LOC_ANCHOR
 			{
-				ssize_t rc = iobuf_peek(&_ib, sizeof(hdr), &p);
+				ssize_t rc = iobuf_peek(&_ib, sizeof(_iHeader), &p);
 				if (rc < 0)
 				{
 					if (_state < ST_WAITING_HELLO)
@@ -566,7 +566,7 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 						if (_state >= ST_ACTIVE)
 							throw XERROR_MSG(ConnectionLostException, _info);
 						else if (_ck_state > CK_INIT)
-							throw XERROR(AuthenticationException);
+							throw XERROR_MSG(AuthenticationException, _info);
 						else
 							throw XERROR_MSG(ConnectFailedException, _info);
 					}
@@ -575,30 +575,36 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 				}
 
 				_recent_active = true;
-				if (rc < (ssize_t)sizeof(hdr))
+				if (rc < (ssize_t)sizeof(_iHeader))
 					LOC_PAUSE(0);
 			}
-			memcpy(&hdr, p, sizeof(hdr));
-			iobuf_skip(&_ib, sizeof(hdr));
+			memcpy(&_iHeader, p, sizeof(_iHeader));
+			iobuf_skip(&_ib, sizeof(_iHeader));
 
-			if (hdr.magic != 'X')
-				throw XERROR_FMT(ProtocolException, "Invalid packet header magic %#x", hdr.magic);
+			if (_iHeader.magic != 'X')
+				throw XERROR_FMT(ProtocolException, "%s Invalid packet header magic %#x", _info.c_str(), _iHeader.magic);
 
-			if (hdr.version != 'I')
-				throw XERROR_FMT(ProtocolException, "Unknown packet version %#x", hdr.version);
+			if (_iHeader.version != 'I')
+				throw XERROR_FMT(ProtocolException, "%s Unknown packet version %#x", _info.c_str(), _iHeader.version);
 
-			if (hdr.flags != 0)
-				throw XERROR_FMT(ProtocolException, "Unknown packet header flag %#x", hdr.flags);
+			if (_iHeader.flags & ~XIC_FLAG_MASK)
+				throw XERROR_FMT(ProtocolException, "%s Unknown packet header flag %#x", _info.c_str(), _iHeader.flags);
 
-			xnet_msb32(&hdr.bodySize);
-			if (hdr.bodySize > xic_message_size)
-				throw XERROR_FMT(MessageSizeException, "Huge packet bodySize %lu>%u",
-					(unsigned long)hdr.bodySize, xic_message_size);
-
-			if (hdr.msgType == 'H')
+			_flagCipher = (_iHeader.flags & XIC_FLAG_CIPHER);
+			if (_flagCipher && !_cipher)
 			{
-				if (hdr.bodySize != 0)
-					throw XERROR_MSG(ProtocolException, "Invalid hello message");
+				throw XERROR_FMT(ProtocolException, "%s CIPHER flag set but No CIPHER negociated before", _info.c_str());
+			}
+
+			bodySize = xnet_m32(_iHeader.bodySize);
+			if (bodySize > xic_message_size)
+				throw XERROR_FMT(MessageSizeException, "%s Huge packet bodySize %lu>%u",
+					_info.c_str(), (unsigned long)bodySize, xic_message_size);
+
+			if (_iHeader.msgType == 'H')
+			{
+				if (bodySize != 0)
+					throw XERROR_FMT(ProtocolException, "%s Invalid hello message", _info.c_str());
 
 				if (_state < ST_ACTIVE)
 				{
@@ -611,10 +617,10 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 				}
 				continue;
 			}
-			else if (hdr.msgType == 'B')
+			else if (_iHeader.msgType == 'B')
 			{
-				if (hdr.bodySize != 0)
-					throw XERROR_MSG(ProtocolException, "Invalid close message");
+				if (bodySize != 0)
+					throw XERROR_FMT(ProtocolException, "%s Invalid close message", _info.c_str());
 
 				if (xic_dlog_debug)
 					dlog("XIC.DEBUG", "peer=%s+%d #=Close message received", _peer_ip, _peer_port);
@@ -624,8 +630,39 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 				goto done;
 			}
 
-			_rMsg = XicMessage::create(hdr.msgType, hdr.bodySize);
+			if (_flagCipher)
+			{
+				if (bodySize <= _cipher->extraSize())
+					throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
+							_info.c_str(), (unsigned long)bodySize);
 
+				LOC_ANCHOR
+				{
+					ssize_t rc = iobuf_peek(&_ib, sizeof(_cipher->iIV), &p);
+					if (rc < 0)
+					{
+						if (rc == -2)
+						{
+							if (_state >= ST_CLOSING)
+								return -1;
+							throw XERROR_MSG(ConnectionLostException, _info);
+						}
+						throw XERROR_FMT(SocketException, "%s errno=%d", _info.c_str(), errno);
+					}
+
+					_recent_active = true;
+					if (rc < (ssize_t)sizeof(_cipher->iIV))
+						LOC_PAUSE(0);
+				}
+
+				memcpy(_cipher->iIV, p, sizeof(_cipher->iIV));
+				iobuf_skip(&_ib, sizeof(_cipher->iIV));
+			}
+
+			bodySize = xnet_m32(_iHeader.bodySize);
+			if (_flagCipher)
+				bodySize -= _cipher->extraSize();
+			_rMsg = XicMessage::create(_iHeader.msgType, bodySize);
 			_ipos = 0;
 
 			LOC_ANCHOR
@@ -647,6 +684,38 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 				_recent_active = true;
 				if (_ipos < (int)body.len)
 					LOC_PAUSE(0);
+			}
+
+			if (_flagCipher)
+			{
+				LOC_ANCHOR
+				{
+					ssize_t rc = iobuf_peek(&_ib, sizeof(_cipher->iMAC), &p);
+					if (rc < 0)
+					{
+						if (rc == -2)
+						{
+							if (_state >= ST_CLOSING)
+								return -1;
+							throw XERROR_MSG(ConnectionLostException, _info);
+						}
+						throw XERROR_FMT(SocketException, "%s errno=%d", _info.c_str(), errno);
+					}
+
+					_recent_active = true;
+					if (rc < (ssize_t)sizeof(_cipher->iMAC))
+						LOC_PAUSE(0);
+				}
+
+				memcpy(_cipher->iMAC, p, sizeof(_cipher->iMAC));
+				iobuf_skip(&_ib, sizeof(_cipher->iMAC));
+
+				xstr_t body = _rMsg->body();
+				_cipher->decryptStart(&_iHeader, sizeof(_iHeader));
+				_cipher->decryptUpdate(body.data, body.data, body.len);
+				bool ok = _cipher->decryptFinish();
+				if (!ok)
+					throw XERROR_FMT(ProtocolException, "Msg body failed to decrypt, %s", _info.c_str());
 			}
 
 			if (_rMsg->msgType() == 'C')
@@ -1057,7 +1126,7 @@ again:
 		}
 
 		_wMsg = !_kq.empty() ? _kq.front() : _wq.front();
-		_ov = get_msg_iovec(_wMsg, &_ov_num);
+		_ov = get_msg_iovec(_wMsg, &_ov_num, _cipher);
 
 		LOC_ANCHOR
 		{
@@ -1066,7 +1135,7 @@ again:
 			// to be no more than 1024 
 			int count = (_ov_num < 1024) ? _ov_num : 1024;
 			ssize_t rc = xnet_writev_nonblock(_fd, _ov, count);
-				
+
 			if (rc < 0)
 			{
 				if (xic_dlog_warning)
@@ -1191,7 +1260,7 @@ void PtListener::event_on_fd(const XEvent::DispatcherPtr& dispatcher, int events
 			cw.param("reason", "ip not allowed");
 			CheckPtr check = cw.take();
 			int iov_num;
-			struct iovec *iov = get_msg_iovec(check, &iov_num);
+			struct iovec *iov = get_msg_iovec(check, &iov_num, MyCipherPtr());
 			::writev(sock, iov, iov_num);
 			_engine->getTimer()->addTask(XTimerTask::create(::close, sock), 1000);
 			continue;

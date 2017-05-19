@@ -68,8 +68,8 @@ if test "$PHP_XIC" != "no"; then
   PHP_NEW_EXTENSION(xic, [	\
 		php_xic.cpp util.cpp Connection.cpp xs_XError.cpp \
 		xic_Engine.cpp xic_Proxy.cpp xic_Exception.cpp \
-		vbs_Blob.cpp vbs_Dict.cpp vbs_Decimal.cpp vbs_codec.cpp \
-		smart_write.c \
+		vbs_Blob.cpp vbs_Dict.cpp vbs_Decimal.cpp \
+		vbs_codec.cpp smart_write.c \
 		xslib/XRefCount.cpp xslib/XError.cpp xslib/XLock.cpp \
 		xslib/cxxstr.cpp xslib/xio_cxx.cpp \
 		xslib/Srp6a.cpp \
@@ -81,9 +81,10 @@ if test "$PHP_XIC" != "no"; then
 		xslib/decContext.c xslib/decDouble.c xslib/decQuad.c \
 		xslib/decimal64.c xslib/mp.c xslib/bit.c \
 		xslib/unixfs.c xslib/vbs.c xslib/sha1.c xslib/sha256.c \
+		xslib/rijndael.c xslib/aes_eax.c xslib/cmac_aes.c \
 		dlog/dlog.c dlog/dlog_imp.c \
 		xic/SecretBox.cpp xic/VData.cpp xic/VWriter.cpp \
 		xic/XicMessage.cpp xic/XicCheck.cpp xic/XicException.cpp \
-		xic/Context.cpp \
+		xic/Context.cpp xic/MyCipher.cpp \
 	], $ext_shared)
 fi

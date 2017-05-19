@@ -28,6 +28,7 @@ xic.Endpoints = @tcp+IP1+PORT1 @tcp+IP2+PORT2 timeout=MSG_TIMEOUT2
 xic.allow.ips = 127.0.0.1 ::1 192.168.1.0/24
 xic.passport.shadow = shadow.example
 xic.passport.secret = secret.example
+xic.cipher = AES128-EAX
 
 
 xic.PThreadPool.Server.Size = 1

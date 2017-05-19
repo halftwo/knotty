@@ -6,6 +6,7 @@
 #include "xslib/vbs_pack.h"
 #include "xslib/ScopeGuard.h"
 #include "xic/VData.h"
+#include "dlog/dlog.h"
 #include <errno.h>
 #include <limits.h>
 #include <unistd.h>
@@ -185,7 +186,7 @@ void Connection::_send_check_message(int *timeout, const xic::CheckPtr& check)
 
 	ostk_t *ostk = check->ostk();
 	struct iovec *iov = OSTK_ALLOC(ostk, struct iovec, iov_num + 2);
-	memcpy(&iov[1],	body_iov, iov_num);
+	memcpy(&iov[1],	body_iov, iov_num * sizeof(struct iovec));
 
 	XicMessage::Header *hdr = OSTK_ALLOC_ONE(ostk, XicMessage::Header);
 	hdr->magic = 'X';
@@ -291,6 +292,18 @@ void Connection::_check(int *timeout)
 			xstr_t M2_cli = srp6a->compute_M2();
 			if (!xstr_equal(&M2_srv, &M2_cli))
 				throw XERROR_MSG(XError, "Server is fake? srp6a M2 not equal");
+
+			xstr_t cipher = args.getXstr("CIPHER");
+			MyCipher::CipherSuite suite = (cipher.len == 0) ? MyCipher::CLEARTEXT
+					: MyCipher::get_cipher_id_from_name(make_string(cipher));
+			if (suite < 0)
+				throw XERROR_FMT(XError, "Unknown CIPHER \"%.*s\"", XSTR_P(&cipher));
+
+			if (suite > 0)
+			{
+				xstr_t K = srp6a->compute_K();
+				_cipher = new MyCipher(suite, K.data, K.len);
+			}
 		}
 
 		ostk_free(ostk, sentry);
@@ -365,8 +378,10 @@ void Connection::_throw_IOError(const char *rdwr, int rc)
 	throw XERROR_FMT(IOError, "IO error on %s, errno=%d, endpoint=%s", rdwr, errno, _endpoint.c_str());
 }
 
+/* NB: the content of args may be modified after the function return.
+ */
 void Connection::_sendMessage(int64_t id, const xstr_t& service, const xstr_t& method,
-				const rope_t& args, const std::string& ctx, int *timeout)
+				const rope_t& args, const std::string& quest_ctx, int *timeout)
 {
 	if (_fd < 0)
 	{
@@ -376,37 +391,86 @@ void Connection::_sendMessage(int64_t id, const xstr_t& service, const xstr_t& m
 		}
 	}
 
-	unsigned char buf[512];
-	xbuf_t xb = XBUF_INIT(buf, sizeof(buf));
-	struct Header *hdr = (struct Header *)xb.data;
-	*hdr = default_hdr;
-	xb.len += sizeof(struct Header);
+	xstr_t ctx = XSTR_CXX(quest_ctx);
+	if (!ctx.len)
+		ctx = vbs_packed_empty_dict;
+
+	struct Header hdr = default_hdr;
+
+	int buf_len = 30 + service.len + method.len + ctx.len;
+	uint8_t *buf = NULL;
+	uint8_t *ptr4free = NULL;
+	if (buf_len > 4096)
+	{
+		buf = (uint8_t *)malloc(buf_len);
+		ptr4free = buf;
+	}
+	else
+	{
+		buf = (uint8_t *)alloca(buf_len);
+	}
+	ON_BLOCK_EXIT(free, ptr4free);
+
+	xbuf_t xb = XBUF_INIT(buf, buf_len);
 	vbs_packer_t pk = VBS_PACKER_INIT(xbuf_xio.write, &xb, 100);
 	vbs_pack_integer(&pk, id);
 	vbs_pack_xstr(&pk, &service);
 	vbs_pack_xstr(&pk, &method);
-	if (pk.error)
-		throw XERROR_MSG(XError, "vbs_packer_t error, service or method too long?");
+	memcpy(xb.data + xb.len, ctx.data, ctx.len);
+	xb.len += ctx.len;
 
-	int has_ctx = ctx.empty() ? 0 : 1;
-	int count = 1 + has_ctx + args.block_count;
+	hdr.msgType = 'Q';
+	hdr.bodySize = xb.len + args.length;
+	if (_cipher)
+	{
+		hdr.flags |= XIC_FLAG_CIPHER;
+		hdr.bodySize += _cipher->extraSize();
+	}
+	xnet_msb32(&hdr.bodySize);
+
+	int count = 2 + args.block_count;
+	if (_cipher)
+		count += 2;
+
 	struct iovec *iov = (struct iovec *)alloca(count * sizeof(iov[0]));
-	iov[0].iov_base = xb.data;
-	iov[0].iov_len = xb.len;
-	if (has_ctx)
+	int k = 0;
+
+	iov[k].iov_base = &hdr;
+	iov[k].iov_len = sizeof(hdr);
+	++k;
+
+	if (_cipher)
 	{
-		iov[1].iov_base = (char *)ctx.data();
-		iov[1].iov_len = ctx.length();
+		iov[k].iov_base = _cipher->oIV;
+		iov[k].iov_len = sizeof(_cipher->oIV);
+		++k;
 	}
-	else
+
+	struct iovec *body_iov = &iov[k];
+	int body_k = k;
+
+	iov[k].iov_base = xb.data;
+	iov[k].iov_len = xb.len;
+	++k;
+
+	rope_iovec(&args, &iov[k]);
+	k += args.block_count;
+
+	if (_cipher)
 	{
-		iov[1].iov_base = vbs_packed_empty_dict.data;
-		iov[1].iov_len = vbs_packed_empty_dict.len;
+		int num = k - body_k;
+		_cipher->encryptStart(&hdr, sizeof(hdr));
+		for (int i = 0; i < num; ++i)
+		{
+			_cipher->encryptUpdate(body_iov[i].iov_base, body_iov[i].iov_base, body_iov[i].iov_len);
+		}
+		_cipher->encryptFinish();
+
+		iov[k].iov_base = _cipher->oMAC;
+		iov[k].iov_len = sizeof(_cipher->oMAC);
+		++k;
 	}
-	rope_iovec(&args, &iov[2]);
-	hdr->msgType = 'Q';
-	hdr->bodySize = xb.len - sizeof(struct Header) + ctx.length() + args.length;
-	xnet_msb32(&hdr->bodySize);
+	assert(k == count);
 
 	int rc = xnet_writev_resid(_fd, &iov, &count, timeout);
 	if (rc < 0)
@@ -429,20 +493,27 @@ try
 	if (rc < 0)
 		_throw_IOError("reading answer header", rc);
 
-	if (hdr.magic != 'X'
-		|| hdr.version != 'I'
-		|| hdr.flags != 0)
+	if (hdr.magic != 'X' || hdr.version != 'I')
 	{
 		throw XERROR_FMT(ProtocolError, "Protocol header error, endpoint=%s", _endpoint.c_str());
 	}
 
-	xnet_msb32(&hdr.bodySize);
-	if (hdr.bodySize > INT_MAX)
-		throw XERROR_FMT(ProtocolError, "bodySize(%u) too large", hdr.bodySize);
+	if (hdr.flags & ~XIC_FLAG_MASK)
+		throw XERROR_FMT(ProtocolException, "%s Unknown packet header flag %#x", _endpoint.c_str(), hdr.flags);
+
+	bool flagCipher = (hdr.flags & XIC_FLAG_CIPHER);
+	if (flagCipher && !_cipher)
+	{
+		throw XERROR_FMT(ProtocolException, "%s CIPHER flag set but No CIPHER negociated before", _endpoint.c_str());
+	}
+
+	uint32_t bodySize = xnet_m32(hdr.bodySize);
+	if (bodySize > INT_MAX)
+		throw XERROR_FMT(ProtocolError, "bodySize(%u) too large", bodySize);
 
 	if (hdr.msgType == 'B')
 	{
-		if (hdr.bodySize != 0)
+		if (bodySize != 0)
 			throw XERROR_MSG(ProtocolError, "Invalid close message");
 
 		if (_fd >= 0)
@@ -456,21 +527,52 @@ try
 	else if (hdr.msgType != 'A')
 		throw XERROR_FMT(ProtocolError, "Unexpected message type(%#x), endpoint=%s", hdr.msgType, _endpoint.c_str());
 
-	xstr_t res = XSTR_INIT((unsigned char*)malloc(hdr.bodySize), hdr.bodySize);
-	if (!res.data)
+	if (flagCipher)
+	{
+		if (bodySize <= _cipher->extraSize())
+			throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
+					_endpoint.c_str(), (unsigned long)bodySize);
+		bodySize -= _cipher->extraSize();
+
+		resid = sizeof(_cipher->iIV);
+		rc = xnet_read_resid(_fd, _cipher->iIV, &resid, &timeout);
+		if (rc < 0)
+		{
+			_throw_IOError("reading cipher IV", rc);
+		}
+	}
+
+	xstr_t body = XSTR_INIT((unsigned char*)malloc(bodySize), bodySize);
+	if (!body.data)
 	{
 		throw XERROR_FMT(XError, "malloc() failed");
 	}
-	ScopeGuard guard = MakeGuard(free, res.data);
+	ScopeGuard guard = MakeGuard(free, body.data);
 
-	resid = res.len;
-	rc = xnet_read_resid(_fd, res.data, &resid, &timeout);
+	resid = body.len;
+	rc = xnet_read_resid(_fd, body.data, &resid, &timeout);
 	if (rc < 0)
 	{
 		_throw_IOError("reading answer body", rc);
 	}
 
-	vbs_unpacker_t uk = VBS_UNPACKER_INIT(res.data, res.len, -1);
+	if (flagCipher)
+	{
+		resid = sizeof(_cipher->iMAC);
+		rc = xnet_read_resid(_fd, _cipher->iMAC, &resid, &timeout);
+		if (rc < 0)
+		{
+			_throw_IOError("reading cipher MAC", rc);
+		}
+
+		_cipher->decryptStart(&hdr, sizeof(hdr));
+		_cipher->decryptUpdate(body.data, body.data, body.len);
+		bool ok = _cipher->decryptFinish();
+		if (!ok)
+			throw XERROR_FMT(ProtocolException, "Msg body failed to decrypt, %s", _endpoint.c_str());
+	}
+
+	vbs_unpacker_t uk = VBS_UNPACKER_INIT(body.data, body.len, -1);
 	intmax_t answer_id;
 	if (vbs_unpack_integer(&uk, &answer_id) < 0 || answer_id != id)
 	{
@@ -478,7 +580,7 @@ try
 	}
 
 	guard.dismiss();
-	return res;
+	return body;
 }
 catch (XError& ex)
 {

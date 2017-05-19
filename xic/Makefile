@@ -4,7 +4,7 @@
 LIBXIC_OBJS = XicMessage.o XicCheck.o XicException.o Context.o \
 	ServantI.o EngineImp.o VData.o VWriter.o \
 	PtEngineImp.o StEngineImp.o STimer.o \
-	IpMatcher.o SecretBox.o ShadowBox.o
+	IpMatcher.o SecretBox.o ShadowBox.o MyCipher.o
 
 LIBXIC = libxic.a
 

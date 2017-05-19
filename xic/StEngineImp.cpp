@@ -531,6 +531,21 @@ void StConnection::do_timeout(int rw)
 		st_thread_interrupt(_send_sth);
 }
 
+static int _check_io_result(int n, const Connection::State& state, const std::string& conInfo)
+{
+	if (n == -1)
+	{
+		if (errno == EINTR)
+			throw XERROR_MSG(InterruptException, "Interrupt");
+		else
+			throw XERROR_FMT(XSyscallError, "errno=%d", errno);
+	}
+
+	if (state >= Connection::ST_CLOSING)
+		return -1;
+	throw XERROR_MSG(ConnectionLostException, conInfo);
+}
+
 int StConnection::recv_msg(XicMessagePtr& msg)
 {
 	XicMessage::Header hdr;
@@ -553,28 +568,35 @@ int StConnection::recv_msg(XicMessagePtr& msg)
 		if (_state >= ST_ACTIVE)
 			throw XERROR_MSG(ConnectionLostException, _info);
 		else if (_ck_state > CK_INIT)
-			throw XERROR(AuthenticationException);
+			throw XERROR_MSG(AuthenticationException, _info);
 		else
 			throw XERROR_MSG(ConnectFailedException, _info);
 	}
 
 	if (hdr.magic != 'X')
-		throw XERROR_FMT(ProtocolException, "Invalid packet header magic %#x", hdr.magic);
+		throw XERROR_FMT(ProtocolException, "%s Invalid packet header magic %#x", _info.c_str(), hdr.magic);
 
 	if (hdr.version != 'I')
-		throw XERROR_FMT(ProtocolException, "Unknown packet version %#x", hdr.version);
+		throw XERROR_FMT(ProtocolException, "%s Unknown packet version %#x", _info.c_str(), hdr.version);
 
-	if (hdr.flags != 0)
-		throw XERROR_FMT(ProtocolException, "Unknown packet header flag %#x", hdr.flags);
+	if (hdr.flags & ~XIC_FLAG_MASK)
+		throw XERROR_FMT(ProtocolException, "%s Unknown packet header flag %#x", _info.c_str(), hdr.flags);
 
-	xnet_msb32(&hdr.bodySize);
-	if (hdr.bodySize > xic_message_size)
-		throw XERROR_FMT(MessageSizeException, "Huge packet bodySize %lu>%u", (unsigned long)hdr.bodySize, xic_message_size);
+	bool flagCipher = hdr.flags & XIC_FLAG_CIPHER;
+	if (flagCipher && !_cipher)
+	{
+		throw XERROR_FMT(ProtocolException, "%s CIPHER flag set but No CIPHER negociated before", _info.c_str());
+	}
+
+	uint32_t bodySize = xnet_m32(hdr.bodySize);
+	if (bodySize > xic_message_size)
+		throw XERROR_FMT(MessageSizeException, "%s Huge packet bodySize %lu>%u", 
+				_info.c_str(), (unsigned long)bodySize, xic_message_size);
 
 	if (hdr.msgType == 'H')
 	{
-		if (hdr.bodySize != 0)
-			throw XERROR_MSG(ProtocolException, "Invalid hello message");
+		if (bodySize != 0)
+			throw XERROR_FMT(ProtocolException, "%s Invalid hello message", _info.c_str());
 
 		if (_state < ST_ACTIVE)
 		{
@@ -589,8 +611,8 @@ int StConnection::recv_msg(XicMessagePtr& msg)
 	}
 	else if (hdr.msgType == 'B')
 	{
-		if (hdr.bodySize != 0)
-			throw XERROR_MSG(ProtocolException, "Invalid close message");
+		if (bodySize != 0)
+			throw XERROR_FMT(ProtocolException, "%s Invalid close message", _info.c_str());
 
 		if (xic_dlog_debug)
 			dlog("XIC.DEBUG", "peer=%s+%d #=Close message received", _peer_ip, _peer_port);
@@ -600,24 +622,44 @@ int StConnection::recv_msg(XicMessagePtr& msg)
 		return -1;
 	}
 
-	msg = XicMessage::create(hdr.msgType, hdr.bodySize);
+	if (flagCipher)
+	{
+		if (bodySize <= _cipher->extraSize())
+			throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
+					_info.c_str(), (unsigned long)bodySize);
+
+		bodySize -= _cipher->extraSize();
+
+		n = st_read_fully(_sf, _cipher->iIV, sizeof(_cipher->iIV), -1);
+		if (n < (int)sizeof(_cipher->iIV))
+		{
+			return _check_io_result(n, _state, _info);
+		}
+	}
+
+	msg = XicMessage::create(hdr.msgType, bodySize);
 
 	xstr_t body = msg->body();
 	n = st_read_fully(_sf, body.data, body.len, -1);
 	_recent_active = true;
-	if (n < (int)hdr.bodySize)
+	if (n < (int)bodySize)
 	{
-		if (n == -1)
+		return _check_io_result(n, _state, _info);
+	}
+
+	if (flagCipher)
+	{
+		n = st_read_fully(_sf, _cipher->iMAC, sizeof(_cipher->iMAC), -1);
+		if (n < (int)sizeof(_cipher->iMAC))
 		{
-			if (errno == EINTR)
-				throw XERROR_MSG(InterruptException, "Interrupt");
-			else
-				throw XERROR_FMT(XSyscallError, "errno=%d", errno);
+			return _check_io_result(n, _state, _info);
 		}
 
-		if (_state >= ST_CLOSING)
-			return -1;
-		throw XERROR_MSG(ConnectionLostException, _info);
+		_cipher->decryptStart(&hdr, sizeof(hdr));
+		_cipher->decryptUpdate(body.data, body.data, body.len);
+		bool ok = _cipher->decryptFinish();
+		if (!ok)
+			throw XERROR_FMT(ProtocolException, "Msg body failed to decrypt, %s", _info.c_str());
 	}
 
 	if (hdr.msgType == 'C')
@@ -909,7 +951,7 @@ void StConnection::send_fiber()
 			do
 			{
 				int iov_cnt = 0;
-				struct iovec *iov = get_msg_iovec(q.front(), &iov_cnt);
+				struct iovec *iov = get_msg_iovec(q.front(), &iov_cnt, _cipher);
 
 				// NB: The 3rd argument of writev() in Linux 
 				// must be no more than 1024, or error occured.
@@ -1033,7 +1075,7 @@ void StListener::accept_fiber()
 			CheckWriter cw("FORBIDDEN");
 			CheckPtr check = cw.take();
 			int iov_num;
-			struct iovec *iov = get_msg_iovec(check, &iov_num);
+			struct iovec *iov = get_msg_iovec(check, &iov_num, MyCipherPtr());
 			st_writev(sf, iov, iov_num, -1);
 			st_netfd_close(sf);
 			_engine->getTimer()->addTask(STimerTask::create(st_netfd_close, sf), 1000);

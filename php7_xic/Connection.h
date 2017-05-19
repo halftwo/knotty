@@ -9,6 +9,7 @@
 #include "xslib/Srp6a.h"
 #include "xic/XicMessage.h"
 #include "xic/XicCheck.h"
+#include "xic/MyCipher.h"
 #include <stdint.h>
 #include <string>
 
@@ -44,6 +45,8 @@ class Connection: public XRefCount
 		ST_CLOSING,
 		ST_CLOSED,
 	} _state;
+
+	MyCipherPtr _cipher;
 
 	bool _read_hello_or_check(int *timeout, ostk_t *ostk, xstr_t *command, vbs_dict_t *dict);
 	void _send_check_message(int *timeout, const xic::CheckPtr& check);
