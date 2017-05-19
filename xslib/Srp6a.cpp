@@ -95,10 +95,6 @@ void Srp6aBase::_init()
 	_ndigits = 0;
 	_bsize = 0;
 
-	_hash_size = 20;
-	_hash_func = sha1_checksum;
-	_hash_name = "SHA1";
-
 	_N = NULL;
 	_g = NULL;
 	_k = NULL;
@@ -111,6 +107,8 @@ void Srp6aBase::_init()
 	_M1 = xstr_null;
 	_M2 = xstr_null;
 	_K = xstr_null;
+
+	set_hash("SHA256");
 }
 
 bool Srp6aBase::set_hash(const char *hash)
@@ -639,15 +637,19 @@ xstr_t Srp6aClient::compute_S()
 #ifdef TEST_SRP6A
 
 #include <stdio.h>
-#define BITS	1024
+#define BITS	2048
 
 int main(int argc, char **argv)
 {
 	const char *N_str = \
-	"eeaf0ab9adb38dd69c33f80afa8fc5e86072618775ff3c0b9ea2314c9c256576"
-	"d674df7496ea81d3383b4813d692c6e0e0d5d8e250b98be48e495c1d6089dad1" 
-	"5dc7d7b46154d6b6ce8ef4ad69b15d4982559b297bcf1885c529f566660e57ec"
-	"68edbc3c05726cc02fd4cbf4976eaa9afd5138fe8376435b9fc61d2fc0eb06e3";
+	"ac6bdb41324a9a9bf166de5e1389582faf72b6651987ee07fc3192943db56050"
+	"a37329cbb4a099ed8193e0757767a13dd52312ab4b03310dcd7f48a9da04fd50"
+	"e8083969edb767b0cf6095179a163ab3661a05fbd5faaae82918a9962f0b93b8"
+	"55f97993ec975eeaa80d740adbf4ff747359d041d5c33ea71d281e446b14773b"
+	"ca97b43a23fb801676bd207a436c6481f1d2b9078717461a5b9d32e688f87748"
+	"544523b524b0d57d5ea77a2775d2ecfa032cfbdbf52fb3786160279004e57ae6"
+	"af874e7303ce53299ccc041c7bc308d82a5698f3a8d0c38271ae35f8e9dbfbb6"
+	"94b5c803d89f7ae435de236d525f54759b65e372fcd68ef20fa7111f9e4aff73";
 
 	uint8_t N_buf[MP_BUFSIZE(BITS)];
 	int N_len = unhexlify(N_buf, N_str, -1);
