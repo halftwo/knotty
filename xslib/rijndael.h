@@ -22,6 +22,7 @@ typedef struct
  */
 bool rijndael_setup_encrypt(rijndael_context *ctx, const uint8_t *key, size_t keylen);
 bool rijndael_setup_decrypt(rijndael_context *ctx, const uint8_t *key, size_t keylen);
+void rijndael_clear_context(rijndael_context *ctx);	/* in case key information leaked */
 
 
 /*

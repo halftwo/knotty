@@ -853,6 +853,11 @@ bool rijndael_setup_decrypt(rijndael_context *ctx, const uint8_t *key, size_t ke
 	return true;
 }
 
+void rijndael_clear_context(rijndael_context *ctx)
+{
+	memset(ctx, 0, sizeof(*ctx));
+}
+
 void rijndael_encrypt(const rijndael_context *ctx, const uint8_t plain[16], uint8_t cipher[16])
 {
 	uint32_t s0, s1, s2, s3, t0, t1, t2, t3;
