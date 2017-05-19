@@ -59,7 +59,9 @@ class ShadowBox: virtual public XRefCount
 	VerifierMap _vMap;
 
 	void _load();
-	void _add_default();
+	void _add_internal_parameters();
+	void _add_internal(const char *id, const char *hash, int bits, uintmax_t g, const char *N_str);
+
 	void _add_item(int lineno, Section section, uint8_t *start, uint8_t *end);
 	ShadowBox(const std::string& filename);
 public:

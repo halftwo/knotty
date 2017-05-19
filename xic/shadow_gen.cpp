@@ -39,6 +39,7 @@ void usage(const char *program)
 }
 
 int main(int argc, char **argv)
+try 
 {
 	static bset_t id_bset = make_bset_by_add_cstr(&alnum_bset, "@._-");
 	static bset_t pass_bset = make_bset_by_del_cstr(&graph_bset, ":");
@@ -70,7 +71,12 @@ int main(int argc, char **argv)
 	if (argc - optend < 1)
 		usage(prog);
 
-	if (bool(filename) ^ bool(param))
+	xstr_t paramId = XSTR_C((param && param[0]) ? param : "@2048SHA256");
+	if (paramId.data[0] == '@')
+	{
+		xstr_upper(&paramId);
+	}
+	else if (!filename)
 	{
 		usage(prog);
 	}
@@ -79,7 +85,6 @@ int main(int argc, char **argv)
 	password = (optend + 1 < argc) ? argv[optend + 1] : NULL;
 
 	ShadowBoxPtr sb = ShadowBox::createFromFile(filename ? filename : "");
-	xstr_t paramId = XSTR_C(param ? param : "*");
 
 	xstr_t hashId;
 	int bits;
@@ -209,5 +214,10 @@ int main(int argc, char **argv)
 	}
 
 	return 0;
+}
+catch (std::exception& ex)
+{
+	fprintf(stderr, "EXCEPTION: %s\n", ex.what());
+	return 1;
 }
 

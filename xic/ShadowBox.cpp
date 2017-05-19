@@ -65,7 +65,10 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 	if (xstr_key_value(&xs, '=', &key, &value) <= 0 || key.len == 0 || value.len == 0)
 		throw XERROR_FMT(XError, "Invalid syntax in line %d", lineno);
 
-	key = ostk_xstr_dup(_ostk, &key);
+	/* internal parameters are ignored */
+	if (xstr_char_equal(&key, 0, '@'))
+		return;
+
 	if (xstr_char_equal(&key, 0, '!'))
 	{
 		// temporarily change the section to SCT_VERIFIER for this item
@@ -74,6 +77,8 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 		if (key.len == 0)
 			throw XERROR_FMT(XError, "Invalid syntax in line %d", lineno);
 	}
+
+	key = ostk_xstr_dup(_ostk, &key);
 
 	if (section == SCT_SRP6A)
 	{
@@ -120,12 +125,6 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 		else if (len * 4 > bits)
 			throw XERROR_FMT(XError, "Too large N in line %d", lineno);
 
-		if (xstr_equal_cstr(&key, "*"))
-		{
-			/* Do nothing */
-			return;
-		}
-
 		xstr_t N = ostk_xstr_calloc(_ostk, MPSIZE(bits));
 		len = unhexlify_ignore_space(N.data, (char*)value.data, value.len);
 		if (len != N.len)
@@ -170,19 +169,12 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 	}
 }
 
-void ShadowBox::_add_default()
+void ShadowBox::_add_internal(const char *id, const char *hash, int bits, uintmax_t g, const char *N_str)
 {
-	const char *N_str = \
-	"eeaf0ab9adb38dd69c33f80afa8fc5e86072618775ff3c0b9ea2314c9c256576"
-	"d674df7496ea81d3383b4813d692c6e0e0d5d8e250b98be48e495c1d6089dad1"
-	"5dc7d7b46154d6b6ce8ef4ad69b15d4982559b297bcf1885c529f566660e57ec"
-	"68edbc3c05726cc02fd4cbf4976eaa9afd5138fe8376435b9fc61d2fc0eb06e3";
-
-	xstr_t paramId = ostk_xstr_dup_cstr(_ostk, "*");
-	xstr_t hid = ostk_xstr_dup_cstr(_ostk, "SHA1");
-	int bits = 1024;
-	uintmax_t g = 2;
-	xstr_t N = ostk_xstr_alloc(_ostk, MPSIZE(1024));
+	assert(id[0] == '@');
+	xstr_t paramId = ostk_xstr_dup_cstr(_ostk, id);
+	xstr_t hid = ostk_xstr_dup_cstr(_ostk, hash);
+	xstr_t N = ostk_xstr_alloc(_ostk, MPSIZE(bits));
 	int len = unhexlify_ignore_space(N.data, N_str, -1);
 	assert(len == N.len);
 
@@ -190,9 +182,31 @@ void ShadowBox::_add_default()
 	_sMap.insert(std::make_pair(paramId, srp));
 }
 
+void ShadowBox::_add_internal_parameters()
+{
+	const char *N1024_str = \
+	"eeaf0ab9adb38dd69c33f80afa8fc5e86072618775ff3c0b9ea2314c9c256576"
+	"d674df7496ea81d3383b4813d692c6e0e0d5d8e250b98be48e495c1d6089dad1"
+	"5dc7d7b46154d6b6ce8ef4ad69b15d4982559b297bcf1885c529f566660e57ec"
+	"68edbc3c05726cc02fd4cbf4976eaa9afd5138fe8376435b9fc61d2fc0eb06e3";
+
+	const char *N2048_str = \
+	"ac6bdb41324a9a9bf166de5e1389582faf72b6651987ee07fc3192943db56050"
+	"a37329cbb4a099ed8193e0757767a13dd52312ab4b03310dcd7f48a9da04fd50"
+	"e8083969edb767b0cf6095179a163ab3661a05fbd5faaae82918a9962f0b93b8"
+	"55f97993ec975eeaa80d740adbf4ff747359d041d5c33ea71d281e446b14773b"
+	"ca97b43a23fb801676bd207a436c6481f1d2b9078717461a5b9d32e688f87748"
+	"544523b524b0d57d5ea77a2775d2ecfa032cfbdbf52fb3786160279004e57ae6"
+	"af874e7303ce53299ccc041c7bc308d82a5698f3a8d0c38271ae35f8e9dbfbb6"
+	"94b5c803d89f7ae435de236d525f54759b65e372fcd68ef20fa7111f9e4aff73";
+
+	_add_internal("@1024SHA1", "SHA1", 1024, 2, N1024_str);
+	_add_internal("@2048SHA256", "SHA256", 2048, 2, N2048_str);
+}
+
 void ShadowBox::_load()
 {
-	_add_default();
+	_add_internal_parameters();
 
 	if (_filename.empty())
 		return;
@@ -276,7 +290,7 @@ void ShadowBox::_load()
 		const xstr_t& id = iter->first;
 		const xstr_t& pid = iter->second.paramId;
 
-		if (xstr_equal_cstr(&pid, "*"))
+		if (xstr_char_equal(&pid, 0, '@'))
 			continue;
 
 		Srp6aMap::iterator i = _sMap.find(pid);
@@ -303,7 +317,7 @@ void ShadowBox::dump(xio_write_function write, void *cookie)
 		const xstr_t& pid = iter->first;
 		Srp6aInfo& s = iter->second;
 
-		if (xstr_equal_cstr(&pid, "*"))
+		if (xstr_char_equal(&pid, 0, '@'))
 			continue;
 
 		iobuf_printf(&ob, "%.*s = %.*s:%d:%jd:\n", XSTR_P(&pid), XSTR_P(&s.hashId), s.bits, s.g);
