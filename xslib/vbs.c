@@ -85,6 +85,7 @@ static int _copy_dict(vbs_dict_t *dst, const vbs_dict_t *src, const xmem_t *xm, 
 
 static inline int _copy_data(vbs_data_t *dst, const vbs_data_t *src, const xmem_t *xm, void *xm_cookie)
 {
+	dst->descriptor = src->descriptor;
 	if (src->type == VBS_STRING)
 	{
 		size_t len = src->d_xstr.len;
@@ -177,8 +178,16 @@ int vbs_print_list(const vbs_list_t *list, iobuf_t *ob)
 {
 	vbs_litem_t *ent;
 
-	if (iobuf_putc(ob, '[') < 1)
-		return -1;
+	if (list->kind)
+	{
+		if (iobuf_printf(ob, "%d[", list->kind) < 0)
+			return -1;
+	}
+	else
+	{
+		if (iobuf_putc(ob, '[') < 1)
+			return -1;
+	}
 
 	for (ent = list->first; ent; ent = ent->next)
 	{
@@ -201,8 +210,16 @@ int vbs_print_dict(const vbs_dict_t *dict, iobuf_t *ob)
 {
 	vbs_ditem_t *ent;
 
-	if (iobuf_putc(ob, '{') < 1)
-		return -1;
+	if (dict->kind > 0)
+	{
+		if (iobuf_printf(ob, "%d{", dict->kind) < 0)
+			return -1;
+	}
+	else
+	{
+		if (iobuf_putc(ob, '{') < 1)
+			return -1;
+	}
 
 	for (ent = dict->first; ent; ent = ent->next)
 	{
@@ -469,6 +486,12 @@ int vbs_print_data(const vbs_data_t *pv, iobuf_t *ob)
 	}
 	else
 	{
+		if (pv->descriptor > 0)
+		{
+			if (iobuf_printf(ob, "%d@", pv->descriptor) < 0)
+				return -1;
+		}
+
 		switch (pv->type)
 		{
 		case VBS_INTEGER:
