@@ -21,7 +21,7 @@ protected:
 	uint16_t _bsize;
 
 	uint16_t _hash_size;
-	void (*_hash_func)(uint8_t *digest, const void *input, size_t size);	// default SHA1
+	void (*_hash_func)(uint8_t *digest, const void *input, size_t size);	// default SHA256
 	const char *_hash_name;
 
 	mpi_t _N;
