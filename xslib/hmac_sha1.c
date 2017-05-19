@@ -44,7 +44,7 @@ void hmac_sha1_update(hmac_sha1_context *ctx, const void *msg, size_t msg_len)
 	sha1_update(&ctx->i_ctx, msg, msg_len);
 }
 
-void hmac_sha1_finish(hmac_sha1_context *ctx, uint8_t *mac, size_t size)
+void hmac_sha1_finish(hmac_sha1_context *ctx, uint8_t *mac)
 {
 	uint8_t digest[20];
 	sha1_finish(&ctx->i_ctx, digest);
@@ -52,18 +52,16 @@ void hmac_sha1_finish(hmac_sha1_context *ctx, uint8_t *mac, size_t size)
 	sha1_update(&ctx->o_ctx, digest, sizeof(digest));
 	sha1_finish(&ctx->o_ctx, digest);
 	
-	if (size > sizeof(digest))
-		size = sizeof(digest);
-	memcpy(mac, digest, size);
+	memcpy(mac, digest, sizeof(digest));
 }
 
-void hmac_sha1_checksum(const void *key, size_t key_size, const void *msg, size_t msg_len,
-			uint8_t *mac, size_t mac_size)
+void hmac_sha1_checksum(const void *key, size_t key_size, 
+			const void *msg, size_t msg_len, uint8_t *mac)
 {
 	hmac_sha1_context ctx;
 	hmac_sha1_start(&ctx, key, key_size);
 	hmac_sha1_update(&ctx, msg, msg_len);
-	hmac_sha1_finish(&ctx, mac, mac_size);
+	hmac_sha1_finish(&ctx, mac);
 }
 
 
@@ -84,7 +82,7 @@ bool do_test(const char *key, const char *msg, const char *mac)
 	if (mac_len < sizeof(hmac) * 2)
 		return false;
 
-	hmac_sha1_checksum(key, key_len, msg, msg_len, hmac, sizeof(hmac));
+	hmac_sha1_checksum(key, key_len, msg, msg_len, hmac);
 
 	int i;
 	for (i = 0; i < sizeof(hmac); ++i)

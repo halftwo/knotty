@@ -81,7 +81,7 @@ static inline void encrypt_stream_block(aes_ccm_context *ac, ssize_t pos)
 
 /* length of nonce is (15 - counter_size)
  */
-void aes_ccm_start(aes_ccm_context *ac, bool encrypt, const uint8_t *nonce, const uint8_t *aad, size_t aad_len, size_t msg_len)
+void aes_ccm_start(aes_ccm_context *ac, bool encrypt, const void *nonce, const void *aad, size_t aad_len, size_t msg_len)
 {
 	uint8_t flags;
 	size_t i;
@@ -146,10 +146,12 @@ void aes_ccm_start(aes_ccm_context *ac, bool encrypt, const uint8_t *nonce, cons
 	memcpy(&ac->A[1], nonce, 15 - ac->counter_size);
 }
 
-ssize_t aes_ccm_update(aes_ccm_context *ac, const uint8_t *in, uint8_t *out, size_t length)
+ssize_t aes_ccm_update(aes_ccm_context *ac, const void *input, void *output, size_t length)
 {
 	ssize_t k = ac->pos % 16;
 	ssize_t len = length;
+	const uint8_t *in = (const uint8_t *)input;
+	uint8_t *out = (uint8_t *)output;
 	const uint8_t **auth_ptr = (ac->encrypt) ? &in : (const uint8_t **)&out;
 
 	if (ac->pos + len > ac->total)

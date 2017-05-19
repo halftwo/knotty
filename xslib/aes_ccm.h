@@ -29,9 +29,9 @@ void aes_ccm_config(aes_ccm_context *ac, const rijndael_context *aes, size_t mac
 
 /* length of nonce is (15 - counter_size)
  */
-void aes_ccm_start(aes_ccm_context *ac, bool encrypt, const uint8_t *nonce, const uint8_t *aad, size_t aad_len, size_t msg_len);
+void aes_ccm_start(aes_ccm_context *ac, bool encrypt, const void *nonce, const void *aad, size_t aad_len, size_t msg_len);
 
-ssize_t aes_ccm_update(aes_ccm_context *ac, const uint8_t *in, uint8_t *out, size_t len);
+ssize_t aes_ccm_update(aes_ccm_context *ac, const void *in, void *out, size_t len);
 
 ssize_t aes_ccm_finish(aes_ccm_context *ac, uint8_t *mac);
 

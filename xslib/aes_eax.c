@@ -16,7 +16,7 @@ static inline void counter_increase(uint8_t *counter)
 }
 
 void aes_eax_start(aes_eax_context *ax, const rijndael_context *aes, bool encrypt, 
-		const uint8_t *nonce, size_t nonce_len, const uint8_t *header, size_t header_len)
+		const void *nonce, size_t nonce_len, const void *header, size_t header_len)
 {
 	uint8_t block[BLOCK_SIZE];
 
@@ -63,10 +63,10 @@ static inline void xor_2block(uint8_t *d, const uint8_t *s1, const uint8_t *s2)
 	*d++ = *s1++ ^ *s2++; 		*d++ = *s1++ ^ *s2++;
 }
 
-void aes_eax_update(aes_eax_context *ax, const uint8_t *input, uint8_t *output, size_t length)
+void aes_eax_update(aes_eax_context *ax, const void *input, void *output, size_t length)
 {
-	const uint8_t *in = input;
-	uint8_t *out = output;
+	const uint8_t *in = (const uint8_t *)input;
+	uint8_t *out = (uint8_t *)output;
 	ssize_t len = length;
 
 	if (!ax->encrypt)
