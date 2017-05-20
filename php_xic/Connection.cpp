@@ -27,17 +27,17 @@ struct Header {
 
 	bool isCheck() const
 	{
-		return (memcmp(this, "XIC\0", 4) == 0);
+		return (memcmp(this, "X!C\0", 4) == 0);
 	}
 
 	bool isHello() const
 	{
-		return (memcmp(this, "XIH\0\0\0\0\0", 8) == 0);
+		return (memcmp(this, "X!H\0\0\0\0\0", 8) == 0);
 	}
 };
 
-static struct Header default_hdr = { 'X', 'I', 0, 0, 0 };
-static struct Header bye_hdr = { 'X','I','B', 0, 0 };
+static struct Header default_hdr = { 'X', '!', 0, 0, 0 };
+static struct Header bye_hdr = { 'X','!','B', 0, 0 };
 
 
 Connection::Connection(const EnginePtr& engine, const std::string& endpoint)
@@ -190,7 +190,7 @@ void Connection::_send_check_message(int *timeout, const xic::CheckPtr& check)
 
 	XicMessage::Header *hdr = OSTK_ALLOC_ONE(ostk, XicMessage::Header);
 	hdr->magic = 'X';
-	hdr->version = 'I';
+	hdr->version = '!';
 	hdr->msgType = 'C';
 	hdr->flags = 0;
 	hdr->bodySize = xnet_m32(check->bodySize());
@@ -493,7 +493,7 @@ try
 	if (rc < 0)
 		_throw_IOError("reading answer header", rc);
 
-	if (hdr.magic != 'X' || hdr.version != 'I')
+	if (hdr.magic != 'X' || hdr.version != '!')
 	{
 		throw XERROR_FMT(ProtocolError, "Protocol header error, endpoint=%s", _endpoint.c_str());
 	}

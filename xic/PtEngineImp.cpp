@@ -584,7 +584,7 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 			if (_iHeader.magic != 'X')
 				throw XERROR_FMT(ProtocolException, "%s Invalid packet header magic %#x", _info.c_str(), _iHeader.magic);
 
-			if (_iHeader.version != 'I')
+			if (_iHeader.version != '!')
 				throw XERROR_FMT(ProtocolException, "%s Unknown packet version %#x", _info.c_str(), _iHeader.version);
 
 			if (_iHeader.flags & ~XIC_FLAG_MASK)

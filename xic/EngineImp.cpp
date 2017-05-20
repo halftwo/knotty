@@ -135,7 +135,7 @@ struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count, const MyC
 
 	XicMessage::Header *hdr = OSTK_ALLOC_ONE(ostk, XicMessage::Header);
 	hdr->magic = 'X';
-	hdr->version = 'I';
+	hdr->version = '!';
 	hdr->msgType = msg->msgType();
 	hdr->flags = 0;
 	hdr->bodySize = msg->bodySize();

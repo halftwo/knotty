@@ -576,7 +576,7 @@ int StConnection::recv_msg(XicMessagePtr& msg)
 	if (hdr.magic != 'X')
 		throw XERROR_FMT(ProtocolException, "%s Invalid packet header magic %#x", _info.c_str(), hdr.magic);
 
-	if (hdr.version != 'I')
+	if (hdr.version != '!')
 		throw XERROR_FMT(ProtocolException, "%s Unknown packet version %#x", _info.c_str(), hdr.version);
 
 	if (hdr.flags & ~XIC_FLAG_MASK)

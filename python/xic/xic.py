@@ -15,8 +15,8 @@ XXX: It seems this module is not working with gevent.
 from __future__ import print_function
 
 XIC_V_EDITION  = 20160707
-XIC_V_REVISION = 20160707
-XIC_V_RELEASE  = 2335
+XIC_V_REVISION = 20170520
+XIC_V_RELEASE  = 2300
 
 __version__ = str(XIC_V_EDITION) + "." + str(XIC_V_REVISION) + "." + str(XIC_V_RELEASE)
 
@@ -137,7 +137,7 @@ _textify = vbs.textify
 
 
 def _pack_header(type, len):
-    return struct.pack('>3cBi', b'X', b'I', type, 0, len)
+    return struct.pack('>3cBi', b'X', b'!', type, 0, len)
 
 
 def _except2answer(ex):
