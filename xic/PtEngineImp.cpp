@@ -878,6 +878,8 @@ void PtConnection::sendQuest(const QuestPtr& quest, const ResultIPtr& r)
 			*p++ = '/';
 			*p++ = r->isAsync() ? 'A' : 'S';
 			*p++ = '/';
+			if (_cipher)
+				*p++ = '*';
 			*p++ = 0;
 
 			Quest* q = quest.get();

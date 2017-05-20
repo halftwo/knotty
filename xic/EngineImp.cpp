@@ -1075,6 +1075,22 @@ int ConnectionI::connectTimeout()
 		: DEFAULT_CONNECT_TIMEOUT;
 }
 
+static const char *set_locus(char *locus, const char *str, bool cipher)
+{
+	const char *s = str;
+	char *d = locus;
+
+	while (*s)
+	{
+		*d++ = *s++;
+	}
+
+	if (cipher)
+		*d++ = '*';
+	*d = 0;
+	return locus;
+}
+
 void ConnectionI::handle_quest(CurrentI& current)
 {
 	Adapter* adapter = current.adapter.get();
@@ -1084,12 +1100,14 @@ void ConnectionI::handle_quest(CurrentI& current)
 	const xstr_t& method = current._method;
 	AnswerPtr answer;
 	bool trace = true;
+	char locus[64];
 
 	try
 	{
 		if (xic_dlog_sq)
 		{
-			xdlog(vbs_xfmt, NULL, "XIC.SQ", "/",
+			set_locus(locus, "/", _cipher);
+			xdlog(vbs_xfmt, NULL, "XIC.SQ", locus,
 				"%u/%s+%u %jd Q=%.*s::%.*s C%p{>VBS_DICT<} %p{>VBS_DICT<}",
 				_sock_port, _peer_ip, _peer_port,
 				(intmax_t)txid, XSTR_P(&service), XSTR_P(&method), 
@@ -1190,9 +1208,10 @@ void ConnectionI::handle_quest(CurrentI& current)
 
 		if (log_answer)
 		{
+			set_locus(locus, "/S/", _cipher);
 			if (status && !xic_dlog_sq)
 			{
-				xdlog(vbs_xfmt, NULL, "XIC.SQE", "/S/",
+				xdlog(vbs_xfmt, NULL, "XIC.SQE", locus,
 					"%u/%s+%u %jd Q=%.*s::%.*s C%p{>VBS_DICT<} %p{>VBS_DICT<}",
 					_sock_port, _peer_ip, _peer_port,
 					(intmax_t)txid, XSTR_P(&service), XSTR_P(&method), 
@@ -1200,7 +1219,7 @@ void ConnectionI::handle_quest(CurrentI& current)
 			}
 
 			const char *tag = !txid ? "XIC.SAX" : status ? "XIC.SAE" : "XIC.SAN";
-			xdlog(vbs_xfmt, NULL, tag, "/S/",
+			xdlog(vbs_xfmt, NULL, tag, locus,
 				"%u/%s+%u %jd Q=%.*s::%.*s T=%d.%03d A=%d %p{>VBS_RAW<}",
 				_sock_port, _peer_ip, _peer_port,
 				(intmax_t)txid, XSTR_P(&service), XSTR_P(&method),
@@ -1210,7 +1229,6 @@ void ConnectionI::handle_quest(CurrentI& current)
 
 		if (log_slow || log_sample || log_except || log_mark)
 		{
-			char locus[64];
 			char *p = locus;
 			if (log_slow)
 				p = stpcpy(p, locus_srv_slow);
@@ -1220,10 +1238,7 @@ void ConnectionI::handle_quest(CurrentI& current)
 				p = stpcpy(p, "/EXCEPT");
 			if (log_mark)
 				p = stpcpy(p, "/MARK");
-			*p++ = '/';
-			*p++ = 'S';
-			*p++ = '/';
-			*p = 0;
+			set_locus(p, "/S/", _cipher);
 
 			if (answer)
 			{
@@ -1308,10 +1323,7 @@ void ConnectionI::handle_answer(AnswerPtr& answer, const ResultIPtr& result)
 			if (!used_tsc)
 				used_tsc = rdtsc() - res->start_tsc();
 			used_ms = used_tsc * 1000 / cpu_frequency();
-			locus_sync[0] = '/';
-			locus_sync[1] = res->isAsync() ? 'A' : 'S';
-			locus_sync[2] = '/';
-			locus_sync[3] = 0;
+			set_locus(locus_sync, (res->isAsync()?"/A/":"/S/"), _cipher);
 		}
 		else
 		{
@@ -1321,8 +1333,7 @@ void ConnectionI::handle_answer(AnswerPtr& answer, const ResultIPtr& result)
 			method = &na;
 			q_ctx = &vbs_packed_empty_dict;
 			q_args = &vbs_packed_empty_dict;
-			locus_sync[0] = '/';
-			locus_sync[1] = 0;
+			set_locus(locus_sync, "/", _cipher);
 		}
 
 		if (log_answer)
@@ -1630,6 +1641,7 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 				|| (random() / (RAND_MAX + 1.0) * xic_sample_server) < 1));
 		bool log_except = xic_except_server && status;
 		bool log_mark = _logit;
+		char locus[64];
 
 		if (log_answer || log_slow || log_sample || log_except || log_mark)
 		{
@@ -1640,9 +1652,10 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 
 			if (log_answer)
 			{
+				set_locus(locus, "/A/", _con->_cipher);
 				if (status && !xic_dlog_sq)
 				{
-					xdlog(vbs_xfmt, NULL, "XIC.SQE", "/A/",
+					xdlog(vbs_xfmt, NULL, "XIC.SQE", locus,
 						"%u/%s+%u %jd Q=%.*s::%.*s C%p{>VBS_DICT<} %p{>VBS_DICT<}",
 						con->_sock_port, con->_peer_ip, con->_peer_port,
 						(intmax_t)_txid, XSTR_P(&_service), XSTR_P(&_method), 
@@ -1650,7 +1663,7 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 				}
 
 				const char *tag = status ? "XIC.SAE" : "XIC.SAN";
-				xdlog(vbs_xfmt, NULL, tag, "/A/",
+				xdlog(vbs_xfmt, NULL, tag, locus,
 					"%u/%s+%u %jd Q=%.*s::%.*s T=%d.%03d A=%d %p{>VBS_RAW<}",
 					con->_sock_port, con->_peer_ip, con->_peer_port,
 					(intmax_t)_txid, XSTR_P(&_service), XSTR_P(&_method),
@@ -1660,7 +1673,6 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 
 			if (log_slow || log_sample || log_except || log_mark)
 			{
-				char locus[64];
 				char *p = locus;
 				if (log_slow)
 					p = stpcpy(p, locus_srv_slow);
@@ -1670,10 +1682,7 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 					p = stpcpy(p, "/EXCEPT");
 				if (log_mark)
 					p = stpcpy(p, "/MARK");
-				*p++ = '/';
-				*p++ = 'A';
-				*p++ = '/';
-				*p = 0;
+				set_locus(locus, "/A/", _con->_cipher);
 
 				xdlog(vbs_xfmt, NULL, "XIC.SQA", locus,
 					"T=%d.%03d %u/%s+%u %jd Q=%.*s::%.*s C%p{>VBS_DICT<} %p{>VBS_DICT<} A=%d %p{>VBS_RAW<}",
