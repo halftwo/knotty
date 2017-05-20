@@ -616,7 +616,7 @@ class Connection(object):
                 hdr += x
 
             hdr = struct.unpack('>3cBi', hdr)
-            assert(hdr[0] == b'X' and hdr[1] == b'I')
+            assert(hdr[0] == b'X' and hdr[1] == b'!')
             msgType = hdr[2]
             # flags = hdr[3]       # NOT USED
             bodyLen = hdr[4]
