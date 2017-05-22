@@ -1682,7 +1682,7 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 					p = stpcpy(p, "/EXCEPT");
 				if (log_mark)
 					p = stpcpy(p, "/MARK");
-				set_locus(locus, "/A/", _con->_cipher);
+				set_locus(p, "/A/", _con->_cipher);
 
 				xdlog(vbs_xfmt, NULL, "XIC.SQA", locus,
 					"T=%d.%03d %u/%s+%u %jd Q=%.*s::%.*s C%p{>VBS_DICT<} %p{>VBS_DICT<} A=%d %p{>VBS_RAW<}",
