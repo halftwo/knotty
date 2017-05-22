@@ -1,7 +1,6 @@
 #include "VWriter.h"
 #include "XicException.h"
 #include "xslib/xformat.h"
-#include "xslib/escape.h"
 #include <stdio.h>
 #include <stdlib.h>
 
