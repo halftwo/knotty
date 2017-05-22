@@ -25,8 +25,9 @@ int demo_client_doit(const xic::EnginePtr& engine)
 	{
 		xic::QuestWriter qw("time");
 		xic::AnswerReader ar = prx->request(qw);
-		xstr_t utc = ar.wantXstr("utc");
-		xstr_t local = ar.wantXstr("local");
+		xic::VDict vd = ar.wantVDict("strftime");
+		xstr_t utc = vd.wantXstr("utc");
+		xstr_t local = vd.wantXstr("local");
 		printf("----------------------------- time\n");
 		printf(" time=%jd\n", ar.wantInt("time"));
 		printf("  utc=%.*s\n", XSTR_P(&utc));

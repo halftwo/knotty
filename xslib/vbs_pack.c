@@ -524,7 +524,20 @@ again:
 			else if (x >= VBS_DESCRIPTOR)
 			{
 				num = (x & 0x07);
-				descriptor = num + 1;
+				if (num == 0)
+				{
+					if ((descriptor & VBS_SPECIAL_DESCRIPTOR) == 0)
+						descriptor |= VBS_SPECIAL_DESCRIPTOR;
+					else
+						return VBS_ERR_INVALID;
+				}
+				else
+				{
+					if ((descriptor & VBS_DESCRIPTOR_MAX) == 0)
+						descriptor |= num;
+					else
+						return VBS_ERR_INVALID;
+				}
 				goto again;
 			}
 			else if (!BSET_TEST(&_single_byte_bset, x))
@@ -602,13 +615,16 @@ again:
 					num |= ((uintmax_t)x) << shift;
 				}
 
-				if (num >= VBS_DESCRIPTOR_MAX)
+				if (num == 0 || num > VBS_DESCRIPTOR_MAX)
 				{
 					job->error = __LINE__;
-					return VBS_ERR_TOOBIG;
+					return VBS_ERR_INVALID;
 				}
 
-				descriptor = num + 1;
+				if ((descriptor & VBS_DESCRIPTOR_MAX) == 0)
+					descriptor |= num;
+				else
+					return VBS_ERR_INVALID;
 				goto again;
 			}
 			else if (!BSET_TEST(&_multi_byte_bset, x))
@@ -652,14 +668,22 @@ static inline int _unpack_int(vbs_unpacker_t *job, intmax_t *p_value)
 
 inline size_t vbs_size_of_descriptor(int descriptor)
 {
-	if (descriptor > 0 && descriptor <= VBS_DESCRIPTOR_MAX)
+	uint32_t value = descriptor;
+	if (value && value < (VBS_SPECIAL_DESCRIPTOR | VBS_DESCRIPTOR_MAX))
 	{
-		size_t n = 1;
-		--descriptor;
-		while (descriptor > 0x07)
+		size_t n = 0;
+		if (value & VBS_SPECIAL_DESCRIPTOR)
 		{
-			descriptor >>= 7;
 			++n;
+			value &= VBS_DESCRIPTOR_MAX;
+		}
+
+		if (value)
+		{
+			do {
+				++n;
+				value >>= 7;
+			} while (value > 0x07);
 		}
 		return n;
 	}
@@ -725,17 +749,25 @@ inline size_t vbs_head_size_of_dict(int kind)
 
 inline size_t vbs_buffer_of_descriptor(unsigned char *buf, int descriptor)
 {
-	if (descriptor > 0 && descriptor <= VBS_DESCRIPTOR_MAX)
+	uint32_t value = descriptor;
+	if (value && value < (VBS_SPECIAL_DESCRIPTOR | VBS_DESCRIPTOR_MAX))
 	{
 		unsigned char *p = buf;
-		--descriptor;
-		while (descriptor > 0x07)
+		if (value & VBS_SPECIAL_DESCRIPTOR)
 		{
-			*p++ = 0x80 | descriptor;
-			descriptor >>= 7;
+			*p++ = VBS_DESCRIPTOR;
+			value &= VBS_DESCRIPTOR_MAX;
 		}
 
-		*p++ = VBS_DESCRIPTOR | descriptor;
+		if (value)
+		{
+			while (value > 0x07)
+			{
+				*p++ = 0x80 | value;
+				value >>= 7;
+			}
+			*p++ = VBS_DESCRIPTOR | value;
+		}
 		return (p - buf);
 	}
 	return 0;
@@ -816,8 +848,7 @@ inline size_t vbs_head_buffer_of_dict(unsigned char *buf, int kind)
 
 inline size_t vbs_size_of_data(const vbs_data_t *value)
 {
-	int n = value->descriptor <= 0 ? 0
-		: vbs_size_of_descriptor(value->descriptor);
+	int n = value->descriptor ? vbs_size_of_descriptor(value->descriptor) : 0;
 
 	if (value->type == VBS_INTEGER)
 		n += vbs_size_of_integer(value->d_int);
@@ -893,12 +924,15 @@ size_t vbs_size_of_dict(const vbs_dict_t *vd)
 
 int vbs_pack_descriptor(vbs_packer_t *job, int descriptor)
 {
-	unsigned char tmpbuf[TMPBUF_SIZE];
-	size_t n = vbs_buffer_of_descriptor(tmpbuf, descriptor);
-	if (job->write(job->cookie, tmpbuf, n) != n)
+	if (descriptor)
 	{
-		job->error = __LINE__;
-		return -1;
+		unsigned char tmpbuf[TMPBUF_SIZE];
+		size_t n = vbs_buffer_of_descriptor(tmpbuf, descriptor);
+		if (job->write(job->cookie, tmpbuf, n) != n)
+		{
+			job->error = __LINE__;
+			return -1;
+		}
 	}
 	return 0;
 }

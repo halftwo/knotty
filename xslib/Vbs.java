@@ -25,7 +25,8 @@ public class Vbs
 	public static final byte VBS_STRING 	= 0x20;
 	public static final byte VBS_INTEGER	= 0x40;
 
-	public static final int VBS_DESCRIPTOR_MAX = 32767;
+	public static final int VBS_DESCRIPTOR_MAX 	= 0x7fff;
+	public static final int VBS_SPECIAL_DESCRIPTOR 	= 0x8000;
 
 	private static final int FLT_ZERO_ZERO	= 0;	// 0.0 for backward compatibility
 	private static final int FLT_ZERO	= 1;	// +0.0
@@ -88,6 +89,29 @@ public class Vbs
 			return null;
 
 		return obj;
+	}
+
+	public static void packDescriptor(OutputStream out, short descriptor) throws java.io.IOException
+	{
+		if (descriptor != 0)
+		{
+			int value = ((int)descriptor & 0xFFFF);
+			if ((value & VBS_SPECIAL_DESCRIPTOR) != 0)
+			{
+				out.write((byte)VBS_DESCRIPTOR);
+				value &= VBS_DESCRIPTOR_MAX;
+			}
+
+			if (value)
+			{
+				while (value > 0x07)
+				{
+					out.write((byte)(0x80 + (value & 0x7F)));
+					value = value >>> 7;
+				}
+				out.write((byte)(VBS_DESCRIPTOR | value));
+			}
+		}
 	}
 
 	public static void pack(OutputStream out, Object obj, String charsetName) throws java.io.IOException
@@ -435,7 +459,20 @@ public class Vbs
 				else if (x >= VBS_DESCRIPTOR)
 				{
 					num = (x & 0x07);
-					descriptor = (int)num + 1;
+					if (num == 0)
+					{
+						if ((descriptor & VBS_SPECIAL_DESCRIPTOR) == 0)
+							descriptor |= VBS_SPECIAL_DESCRIPTOR;
+						else
+							return -1;
+					}
+					else
+					{
+						if ((descriptor & VBS_DESCRIPTOR_MAX) == 0)
+							descriptor |= (int)num;
+						else
+							return -1;
+					}
 					continue;
 				}
 				else 
@@ -500,11 +537,15 @@ public class Vbs
 						num |= ((long)x) << shift;
 					}
 
-					if (num >= VBS_DESCRIPTOR_MAX)
+					if (num == 0 || num >= VBS_DESCRIPTOR_MAX)
 					{
 						return -1;
 					}
-					descriptor = (int)num + 1;
+
+					if ((descriptor & VBS_DESCRIPTOR_MAX) == 0)
+						descriptor |= (int)num;
+					else
+						return -1;
 					continue;
 				}
 				else 

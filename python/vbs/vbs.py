@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 #
 
-__version__ = "20170516.20170516"
+__version__ = "20170522.20170522"
 
 import sys
 import decimal
@@ -47,6 +47,9 @@ except ImportError:
     VBS_FLOATING    = 0x1E
     VBS_STRING	    = 0x20
     VBS_INTEGER     = 0x40
+
+    VBS_DESCRIPTOR_MAX      = 0x7fff
+    VBS_SPECIAL_DESCRIPTOR  = 0x8000
 
     _CHR_TAIL 	    = _itemtype(VBS_TAIL)
     _CHR_LIST 	    = _itemtype(VBS_LIST)
@@ -240,7 +243,16 @@ except ImportError:
                 elif (x >= VBS_DESCRIPTOR):
                     tag = VBS_DESCRIPTOR
                     num = (x & 0x07)
-                    descriptor = num + 1
+                    if num == 0:
+                        if (descriptor & VBS_SPECIAL_DESCRIPTOR) == 0:
+                            descriptor |= VBS_SPECIAL_DESCRIPTOR
+                        else:
+                            raise ValueError
+                    else:
+                        if (descriptor & VBS_DESCRIPTOR_MAX) == 0:
+                            descriptor |= num;
+                        else:
+                            raise ValueError
                     continue
 
             else:
@@ -272,8 +284,12 @@ except ImportError:
                 elif (x >= VBS_DESCRIPTOR):
                     tag = VBS_DESCRIPTOR
                     num += (x & 0x07) << shift
-                    descriptor = num + 1;
-                    if (descriptor > 65535):
+                    if (num == 0 or num > VBS_DESCRIPTOR_MAX):
+                        raise ValueError
+
+                    if (descriptor & VBS_DESCRIPTOR_MAX) == 0:
+                        descriptor |= num;
+                    else:
                         raise ValueError
                     continue
 

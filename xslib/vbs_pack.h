@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#define VBS_DESCRIPTOR_MAX	0x7fff
+#define VBS_SPECIAL_DESCRIPTOR	0x8000
 
 extern const xstr_t vbs_packed_empty_list;
 extern const xstr_t vbs_packed_empty_dict;
@@ -66,8 +68,6 @@ typedef enum
 } vbs_type_t;
 
 
-#define VBS_DESCRIPTOR_MAX	INT16_MAX
-
 
 typedef struct vbs_data_t vbs_data_t;
 typedef struct vbs_list_t vbs_list_t;
@@ -105,7 +105,7 @@ struct vbs_data_t
 	   If it is allocated, don't forget to free it when appropriate.
  	 */
 
-	int16_t			descriptor;
+	uint16_t		descriptor;
 
 	union
 	{
@@ -524,7 +524,7 @@ typedef struct
 	unsigned char *end;
 	int16_t max_depth;
 	int16_t depth;
-	int16_t descriptor;
+	uint16_t descriptor;
 	int16_t error;
 } vbs_unpacker_t;
 
