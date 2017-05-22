@@ -4,7 +4,6 @@
 #include "sha256.h"
 #include "urandom.h"
 #include "xnet.h"
-#include "hex.h"
 #include <alloca.h>
 #include <assert.h>
 
@@ -636,6 +635,7 @@ xstr_t Srp6aClient::compute_S()
 
 #ifdef TEST_SRP6A
 
+#include "hex.h"
 #include <stdio.h>
 #define BITS	2048
 
