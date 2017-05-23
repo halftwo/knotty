@@ -2,6 +2,7 @@
 #include "vbs_Blob.h"
 #include "vbs_Dict.h"
 #include "vbs_Decimal.h"
+#include "vbs_Data.h"
 
 namespace vbs
 {
@@ -213,6 +214,16 @@ void v_encode_r(vbs_packer_t *job, zval *val TSRMLS_DC)
 			decimal64_t dec;
 			decimal64_from_cstr(&dec, Z_STRVAL_P(zv), NULL);
 			vbs_pack_decimal64(job, dec);
+			break;
+		}
+		else if (Z_OBJCE_P(val) == vbs::classEntry_Data)
+		{
+			zval *zv1 = zend_read_property(vbs::classEntry_Data, val, "r", sizeof("r") - 1, 0 TSRMLS_CC);
+			int descriptor = Z_LVAL_P(zv1);
+			vbs_pack_descriptor(job, descriptor);
+
+			zval *zv2 = zend_read_property(vbs::classEntry_Data, val, "d", sizeof("d") - 1, 0 TSRMLS_CC);
+			v_encode_r(job, zv2);
 			break;
 		}
 		/* fall through */

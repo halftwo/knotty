@@ -24,7 +24,8 @@ if (extension_loaded($module)) {
 	print xic_build_info() . "\n";
 
 	$bb = vbs_blob("world");
-	$dd = vbs_dict(array("hello"=>vbs_blob($bb), "ni"=>"hao", "float"=>0.0, 'dec'=>vbs_decimal('1.2340000E373')));
+	$d = vbs_data("hao", VBS_SPECIAL_DESCRIPTOR);
+	$dd = vbs_dict(array("hello"=>vbs_blob($bb), "ni"=>$d, "float"=>0.0, 'dec'=>vbs_decimal('1.2340000E373')));
 	$x = vbs_dict($dd);
 	$y = vbs_encode($x);
 	$z = vbs_decode($y, $used);

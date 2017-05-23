@@ -68,7 +68,7 @@ if test "$PHP_XIC" != "no"; then
   PHP_NEW_EXTENSION(xic, [	\
 		php_xic.cpp util.cpp Connection.cpp xs_XError.cpp \
 		xic_Engine.cpp xic_Proxy.cpp xic_Exception.cpp \
-		vbs_Blob.cpp vbs_Dict.cpp vbs_Decimal.cpp \
+		vbs_Blob.cpp vbs_Dict.cpp vbs_Decimal.cpp vbs_Data.cpp \
 		vbs_codec.cpp smart_write.c \
 		xslib/XRefCount.cpp xslib/XError.cpp xslib/XLock.cpp \
 		xslib/cxxstr.cpp xslib/xio_cxx.cpp \

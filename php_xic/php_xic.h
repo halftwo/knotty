@@ -3,9 +3,9 @@
 
 #include "util.h"
 
-#define PHP_XIC_EDITION     20170522
-#define PHP_XIC_REVISION    20170522
-#define PHP_XIC_RELEASE     2100
+#define PHP_XIC_EDITION     20170523
+#define PHP_XIC_REVISION    20170523
+#define PHP_XIC_RELEASE     1800
 
 #define PHP_XIC_VERSION     XS_TOSTR(PHP_XIC_EDITION)"."XS_TOSTR(PHP_XIC_REVISION)"."XS_TOSTR(PHP_XIC_RELEASE)
 
@@ -49,11 +49,14 @@ PHP_RSHUTDOWN_FUNCTION(xic);
    proto string xic_Exception::getRaiser();
    proto array xic_Exception::getDetail();
 
-   proto string vbs_Blob::toString();
+   proto string v_Blob::toString();
 
-   proto array vbs_Dict::toArray();
+   proto array v_Dict::toArray();
 
-   proto string vbs_Decimal::toString();
+   proto string v_Decimal::toString();
+
+   proto mixed v_Data()::getData();
+   proto int v_Data()::getDescriptor();
 */
 
 
@@ -74,19 +77,24 @@ PHP_FUNCTION(xic_self_id);
 PHP_FUNCTION(xic_self);
 
 
-/* proto vbs_Blob vbs_blob(string $str);
+/* proto v_Blob vbs_blob(string $str);
  */
 PHP_FUNCTION(vbs_blob);
 
 
-/* proto vbs_Dict vbs_dict(array $arr);
+/* proto v_Dict vbs_dict(array $arr);
  */
 PHP_FUNCTION(vbs_dict);
 
 
-/* proto vbs_Decimal vbs_decimal(string $s);
+/* proto v_Decimal vbs_decimal(string $str);
  */
 PHP_FUNCTION(vbs_decimal);
+
+
+/* proto v_Data vbs_data(mixed $data, int descriptor);
+ */
+PHP_FUNCTION(vbs_data);
 
 
 /* proto string vbs_encode(mixed $arg);

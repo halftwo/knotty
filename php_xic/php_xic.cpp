@@ -10,6 +10,7 @@
 #include "vbs_Blob.h"
 #include "vbs_Dict.h"
 #include "vbs_Decimal.h"
+#include "vbs_Data.h"
 #include "vbs_codec.h"
 #include "smart_write.h"
 #include "ext/standard/info.h"
@@ -75,6 +76,7 @@ zend_function_entry xic_functions[] = {
 	PHP_FE(vbs_blob, NULL)
 	PHP_FE(vbs_dict, NULL)
 	PHP_FE(vbs_decimal, NULL)
+	PHP_FE(vbs_data, NULL)
 	PHP_FE(vbs_encode, arginfo_vbs_encode)
 	PHP_FE(vbs_decode, arginfo_vbs_decode)
 	PHP_FE(vbs_encode_write, arginfo_vbs_encode_write)
@@ -278,6 +280,30 @@ PHP_FUNCTION(vbs_decimal)
 		{
 			raise_Exception(0 TSRMLS_CC, "Wrong parameters for vbs_decimal(string $s)");
 		}
+	}
+	catch (std::exception& ex)
+	{
+		raise_Exception(0 TSRMLS_CC, "%s", ex.what());
+	}
+}
+
+PHP_FUNCTION(vbs_data)
+{
+	zval *dat;
+	long descriptor;
+	long max = VBS_DESCRIPTOR_MAX | VBS_SPECIAL_DESCRIPTOR;
+
+	try {
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/l", &dat, &descriptor) != SUCCESS)
+		{
+			raise_Exception(0 TSRMLS_CC, "Wrong parameters for vbs_data(mixed $d, int descriptor)");
+		}
+		else if (descriptor < 0 || descriptor > max)
+		{
+				raise_Exception(0 TSRMLS_CC, "descriptor of vbs_data should be a positive integer not greater than %d", VBS_DESCRIPTOR_MAX);
+		}
+
+		vbs::create_Data(return_value, dat, descriptor TSRMLS_CC);
 	}
 	catch (std::exception& ex)
 	{
@@ -545,6 +571,7 @@ PHP_MINIT_FUNCTION(xic)
 	vbs::init_Blob(TSRMLS_C);
 	vbs::init_Dict(TSRMLS_C);
 	vbs::init_Decimal(TSRMLS_C);
+	vbs::init_Data(TSRMLS_C);
 
 	return SUCCESS;
 }

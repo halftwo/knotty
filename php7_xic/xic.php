@@ -5,15 +5,19 @@
  * @author jiagui
  */
 #
+# xic.so extension includes following constants:
+#	VBS_SPECIAL_DESCRIPTOR
+#	VBS_DESCRIPTOR_MAX
 #
 # xic.so extension includes following functions:
 #	xic_Engine xic_engine();
 #	string xic_self_id();
 #	string xic_self();
 #
-#	vbs_Blob vbs_blob(string $s);
-#	vbs_Dict vbs_dict(array $a);
-#	vbs_Decimal vbs_decimal(string $s);
+#	v_Blob vbs_blob(string $s);
+#	v_Dict vbs_dict(array $a);
+#	v_Decimal vbs_decimal(string $s);
+#	v_Data vbs_data(mixed $d, ing descriptor);
 #
 #	string vbs_encode(mixed $value);
 #	mixed vbs_decode(string $vbs [, int &$used]);

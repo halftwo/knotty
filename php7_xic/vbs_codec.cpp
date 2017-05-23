@@ -221,15 +221,14 @@ void v_encode_r(vbs_packer_t *job, zval *val TSRMLS_DC)
 		}
 		else if (Z_OBJCE_P(val) == vbs::classEntry_Data)
 		{
-			zval rv;
-			ZVAL_UNDEF(&rv);
-			zval *zv = zend_read_property(vbs::classEntry_Decimal, val, "r", sizeof("r") - 1, 0, &rv TSRMLS_CC);
-			int descriptor = Z_LVAL_P(zv);
+			zval rv1, rv2;
+
+			zval *r = zend_read_property(vbs::classEntry_Data, val, "r", sizeof("r") - 1, 0, &rv1 TSRMLS_CC);
+			int descriptor = Z_LVAL_P(r);
 			vbs_pack_descriptor(job, descriptor);
 
-			ZVAL_UNDEF(&rv);
-			zv = zend_read_property(vbs::classEntry_Decimal, val, "d", sizeof("d") - 1, 0, &rv TSRMLS_CC);
-			v_encode_r(job, zv);
+			zval *d = zend_read_property(vbs::classEntry_Data, val, "d", sizeof("d") - 1, 0, &rv2 TSRMLS_CC);
+			v_encode_r(job, d);
 			break;
 		}
 

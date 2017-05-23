@@ -290,13 +290,14 @@ PHP_FUNCTION(vbs_data)
 {
 	zval *dat;
 	zend_long descriptor = 0;
+	zend_long max = VBS_DESCRIPTOR_MAX | VBS_SPECIAL_DESCRIPTOR;
 
 	try {
-		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "zl", &dat, &descriptor) != SUCCESS)
+		if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z/l", &dat, &descriptor) != SUCCESS)
 		{
 			raise_Exception(0 TSRMLS_CC, "Wrong parameters for vbs_data(mixed $data, int $descriptor)");
 		}
-		else if (descriptor < 0 || descriptor > VBS_DESCRIPTOR_MAX)
+		else if (descriptor < 0 || descriptor > max)
 		{
 			raise_Exception(0 TSRMLS_CC, "descriptor of vbs_data should be a positive integer not greater than %d", VBS_DESCRIPTOR_MAX);
 		}
