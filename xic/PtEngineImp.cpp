@@ -930,22 +930,6 @@ void PtConnection::event_on_fd(const XEvent::DispatcherPtr& dispatcher, int even
 		if (do_read(dispatcher) < 0)
 			rc = -1;
 	}
-	if (events & XEvent::CLOSE_EVENT)
-	{
-		if (_state < ST_CLOSING)
-		{
-			XERROR_VAR_MSG(ConnectionLostException, ex, _info);
-			{
-				Lock lock(*this);
-				set_exception(ex.clone());
-			}
-
-			if (xic_dlog_warning)
-				dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
-		}
-
-		rc = -1;
-	}
 
 	if (rc < 0)
 	{
