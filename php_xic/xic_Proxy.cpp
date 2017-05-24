@@ -194,9 +194,9 @@ PHP_METHOD(xic_Proxy, invoke)
 	}
 }
 
-/* proto void xic_Proxy::invoke_oneway(string $method, array $args [, array $ctx])
+/* proto void xic_Proxy::invokeOneway(string $method, array $args [, array $ctx])
  */
-PHP_METHOD(xic_Proxy, invoke_oneway)
+PHP_METHOD(xic_Proxy, invokeOneway)
 {
 	ProxyPtr prx = MyObject<Proxy>::get(getThis() TSRMLS_CC);
 	char *name;
@@ -246,7 +246,7 @@ static zend_function_entry _methods[] = {
 	PHP_ME(xic_Proxy, setContext, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(xic_Proxy, getContext, NULL, ZEND_ACC_PUBLIC)
 	PHP_ME(xic_Proxy, invoke, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Proxy, invoke_oneway, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Proxy, invokeOneway, NULL, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 
