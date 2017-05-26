@@ -1794,9 +1794,20 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 		else if (xstr_equal(&method, &x00mark))
 		{
 			VDict args = quest->args();
-			xstr_t m = args.wantXstr("method");
-			bool on = args.wantBool("on");
-			mtab->mark(m, on);
+
+			std::vector<xstr_t> marks = args.getXstrVector("marks");
+			for (size_t i = 0; i < marks.size(); ++i)
+			{
+				const xstr_t& method = marks[i];
+				mtab->mark(method, true);
+			}
+
+			std::vector<xstr_t> nomarks = args.getXstrVector("nomarks");
+			for (size_t i = 0; i < nomarks.size(); ++i)
+			{
+				const xstr_t& method = nomarks[i];
+				mtab->mark(method, false);
+			}
 
 			AnswerWriter aw;
 			VListWriter lw = aw.paramVList("marks");

@@ -1,0 +1,33 @@
+
+\x00
+=====================
+
+=> uuid {}
+<= { uuid^%s; }
+
+
+=> info {}
+<= {...}
+
+
+=> tune { ?dlog^{}; ?allow^{}; ?xlog^{}; ?timeout^{}; ?acm^{}; ?slow^{}; ?sample^{}; ?except^{}; }
+<= {...}
+
+
+
+$(SERVICE)
+=====================
+
+
+=> \x00ping {}
+<= {}
+
+
+=> \x00stat {}
+<= { counter^{%s^%i}; marks^[%s]; }
+
+
+=> \x00mark { ?marks^[%s]; ?nomarks^[%s]; }
+<= { marks^[%s]; }
+
+

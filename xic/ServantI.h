@@ -40,8 +40,7 @@ struct MethodTab
 	NodeType* find(const xstr_t& name) const;
 	NodeType* next(const NodeType *node) const;
 
-	void mark(const xstr_t& method, bool on=true) const;
-	void markMany(const xstr_t& methods, bool on=true) const;
+	void mark(const xstr_t& method, bool on) const;
 
 	mutable xatomic64_t notFound;
 private:

@@ -17,7 +17,8 @@ MethodTab::NodeType::NodeType(const char *name_, size_t nlen_, const Servant::Me
 
 MethodTab::MethodTab(const PairType* pairs, size_t size)
 {
-	size_t slot_num = round_up_power_two(size > SHRT_MAX ? SHRT_MAX : size < 16 ? 16 : size);
+	size_t slot_num = XS_CLAMP(size, 16, SHRT_MAX);
+	slot_num = round_up_power_two(slot_num * 2);
 	_ostk = ostk_create(0);
 	_tab = OSTK_CALLOC(_ostk, NodeType*, slot_num);
 	_mask = slot_num - 1;
@@ -107,15 +108,5 @@ void MethodTab::mark(const xstr_t& method, bool on) const
 	NodeType* node = find(method);
 	if (node)
 		node->mark = on;
-}
-
-void MethodTab::markMany(const xstr_t& methods, bool on) const
-{
-	xstr_t tmp = methods;
-	xstr_t xs;
-	while (xstr_token_cstr(&tmp, ", ", &xs))
-	{
-		mark(xs, on);
-	}
 }
 
