@@ -1772,20 +1772,18 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 		else if (xstr_equal(&method, &x00stat))
 		{
 			AnswerWriter aw;
-			VDictWriter dw = aw.paramVDict("counter");
 
+			VDictWriter dw = aw.paramVDict("counter");
 			int64_t notFound = xatomic64_get(&mtab->notFound);
 			dw.kv("__METHOD_NOT_FOUND__", notFound);
-
-			const MethodTab::NodeType *node = NULL;
-			while ((node = mtab->next(node)) != NULL)
+			for (node = NULL; (node = mtab->next(node)) != NULL; )
 			{
 				int64_t ncall = xatomic64_get(&node->ncall);
 				dw.kv(node->name, ncall);
 			}
 
 			VListWriter lw = aw.paramVList("marks");
-			while ((node = mtab->next(node)) != NULL)
+			for (node = NULL; (node = mtab->next(node)) != NULL; )
 			{
 				if (node->mark)
 					lw.v(node->name);
