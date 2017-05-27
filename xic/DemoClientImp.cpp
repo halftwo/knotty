@@ -1,10 +1,10 @@
 #include "DemoClientImp.h"
 
-int demo_client_doit(const xic::EnginePtr& engine)
+int demo_client_doit(const xic::EnginePtr& engine, const std::string& serverIp)
 {
 	SecretBoxPtr sb = SecretBox::createFromContent("@++=complex:complicated");
 	engine->setSecretBox(sb);
-	std::string proxy = "Tester @tcp++5555";
+	std::string proxy = "Tester @tcp+" + serverIp + "+5555";
 	xic::ProxyPtr prx = engine->stringToProxy(proxy);
 
 	{
@@ -25,10 +25,12 @@ int demo_client_doit(const xic::EnginePtr& engine)
 	{
 		xic::QuestWriter qw("time");
 		xic::AnswerReader ar = prx->request(qw);
+		xstr_t con = ar.getXstr("con");
 		xic::VDict vd = ar.wantVDict("strftime");
 		xstr_t utc = vd.wantXstr("utc");
 		xstr_t local = vd.wantXstr("local");
 		printf("----------------------------- time\n");
+		printf("  con=%.*s\n", XSTR_P(&con));
 		printf(" time=%jd\n", ar.wantInt("time"));
 		printf("  utc=%.*s\n", XSTR_P(&utc));
 		printf("local=%.*s\n", XSTR_P(&local));

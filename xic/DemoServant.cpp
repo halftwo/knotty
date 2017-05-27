@@ -34,6 +34,7 @@ XIC_METHOD(DemoServant, time)
 	}
 
         xic::AnswerWriter aw;
+	aw.param("con", current.con->info());
         aw.param("time", t);
 
         struct tm tm;

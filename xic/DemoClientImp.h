@@ -3,7 +3,7 @@
 
 #include "Engine.h"
 
-int demo_client_doit(const xic::EnginePtr& engine);
+int demo_client_doit(const xic::EnginePtr& engine, const std::string& serverIp);
 
 #endif
 

@@ -2,7 +2,8 @@
 
 static int run(int argc, char **argv, const xic::EnginePtr& engine)
 {
-	int rc = demo_client_doit(engine);
+	std::string serverIp = (argc > 1) ? argv[1] : "";
+	int rc = demo_client_doit(engine, serverIp);
 	engine->shutdown();
 	engine->waitForShutdown();
 	return rc;
