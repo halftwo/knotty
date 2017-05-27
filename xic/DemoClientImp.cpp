@@ -1,10 +1,14 @@
 #include "DemoClientImp.h"
 
-int demo_client_doit(const xic::EnginePtr& engine, const std::string& serverIp)
+int demo_client_doit(const xic::EnginePtr& engine, const std::string& serverAddr)
 {
-	SecretBoxPtr sb = SecretBox::createFromContent("@++=complex:complicated");
+	SecretBoxPtr sb = SecretBox::createFromContent("@++=hello:world");
 	engine->setSecretBox(sb);
-	std::string proxy = "Tester @tcp+" + serverIp + "+5555";
+
+	std::string proxy = "Demo @tcp+" + serverAddr;
+	if (serverAddr.find('+') == std::string::npos)
+		proxy += "+5555";
+
 	xic::ProxyPtr prx = engine->stringToProxy(proxy);
 
 	{

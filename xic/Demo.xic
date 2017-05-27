@@ -1,10 +1,10 @@
 
 
-Tester or Demo
+Demo
 ===============
 
 => time { ?time^%i; }
-<= { time^%i; utc^%s; local^%s; }
+<= { con^%s; time^%i; utc^%s; local^%s; }
 
 => echo { ... }
 <= { ... }
