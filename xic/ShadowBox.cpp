@@ -171,7 +171,6 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 
 void ShadowBox::_add_internal(const char *id, const char *hash, int bits, uintmax_t g, const char *N_str)
 {
-	assert(id[0] == '@');
 	xstr_t paramId = ostk_xstr_dup_cstr(_ostk, id);
 	xstr_t hid = ostk_xstr_dup_cstr(_ostk, hash);
 	xstr_t N = ostk_xstr_alloc(_ostk, MPSIZE(bits));
@@ -184,6 +183,10 @@ void ShadowBox::_add_internal(const char *id, const char *hash, int bits, uintma
 
 void ShadowBox::_add_internal_parameters()
 {
+	const char *N512_str = \
+	"d4c7f8a2b32c11b8fba9581ec4ba4f1b04215642ef7355e37c0fc0443ef756ea"
+	"2c6b8eeb755a1c723027663caa265ef785b8ff6a9b35227a52d86633dbdfca43";
+
 	const char *N1024_str = \
 	"eeaf0ab9adb38dd69c33f80afa8fc5e86072618775ff3c0b9ea2314c9c256576"
 	"d674df7496ea81d3383b4813d692c6e0e0d5d8e250b98be48e495c1d6089dad1"
@@ -200,7 +203,12 @@ void ShadowBox::_add_internal_parameters()
 	"af874e7303ce53299ccc041c7bc308d82a5698f3a8d0c38271ae35f8e9dbfbb6"
 	"94b5c803d89f7ae435de236d525f54759b65e372fcd68ef20fa7111f9e4aff73";
 
-	_add_internal("@1024SHA1", "SHA1", 1024, 2, N1024_str);
+	// NB: '*' as paramId is deprecated, will be removed later.
+	// DONT use it.
+	_add_internal("*", "SHA1", 1024, 2, N1024_str);
+
+	_add_internal("@512SHA256", "SHA256", 512, 2, N512_str);
+	_add_internal("@1024SHA256", "SHA256", 1024, 2, N1024_str);
 	_add_internal("@2048SHA256", "SHA256", 2048, 2, N2048_str);
 }
 
@@ -289,9 +297,6 @@ void ShadowBox::_load()
 	{
 		const xstr_t& id = iter->first;
 		const xstr_t& pid = iter->second.paramId;
-
-		if (xstr_char_equal(&pid, 0, '@'))
-			continue;
 
 		Srp6aMap::iterator i = _sMap.find(pid);
 		if (i == _sMap.end())

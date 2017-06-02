@@ -1503,7 +1503,6 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			if (!_shadowBox->getVerifier(identity, method, paramId, salt, verifier))
 				throw XERROR_FMT(XError, "No such identity [%.*s]", XSTR_P(&identity));
 
-			
 			Srp6aServerPtr srp6aServer = _shadowBox->newSrp6aServer(paramId);
 			ENFORCE(srp6aServer);
 			_srp6a = srp6aServer;
