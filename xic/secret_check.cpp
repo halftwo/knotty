@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <set>
 
-#define SECRET_CHECK_VERSION	"20161027.1900"
+#define SECRET_CHECK_VERSION	"20170605.1800"
 
 void display_version(const char *program)
 {
@@ -95,18 +95,17 @@ int do_check(const char *secret_file, const char *shadow_file)
 		if (!checked.insert(std::string(identity + ":" + password)).second)
 			continue;
 
-		xstr_t method, paramId, salt, verifier;
-		if (!shadow->getVerifier(identity, method, paramId, salt, verifier))
+		xstr_t method, paramId, hashId, salt, verifier;
+		if (!shadow->getVerifier(identity, method, paramId, hashId, salt, verifier))
 		{
 			printf("MISS\t%.*s:%.*s\n", XSTR_P(&identity), XSTR_P(&password));
 			continue;
 		}
 
-		xstr_t hashId;
 		int bits;
 		uintmax_t g;
 		xstr_t N;
-		if (!shadow->getSrp6aParameter(paramId, hashId, bits, g, N))
+		if (!shadow->getSrp6aParameter(paramId, bits, g, N))
 		{
 			printf("ERROR shadow file not consistent\n");
 			continue;

@@ -465,7 +465,7 @@ void Srp6aClient::set_salt(const xstr_t& s)
 void Srp6aClient::gen_salt()
 {
 	ENFORCE(!_salt.len);
-	_salt = ostk_xstr_alloc(_ostk, 24);
+	_salt = ostk_xstr_alloc(_ostk, 16);
 	urandom_get_bytes(_salt.data, _salt.len);
 }
 

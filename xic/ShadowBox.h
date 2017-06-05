@@ -14,36 +14,33 @@ typedef XPtr<ShadowBox> ShadowBoxPtr;
 
 class ShadowBox: virtual public XRefCount
 {
-	struct Srp6aInfo
+	struct Srp6aParameter
 	{
-		xstr_t hashId;
 		int bits;
 		uintmax_t g;
 		xstr_t N;
-		Srp6aServerPtr srp6a;
-
-		Srp6aInfo(const xstr_t& hid, int b_, uintmax_t g_, const xstr_t& N_)
-			: hashId(hid), bits(b_), g(g_), N(N_)
+		Srp6aParameter(int b_, uintmax_t g_, const xstr_t& N_)
+			: bits(b_), g(g_), N(N_)
 		{
-			srp6a = new Srp6aServer(g, N, bits, hashId);
 		}
 	};
 
-	struct Verifier
+	struct SecretVerifier
 	{
 		xstr_t method;
 		xstr_t paramId;
-		xstr_t s;
-		xstr_t v;
+		xstr_t hashId;
+		xstr_t salt;
+		xstr_t verifier;
 
-		Verifier(const xstr_t& m_, const xstr_t& pid, const xstr_t& s_, const xstr_t& v_)
-			: method(m_), paramId(pid), s(s_), v(v_)
+		SecretVerifier(const xstr_t& m_, const xstr_t& pid, const xstr_t& h_, const xstr_t& s_, const xstr_t& v_)
+			: method(m_), paramId(pid), hashId(h_), salt(s_), verifier(v_)
 		{
 		}
 	};
 
-	typedef std::map<xstr_t, Srp6aInfo> Srp6aMap;
-	typedef std::map<xstr_t, Verifier> VerifierMap;
+	typedef std::map<xstr_t, Srp6aParameter> Srp6aParameterMap;
+	typedef std::map<xstr_t, SecretVerifier> SecretVerifierMap;
 
 	enum Section {
 		SCT_UNKNOWN,
@@ -55,14 +52,17 @@ class ShadowBox: virtual public XRefCount
 	std::string _filename;
 	time_t _mtime;
 
-	Srp6aMap _sMap;
-	VerifierMap _vMap;
+	Srp6aParameterMap _sMap;
+	SecretVerifierMap _vMap;
 
 	void _load();
 	void _add_internal_parameters();
-	void _add_internal(const char *id, const char *hash, int bits, uintmax_t g, const char *N_str);
+	void _add_internal(const char *id, int bits, uintmax_t g, const char *N_str);
 
 	void _add_item(int lineno, Section section, uint8_t *start, uint8_t *end);
+	
+	Srp6aParameter *_getSrp6aParameter(const xstr_t& paramId);
+
 	ShadowBox(const std::string& filename);
 public:
 	static ShadowBoxPtr create();
@@ -79,11 +79,12 @@ public:
 
 	size_t count() const			{ return _vMap.size(); }
 
-	bool getVerifier(const xstr_t& identity, xstr_t& method, xstr_t& paramId, xstr_t& salt, xstr_t& verifier);
+	bool getVerifier(const xstr_t& identity, xstr_t& method, xstr_t& paramId, 
+				xstr_t& hashId, xstr_t& salt, xstr_t& verifier);
 
-	bool getSrp6aParameter(const xstr_t& paramId, xstr_t& hashId, int& bits, uintmax_t& g, xstr_t& N);
+	bool getSrp6aParameter(const xstr_t& paramId, int& bits, uintmax_t& g, xstr_t& N);
 
-	Srp6aServerPtr newSrp6aServer(const xstr_t& paramId);
+	Srp6aServerPtr newSrp6aServer(const xstr_t& paramId, const xstr_t& hashId);
 };
 
 

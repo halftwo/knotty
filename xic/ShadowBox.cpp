@@ -82,34 +82,11 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 
 	if (section == SCT_SRP6A)
 	{
-		xstr_t hid, b_, g_;
-		xstr_key_value(&value, ':', &hid, &value);
+		xstr_t b_, g_;
 		xstr_key_value(&value, ':', &b_, &value);
 		xstr_key_value(&value, ':', &g_, &value);
 
-		if (!xstr_equal_cstr(&hid, "SHA1") && !xstr_equal_cstr(&hid, "SHA256"))
-			throw XERROR_FMT(XError, "Unsupported hash `%.*s` in line %d", XSTR_P(&hid), lineno);
-
-		if (value.len == 0)
-		{
-			// !key = hash:{key2}
-			if (b_.len <= 2 || b_.data[0] != '{' || b_.data[b_.len-1] != '}')
-				throw XERROR_FMT(XError, "Invalid syntax in line %d", lineno);
-
-			xstr_t xs = xstr_slice(&b_, 1, -1);
-			Srp6aMap::iterator iter = _sMap.find(xs);
-			if (iter == _sMap.end())
-				throw XERROR_FMT(XError, "Unknown reference in line %d", lineno);
-
-			int bits = iter->second.bits;
-			uintmax_t g = iter->second.g;
-			xstr_t N = iter->second.N;
-			Srp6aInfo srp(hid, bits, g, N);
-			_sMap.insert(std::make_pair(key, srp));
-			return;
-		}
-
-		// !key = hash:bits:g:N
+		// key = bits:g:N
 		xstr_t end;
 		int bits = xstr_to_long(&b_, &end, 10);
 		if (bits < 512 || bits > 1024*32 || end.len)
@@ -130,38 +107,41 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 		if (len != N.len)
 			throw XERROR_FMT(XError, "Invalid N in line %d", lineno);
 
-		hid = ostk_xstr_dup(_ostk, &hid);
-
-		Srp6aInfo srp(hid, bits, g, N);
+		Srp6aParameter srp(bits, g, N);
 		_sMap.insert(std::make_pair(key, srp));
 	}
 	else if (section == SCT_VERIFIER)
 	{
-		xstr_t method, pid, s_;
+		xstr_t method, paramId, hashId, s_;
 		xstr_key_value(&value, ':', &method, &value);
-		xstr_key_value(&value, ':', &pid, &value);
+		xstr_key_value(&value, ':', &paramId, &value);
+		xstr_key_value(&value, ':', &hashId, &value);
 		xstr_key_value(&value, ':', &s_, &value);
 
 		if (!xstr_equal_cstr(&method, "SRP6a"))
 			throw XERROR_FMT(XError, "Unsupported method in line %d", lineno);
 
-		xstr_t s = ostk_xstr_calloc(_ostk, (s_.len * 3 + 3) / 4);
-		s.len = xbase64_decode(&url_xbase64, s.data, (char*)s_.data, s_.len, XBASE64_IGNORE_SPACE | XBASE64_NO_PADDING);
-		if (s.len <= 0)
+		if (!xstr_case_equal_cstr(&hashId, "SHA256") && !xstr_case_equal_cstr(&hashId, "SHA1"))
+			throw XERROR_FMT(XError, "Unsupported hash in line %d", lineno);
+
+		xstr_t salt = ostk_xstr_calloc(_ostk, (s_.len * 3 + 3) / 4);
+		salt.len = xbase64_decode(&url_xbase64, salt.data, (char*)s_.data, s_.len, XBASE64_IGNORE_SPACE | XBASE64_NO_PADDING);
+		if (salt.len <= 0)
 			throw XERROR_FMT(XError, "Decode base64 salt failed in line %d", lineno); 
 
 		int len = value.len - xstr_count_in_bset(&value, &space_bset);
 		len = (len * 3 + 3) / 4;
-		xstr_t v = ostk_xstr_calloc(_ostk, len); 
-		v.len = xbase64_decode(&url_xbase64, v.data, (char*)value.data, value.len, XBASE64_IGNORE_SPACE | XBASE64_NO_PADDING);
-		if (v.len <= 0)
+		xstr_t verifier = ostk_xstr_calloc(_ostk, len); 
+		verifier.len = xbase64_decode(&url_xbase64, verifier.data, (char*)value.data, value.len, XBASE64_IGNORE_SPACE | XBASE64_NO_PADDING);
+		if (verifier.len <= 0)
 			throw XERROR_FMT(XError, "Decode base64 verifier failed in line %d", lineno); 
 
 		method = ostk_xstr_dup(_ostk, &method);
-		pid = ostk_xstr_dup(_ostk, &pid);
+		paramId = ostk_xstr_dup(_ostk, &paramId);
+		hashId = ostk_xstr_dup(_ostk, &hashId);
 
-		Verifier verifier(method, pid, s, v);
-		_vMap.insert(std::make_pair(key, verifier));
+		SecretVerifier sv(method, paramId, hashId, salt, verifier);
+		_vMap.insert(std::make_pair(key, sv));
 	}
 	else
 	{
@@ -169,15 +149,15 @@ void ShadowBox::_add_item(int lineno, Section section, uint8_t *start, uint8_t *
 	}
 }
 
-void ShadowBox::_add_internal(const char *id, const char *hash, int bits, uintmax_t g, const char *N_str)
+void ShadowBox::_add_internal(const char *id, int bits, uintmax_t g, const char *N_str)
 {
+	assert(id[0] == '@');
 	xstr_t paramId = ostk_xstr_dup_cstr(_ostk, id);
-	xstr_t hid = ostk_xstr_dup_cstr(_ostk, hash);
 	xstr_t N = ostk_xstr_alloc(_ostk, MPSIZE(bits));
 	int len = unhexlify_ignore_space(N.data, N_str, -1);
 	assert(len == N.len);
 
-	Srp6aInfo srp(hid, bits, g, N);
+	Srp6aParameter srp(bits, g, N);
 	_sMap.insert(std::make_pair(paramId, srp));
 }
 
@@ -203,13 +183,28 @@ void ShadowBox::_add_internal_parameters()
 	"af874e7303ce53299ccc041c7bc308d82a5698f3a8d0c38271ae35f8e9dbfbb6"
 	"94b5c803d89f7ae435de236d525f54759b65e372fcd68ef20fa7111f9e4aff73";
 
-	// NB: '*' as paramId is deprecated, will be removed later.
-	// DONT use it.
-	_add_internal("*", "SHA1", 1024, 2, N1024_str);
+	const char *N4096_str = \
+	"ffffffffffffffffc90fdaa22168c234c4c6628b80dc1cd129024e088a67cc74"
+	"020bbea63b139b22514a08798e3404ddef9519b3cd3a431b302b0a6df25f1437"
+	"4fe1356d6d51c245e485b576625e7ec6f44c42e9a637ed6b0bff5cb6f406b7ed"
+	"ee386bfb5a899fa5ae9f24117c4b1fe649286651ece45b3dc2007cb8a163bf05"
+	"98da48361c55d39a69163fa8fd24cf5f83655d23dca3ad961c62f356208552bb"
+	"9ed529077096966d670c354e4abc9804f1746c08ca18217c32905e462e36ce3b"
+	"e39e772c180e86039b2783a2ec07a28fb5c55df06f4c52c9de2bcbf695581718"
+	"3995497cea956ae515d2261898fa051015728e5a8aaac42dad33170d04507a33"
+	"a85521abdf1cba64ecfb850458dbef0a8aea71575d060c7db3970f85a6e1e4c7"
+	"abf5ae8cdb0933d71e8c94e04a25619dcee3d2261ad2ee6bf12ffa06d98a0864"
+	"d87602733ec86a64521f2b18177b200cbbe117577a615d6c770988c0bad946e2"
+	"08e24fa074e5ab3143db5bfce0fd108e4b82d120a92108011a723c12a787e6d7"
+	"88719a10bdba5b2699c327186af4e23c1a946834b6150bda2583e9ca2ad44ce8"
+	"dbbbc2db04de8ef92e8efc141fbecaa6287c59474e6bc05d99b2964fa090c3a2"
+	"233ba186515be7ed1f612970cee2d7afb81bdd762170481cd0069127d5b05aa9"
+	"93b4ea988d8fddc186ffb7dc90a6c08f4df435c934063199ffffffffffffffff";
 
-	_add_internal("@512SHA256", "SHA256", 512, 2, N512_str);
-	_add_internal("@1024SHA256", "SHA256", 1024, 2, N1024_str);
-	_add_internal("@2048SHA256", "SHA256", 2048, 2, N2048_str);
+	_add_internal("@512", 512, 2, N512_str);
+	_add_internal("@1024", 1024, 2, N1024_str);
+	_add_internal("@2048", 2048, 2, N2048_str);
+	_add_internal("@4096", 4096, 5, N4096_str);
 }
 
 void ShadowBox::_load()
@@ -293,17 +288,17 @@ void ShadowBox::_load()
 	if (start)
 		_add_item(saved_lineno, section, start, buf + len);
 
-	for (VerifierMap::iterator iter = _vMap.begin(); iter != _vMap.end(); ++iter)
+	for (SecretVerifierMap::iterator iter = _vMap.begin(); iter != _vMap.end(); ++iter)
 	{
 		const xstr_t& id = iter->first;
-		const xstr_t& pid = iter->second.paramId;
+		const xstr_t& paramId = iter->second.paramId;
 
-		Srp6aMap::iterator i = _sMap.find(pid);
+		Srp6aParameterMap::iterator i = _sMap.find(paramId);
 		if (i == _sMap.end())
-			throw XERROR_FMT(XError, "Unknown paramId `%.*s` with identity `%.*s`", XSTR_P(&pid), XSTR_P(&id));
+			throw XERROR_FMT(XError, "Unknown paramId `%.*s` with identity `%.*s`", XSTR_P(&paramId), XSTR_P(&id));
 
-		const xstr_t& v = iter->second.v;
-		if (v.len != MPSIZE(i->second.bits))
+		const xstr_t& verifier = iter->second.verifier;
+		if (verifier.len != MPSIZE(i->second.bits))
 			throw XERROR_FMT(XError, "Invalid verifier data with identity `%.*s`", XSTR_P(&id));
 	}
 }
@@ -317,15 +312,15 @@ void ShadowBox::dump(xio_write_function write, void *cookie)
 	iobuf_t ob = IOBUF_INIT(&myio, cookie, tmpbuf, sizeof(tmpbuf));
 
 	iobuf_puts(&ob, "[SRP6a]\n\n");
-	for (Srp6aMap::iterator iter = _sMap.begin(); iter != _sMap.end(); ++iter)
+	for (Srp6aParameterMap::iterator iter = _sMap.begin(); iter != _sMap.end(); ++iter)
 	{
-		const xstr_t& pid = iter->first;
-		Srp6aInfo& s = iter->second;
+		const xstr_t& paramId = iter->first;
+		Srp6aParameter& s = iter->second;
 
-		if (xstr_char_equal(&pid, 0, '@'))
+		if (xstr_char_equal(&paramId, 0, '@'))
 			continue;
 
-		iobuf_printf(&ob, "%.*s = %.*s:%d:%jd:\n", XSTR_P(&pid), XSTR_P(&s.hashId), s.bits, s.g);
+		iobuf_printf(&ob, "%.*s = %d:%jd:\n", XSTR_P(&paramId), s.bits, s.g);
 
 		len = hexlify_upper(buf, s.N.data, s.N.len);
 		for (i = 0; i < len; i += 64)
@@ -341,18 +336,18 @@ void ShadowBox::dump(xio_write_function write, void *cookie)
 	}
 
 	iobuf_puts(&ob, "[verifier]\n\n");
-	for (VerifierMap::iterator iter = _vMap.begin(); iter != _vMap.end(); ++iter)
+	for (SecretVerifierMap::iterator iter = _vMap.begin(); iter != _vMap.end(); ++iter)
 	{
 		const xstr_t& id = iter->first;
-		Verifier& v = iter->second;
+		SecretVerifier& sv = iter->second;
 
-		iobuf_printf(&ob, "%.*s = %.*s:%.*s:", XSTR_P(&id), XSTR_P(&v.method), XSTR_P(&v.paramId));
+		iobuf_printf(&ob, "!%.*s = %.*s:%.*s:%.*s:", XSTR_P(&id), XSTR_P(&sv.method), XSTR_P(&sv.paramId), XSTR_P(&sv.hashId));
 
-		len = xbase64_encode(&url_xbase64, buf, v.s.data, v.s.len, XBASE64_NO_PADDING);
+		len = xbase64_encode(&url_xbase64, buf, sv.salt.data, sv.salt.len, XBASE64_NO_PADDING);
 		iobuf_write(&ob, buf, len);
 		iobuf_puts(&ob, ":\n");
 
-		len = xbase64_encode(&url_xbase64, buf, v.v.data, v.v.len, XBASE64_NO_PADDING);
+		len = xbase64_encode(&url_xbase64, buf, sv.verifier.data, sv.verifier.len, XBASE64_NO_PADDING);
 		for (i = 0; i < len; i += 64)
 		{
 			int n = len - i;
@@ -368,43 +363,47 @@ void ShadowBox::dump(xio_write_function write, void *cookie)
 	iobuf_finish(&ob);
 }
 
-bool ShadowBox::getVerifier(const xstr_t& identity, xstr_t& method, xstr_t& paramId, xstr_t& s, xstr_t& v)
+bool ShadowBox::getVerifier(const xstr_t& identity, xstr_t& method, xstr_t& paramId, 
+				xstr_t& hashId, xstr_t& salt, xstr_t& verifier)
 {
-	VerifierMap::iterator iter = _vMap.find(identity);
+	SecretVerifierMap::iterator iter = _vMap.find(identity);
 	if (iter != _vMap.end())
 	{
-		Verifier& verifier = iter->second;
-		method = verifier.method;
-		paramId = verifier.paramId;
-		s = verifier.s;
-		v = verifier.v;
+		SecretVerifier& sv = iter->second;
+		method = sv.method;
+		paramId = sv.paramId;
+		hashId = sv.hashId;
+		salt = sv.salt;
+		verifier = sv.verifier;
 		return true;
 	}
 	return false;
 }
 
-bool ShadowBox::getSrp6aParameter(const xstr_t& paramId, xstr_t& hashId, int& bits, uintmax_t& g, xstr_t& N)
+bool ShadowBox::getSrp6aParameter(const xstr_t& paramId, int& bits, uintmax_t& g, xstr_t& N)
 {
-	Srp6aMap::iterator iter = _sMap.find(paramId);
+	Srp6aParameterMap::iterator iter = _sMap.find(paramId);
 	if (iter != _sMap.end())
 	{
-		Srp6aInfo& srp = iter->second;
-		hashId = srp.hashId;
-		bits = srp.bits;
-		g = srp.g;
-		N = srp.N;
+		const Srp6aParameter& p = iter->second;
+		bits = p.bits;
+		g = p.g;
+		N = p.N;
 		return true;
 	}
 	return false;
 }
 
-Srp6aServerPtr ShadowBox::newSrp6aServer(const xstr_t& paramId)
+Srp6aServerPtr ShadowBox::newSrp6aServer(const xstr_t& paramId, const xstr_t& hashId)
 {
-	Srp6aServerPtr s;
-	Srp6aMap::iterator iter = _sMap.find(paramId);
+	Srp6aServerPtr srp6a;
+	Srp6aParameterMap::iterator iter = _sMap.find(paramId);
 	if (iter != _sMap.end())
-		s = new Srp6aServer(*iter->second.srp6a);
-	return s;
+	{
+		const Srp6aParameter& p = iter->second;
+		srp6a = new Srp6aServer(p.g, p.N, p.bits, hashId);
+	}
+	return srp6a;
 }
 
 

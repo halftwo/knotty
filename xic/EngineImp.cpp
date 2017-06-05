@@ -1499,11 +1499,11 @@ void ConnectionI::handle_check(const CheckPtr& check)
 				throw XERROR_FMT(XError, "Unexpected command of Check message [%.*s]", XSTR_P(&cmd));
 
 			xstr_t identity = args.wantXstr("I");
-			xstr_t method, paramId, salt, verifier;
-			if (!_shadowBox->getVerifier(identity, method, paramId, salt, verifier))
+			xstr_t method, paramId, hashId, salt, verifier;
+			if (!_shadowBox->getVerifier(identity, method, paramId, hashId, salt, verifier))
 				throw XERROR_FMT(XError, "No such identity [%.*s]", XSTR_P(&identity));
 
-			Srp6aServerPtr srp6aServer = _shadowBox->newSrp6aServer(paramId);
+			Srp6aServerPtr srp6aServer = _shadowBox->newSrp6aServer(paramId, hashId);
 			ENFORCE(srp6aServer);
 			_srp6a = srp6aServer;
 

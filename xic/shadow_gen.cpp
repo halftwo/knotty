@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"20170516.2300"
+#define SHADOW_GEN_VERSION	"20170605.1800"
 
 void display_version(const char *program)
 {
@@ -23,16 +23,19 @@ void usage(const char *program)
 {
 	fprintf(stderr, "Usage: %s [options] <identity> [password]\n", program);
 	fprintf(stderr,
-"  -f filename        shadow file to read SRP6a parameters\n"
-"  -p paramId         parameter id used\n"
-"  -V                 display version information\n"
+"  -f filename          shadow file to read SRP6a parameters\n"
+"  -p paramId:hashId    parameter and hash used\n"
+"  -V                   display version information\n"
 "\n"
-"    Option -f and -p should be used both or not.\n"
+"paramId can be read from file, which must specified with option -f\n"
+"or be internal parameter, which starts with '@'.\n"
 "\n"
-"    If identity ends with %%, the %% will be removed and replaced\n" 
-"    with a random string.\n"
+"hashId can only be SHA256 or SHA1. If not specified, it will be SHA256.\n"
 "\n"
-"    If password is -, it will be read (at most 79 chars) from stdin.\n"
+"If identity ends with %%, the %% will be removed and replaced with a\n"
+"random string.\n"
+"\n"
+"If password is -, it will be read (at most 79 chars) from stdin.\n"
 "\n"
 		);
 	exit(1);
@@ -71,14 +74,25 @@ try
 	if (argc - optend < 1)
 		usage(prog);
 
-	xstr_t paramId = XSTR_C((param && param[0]) ? param : "@2048SHA256");
-	if (paramId.data[0] == '@')
-	{
-		xstr_upper(&paramId);
-	}
-	else if (!filename)
+	if (!param || !param[0])
+		param = "@2048:SHA256";
+
+	if (param[0] != '@' && !filename)
 	{
 		usage(prog);
+	}
+
+	xstr_t paramId;
+	xstr_t hashId = XSTR_C(param);
+	xstr_delimit_char(&hashId, ':', &paramId);
+
+	if (hashId.len == 0)
+		xstr_c(&hashId, "SHA256");
+
+	if (!xstr_case_equal_cstr(&hashId, "SHA256") && !xstr_case_equal_cstr(&hashId, "SHA1"))
+	{
+		fprintf(stderr, "ERROR: hashId must be SHA256 or SHA1\n");
+		exit(1);
 	}
 
 	identity = argv[optend];
@@ -86,11 +100,10 @@ try
 
 	ShadowBoxPtr sb = ShadowBox::createFromFile(filename ? filename : "");
 
-	xstr_t hashId;
 	int bits;
 	uintmax_t g;
 	xstr_t N;
-	if (!sb->getSrp6aParameter(paramId, hashId, bits, g, N))
+	if (!sb->getSrp6aParameter(paramId, bits, g, N))
 	{
 		fprintf(stderr, "Unknown paramId %s\n", param);
 		exit(1);
@@ -147,9 +160,7 @@ try
 	if (!password)
 	{
 		random_pass = true;
-		uint8_t randbuf[25];
-		urandom_get_bytes(randbuf, sizeof(randbuf));
-		xbase32_encode(passbuf, randbuf, sizeof(randbuf));
+		urandom_generate_id(passbuf, 41);
 		password = passbuf;
 	}
 	else if (strcmp(password, "-") == 0)
@@ -182,15 +193,15 @@ try
 	srp6a->set_identity(identity, password);
 	srp6a->gen_salt();
 	xstr_t salt = srp6a->get_salt();
-	xstr_t v = srp6a->compute_v();
+	xstr_t verifier = srp6a->compute_v();
 
 	int i, len;
 	char buf[8192];
 	len = xbase64_encode(&url_xbase64, buf, salt.data, salt.len, XBASE64_NO_PADDING);
-	fprintf(stdout, "\n[verifier]\n");
-	fprintf(stdout, "\n!%s = SRP6a:%.*s:%.*s:\n", identity, XSTR_P(&paramId), len, buf);
+	fprintf(stdout, "\n[verifier]\n\n");
+	fprintf(stdout, "!%s = SRP6a:%.*s:%s:%.*s:\n", identity, XSTR_P(&paramId), srp6a->hash_name(), len, buf);
 
-	len = xbase64_encode(&url_xbase64, buf, v.data, v.len, XBASE64_NO_PADDING);
+	len = xbase64_encode(&url_xbase64, buf, verifier.data, verifier.len, XBASE64_NO_PADDING);
 	for (i = 0; i < len; i += 64)
 	{
 		int n = len - i;
@@ -205,7 +216,7 @@ try
 
 	if (random_id || random_pass)
 	{
-		fputc('\n', stderr);
+		fprintf(stderr, "\n%s\n", "## DONT COPY FOLLOWING LINES TO THE SHADOW FILE");
 		if (random_id)
 			fprintf(stderr, "## ID = %s\n", identity);
 		if (random_pass)
