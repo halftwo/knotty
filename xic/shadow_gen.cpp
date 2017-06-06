@@ -13,8 +13,8 @@
 void display_version(const char *program)
 {
 	fprintf(stderr, 
-"shadow_gen "SHADOW_GEN_VERSION"\n"
-"$build: shadow_gen-"SHADOW_GEN_VERSION" "__DATE__" "__TIME__" $\n"
+"shadow_gen " SHADOW_GEN_VERSION "\n"
+"$build: shadow_gen-" SHADOW_GEN_VERSION " " __DATE__ " " __TIME__ " $\n"
 	);
 	exit(1);
 }

@@ -15,7 +15,7 @@
 #define XASSERT(expr)						\
 		((expr)	? (void)0				\
 		: throw XERROR_MSG(XAssertError, 		\
-			"`"XS_TOSTR(expr)"` failed"), (void)0)
+			"`" XS_TOSTR(expr) "` failed"), (void)0)
 
 
 #define XERROR(XErr)						\
@@ -86,7 +86,7 @@ class XCallTrace
 		void *_stk[60];
 
 		Data();
-		const std::string& str() throw();
+		const std::string& str() noexcept;
 		static void destroy(Data *dat)	{ delete dat; }
 	} *_dat;
 public:
@@ -96,7 +96,7 @@ public:
 	XCallTrace& operator=(const XCallTrace& r);
 	~XCallTrace()				{ if (_dat) OREF_DEC(_dat, Data::destroy); }
 
-	const std::string& str() const throw();
+	const std::string& str() const noexcept;
 };
 
 
@@ -127,20 +127,20 @@ public:
 		  _message(msg), _calltrace(ct)
 	{}
 
-	virtual ~XError() throw() 			{}
+	virtual ~XError() noexcept 			{}
 
 	virtual XError* clone() const			{ return new XError(*this); }
 	virtual void do_throw() const			{ throw *this; }
-	virtual const char* exname() const throw()	{ return "XError"; }
+	virtual const char* exname() const noexcept	{ return "XError"; }
 
-	virtual const char* what() const throw();
+	virtual const char* what() const noexcept;
 
-	const char* file() const throw() 		{ return _file; }
-	int line() const throw() 			{ return _line; }
-	int code() const throw() 			{ return _code; }
-	const std::string& tag() const throw() 		{ return _tag; }
-	const std::string& message() const throw() 	{ return _message; }
-	const std::string& calltrace() const throw()	{ return _calltrace.str(); }
+	const char* file() const noexcept 		{ return _file; }
+	int line() const noexcept 			{ return _line; }
+	int code() const noexcept 			{ return _code; }
+	const std::string& tag() const noexcept 	{ return _tag; }
+	const std::string& message() const noexcept 	{ return _message; }
+	const std::string& calltrace() const noexcept	{ return _calltrace.str(); }
 
 	static std::string format(const char *fmt, ...) XS_C_PRINTF(1, 2);
 	static int how;
@@ -169,7 +169,7 @@ protected:
 
 #define XE_DEFAULT_METHODS_EX(BASE, DERIVED, EXNAME)			\
 	XE_DEFAULT_METHODS_WITHOUT_EXNAME(BASE, DERIVED)		\
-	virtual const char* exname() const throw() { return ""EXNAME; }
+	virtual const char* exname() const noexcept { return "" EXNAME; }
 
 
 #define XE_DEFAULT_METHODS(BASE, DERIVED)				\

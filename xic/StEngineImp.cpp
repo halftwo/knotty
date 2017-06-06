@@ -461,7 +461,7 @@ int StConnection::disconnect()
 
 	if (theMap.size())
 	{
-		std::auto_ptr<XError> ex;
+		UniquePtr<XError> ex;
 		if (_ex.get())
 			ex.reset(_ex->clone());
 		else
@@ -1928,7 +1928,7 @@ struct ThreadEnv
 {
 	static st_thread_t create(T* obj, void (T::*mf)(), const StThreadPoolPtr& pool)
 	{
-		std::auto_ptr<ThreadEnv> p(new ThreadEnv(obj, mf, pool));
+		UniquePtr<ThreadEnv> p(new ThreadEnv(obj, mf, pool));
 		pool->wait_thread();
 		st_thread_t thr = st_thread_create(routine, p.get(), 0, pool->_stackSize);
 		if (!thr)

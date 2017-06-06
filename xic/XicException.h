@@ -17,7 +17,7 @@ public:
 };
 
 
-#define XIE_(BASE, DERIVED)	XE_X(BASE, DERIVED, "xic."XS_TOSTR(DERIVED))
+#define XIE_(BASE, DERIVED)	XE_X(BASE, DERIVED, "xic." XS_TOSTR(DERIVED))
 
 
 XIE_(XicException, 	ProtocolException)

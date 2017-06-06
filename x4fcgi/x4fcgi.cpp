@@ -20,9 +20,9 @@
 #define X4FCGI_V_REVISION         20170522
 #define X4FCGI_V_RELEASE          1800
 
-#define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION)"."XS_TOSTR(X4FCGI_V_REVISION)"."XS_TOSTR(X4FCGI_V_RELEASE)
+#define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
 
-static char build_info[] = "$build: x4fcgi-"X4FCGI_VERSION" "__DATE__" "__TIME__" $";
+static char build_info[] = "$build: x4fcgi-" X4FCGI_VERSION " " __DATE__ " " __TIME__ " $";
 
 static pthread_once_t dispatcher_once = PTHREAD_ONCE_INIT;
 static XEvent::DispatcherPtr the_dispatcher;

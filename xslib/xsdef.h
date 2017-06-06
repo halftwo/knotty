@@ -36,7 +36,7 @@
 #define XS_ABS(x)		((x) < 0 ? -(x) : (x))
 #define XS_CLAMP(x, low, high)	((x) < (low) ? (low) : (x) > (high) ? (high) : (x))
 
-#define XS_SNL(S)		""S, (sizeof(S)-1)	/* const string and it's length */
+#define XS_SNL(S)		"" S, (sizeof(S)-1)	/* const string and it's length */
 
 #define XS_ARRCOUNT(arr)	(sizeof(arr) / sizeof((arr)[0]))
 
@@ -72,6 +72,10 @@
 
 #ifndef __STDC_CONSTANT_MACROS
 #define __STDC_CONSTANT_MACROS	1
+#endif
+
+#if __cplusplus < 201103L
+#define noexcept		throw()
 #endif
 
 #endif /* __cplusplus */

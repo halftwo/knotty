@@ -5,8 +5,8 @@
 #include "XRefCount.h"
 #include "XLock.h"
 #include "XError.h"
+#include "UniquePtr.h"
 #include <pthread.h>
-#include <memory>
 
 
 XE_(XError,	XThreadError);
@@ -39,14 +39,14 @@ class XThread: public XRefCount
 
 		static void* routine(void *helper)
 		{
-			std::auto_ptr<ObjHelper0> p((ObjHelper0 *)helper);
+			UniquePtr<ObjHelper0> p((ObjHelper0 *)helper);
 			(p->obj->*(p->mfun))();
 			return NULL;
 		}
 	public:
 		static XThreadPtr create(T& obj, void (T::*mfun)(), bool joinable, size_t stackSize)
 		{
-			std::auto_ptr<ObjHelper0> helper(new ObjHelper0(&obj, mfun));
+			UniquePtr<ObjHelper0> helper(new ObjHelper0(&obj, mfun));
 			XThreadPtr thr = XThread::create_thread(routine, helper.get(), joinable, stackSize);
 			helper.release();
 			return thr;
@@ -64,14 +64,14 @@ class XThread: public XRefCount
 
 		static void* routine(void *helper)
 		{
-			std::auto_ptr<ObjHelper1> p((ObjHelper1 *)helper);
+			UniquePtr<ObjHelper1> p((ObjHelper1 *)helper);
 			(p->obj->*(p->mfun))(p->p1);
 			return NULL;
 		}
 	public:
 		static XThreadPtr create(T& obj, void (T::*mfun)(P1), P1& p1, bool joinable, size_t stackSize)
 		{
-			std::auto_ptr<ObjHelper1> helper(new ObjHelper1(&obj, mfun, p1));
+			UniquePtr<ObjHelper1> helper(new ObjHelper1(&obj, mfun, p1));
 			XThreadPtr thr = XThread::create_thread(routine, helper.get(), joinable, stackSize);
 			helper.release();
 			return thr;
@@ -88,14 +88,14 @@ class XThread: public XRefCount
 
 		static void* routine(void *helper)
 		{
-			std::auto_ptr<RCHelper0> p((RCHelper0 *)helper);
+			UniquePtr<RCHelper0> p((RCHelper0 *)helper);
 			(p->obj.get()->*(p->mfun))();
 			return NULL;
 		}
 	public:
 		static XThreadPtr create(T* obj, void (T::*mfun)(), bool joinable, size_t stackSize)
 		{
-			std::auto_ptr<RCHelper0> helper(new RCHelper0(obj, mfun));
+			UniquePtr<RCHelper0> helper(new RCHelper0(obj, mfun));
 			XThreadPtr thr = XThread::create_thread(routine, helper.get(), joinable, stackSize);
 			helper.release();
 			return thr;
@@ -113,14 +113,14 @@ class XThread: public XRefCount
 
 		static void* routine(void *helper)
 		{
-			std::auto_ptr<RCHelper1> p((RCHelper1 *)helper);
+			UniquePtr<RCHelper1> p((RCHelper1 *)helper);
 			(p->obj.get()->*(p->mfun))(p->p1);
 			return NULL;
 		}
 	public:
 		static XThreadPtr create(T* obj, void (T::*mfun)(P1), P1& p1, bool joinable, size_t stackSize)
 		{
-			std::auto_ptr<RCHelper1> helper(new RCHelper1(obj, mfun, p1));
+			UniquePtr<RCHelper1> helper(new RCHelper1(obj, mfun, p1));
 			XThreadPtr thr = XThread::create_thread(routine, helper.get(), joinable, stackSize);
 			helper.release();
 			return thr;

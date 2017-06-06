@@ -12,10 +12,11 @@
 #include "xslib/rdtsc.h"
 #include "xslib/cxxstr.h"
 #include "xslib/CarpSequence.h"
+#include "xslib/UniquePtr.h"
 #include <sstream>
 #include <map>
 #include <deque>
-#include <memory>
+
 
 namespace xic
 {
@@ -161,7 +162,7 @@ protected:
 	ProxyIPtr _prx;
 	QuestPtr _quest;
 	AnswerPtr _answer;
-	std::auto_ptr<XError> _ex;
+	UniquePtr<XError> _ex;
 	int _retryNumber;
 	bool _isSent;
 	bool _waitSent;
@@ -229,7 +230,7 @@ protected:
 	int _idx;
 	LoadBalance _loadBalance;
 	bool _incoming;
-	std::auto_ptr<CarpSequence> _cseq;
+	UniquePtr<CarpSequence> _cseq;
 
 protected:
 	ProxyI(const std::string& proxy, EngineI* engine, ConnectionI* con = 0);
@@ -277,7 +278,7 @@ protected:
 	std::string _host;
 	std::string _info;
 
-	std::auto_ptr<XError> _ex;
+	UniquePtr<XError> _ex;
 	time_t _ex_time;
 	enum State _state;
 	enum CheckState

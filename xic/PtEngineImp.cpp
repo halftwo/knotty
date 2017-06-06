@@ -84,13 +84,13 @@ AnswerPtr PtResult::takeAnswer(bool throw_ex)
 {
 	waitForCompleted();
 
-	std::auto_ptr<XError> ex;
+	UniquePtr<XError> ex;
 	AnswerPtr r;
 
 	{
 		XLock<XMutex> lock(_mutex);
 		if (_ex.get())
-			ex = _ex;
+			std::swap(_ex, ex);
 		else
 			_answer.swap(r);
 	}
@@ -141,7 +141,7 @@ void PtResult::giveError(const XError& ex)
 {
 	assert(!_answer && !_ex.get());
 
-	std::auto_ptr<XError> e(ex.clone());
+	UniquePtr<XError> e(ex.clone());
 
 	if (_con && isBad(_con->state()))
 	{
@@ -164,7 +164,7 @@ void PtResult::giveError(const XError& ex)
 		{
 			XLock<XMutex> lock(_mutex);
 			assert(!_ex.get() && !_answer);
-			_ex = e;
+			std::swap(_ex, e);
 		}
 
 		try
@@ -182,7 +182,7 @@ void PtResult::giveError(const XError& ex)
 		int x = hash32_uintptr((uintptr_t)this) & COND_MASK;
 		XLock<XMutex> lock(_mutex);
 		assert(!_ex.get() && !_answer);
-		_ex = e;
+		std::swap(_ex, e);
 		_conds[x].broadcast();
 	}
 }
@@ -491,7 +491,7 @@ int PtConnection::disconnect()
 
 	MessageQueue wq;
 	std::map<int64_t, ResultIPtr> theMap;
-	std::auto_ptr<XError> ex;
+	UniquePtr<XError> ex;
 
 	{
 		Lock lock(*this);

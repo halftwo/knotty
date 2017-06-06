@@ -15,7 +15,7 @@
 #include <map>
 #include <list>
 #include <iostream>
-#include <memory>
+
 
 namespace xic
 {

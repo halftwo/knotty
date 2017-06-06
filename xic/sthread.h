@@ -1,8 +1,8 @@
 #ifndef sthread_h_
 #define sthread_h_
 
+#include "xslib/UniquePtr.h"
 #include <st.h>
-#include <memory>
 
 
 template <class T>
@@ -11,7 +11,7 @@ class SThreadObjHelper
 public:
 	static st_thread_t create(T& obj, void (T::*mfun)(), bool joinable, size_t stackSize)
 	{
-		std::auto_ptr<SThreadObjHelper> helper(new SThreadObjHelper(&obj, mfun));
+		UniquePtr<SThreadObjHelper> helper(new SThreadObjHelper(&obj, mfun));
 		st_thread_t thr = st_thread_create(routine, helper.get(), joinable, stackSize);
 		helper.release();
 		return thr;
@@ -41,7 +41,7 @@ class SThreadRCHelper
 public:
 	static st_thread_t create(T* obj, void (T::*mfun)(), bool joinable, size_t stackSize)
 	{
-		std::auto_ptr<SThreadRCHelper> helper(new SThreadRCHelper(obj, mfun));
+		UniquePtr<SThreadRCHelper> helper(new SThreadRCHelper(obj, mfun));
 		st_thread_t thr = st_thread_create(routine, helper.get(), joinable, stackSize);
 		helper.release();
 		return thr;

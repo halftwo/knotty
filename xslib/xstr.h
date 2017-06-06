@@ -56,12 +56,12 @@ extern const bset_t xdigit_bset;	/* [0-9A-Fa-f] */
 
 
 #define XSTR_INIT(STR, LEN)	{(STR), ((ssize_t)(LEN)>0) ? (ssize_t)(LEN) : 0}
-#define XSTR_CONST(CONSTSTR)	{(uint8_t *)""CONSTSTR, (ssize_t)(sizeof(CONSTSTR)-1)}
+#define XSTR_CONST(CONSTSTR)	{(uint8_t *)"" CONSTSTR, (ssize_t)(sizeof(CONSTSTR)-1)}
 #define XSTR_C(STR)		{(uint8_t *)(STR), (ssize_t)strlen(STR)}
 #define XSTR_CXX(STRING)	{(uint8_t *)const_cast<char *>((STRING).data()), (ssize_t)(STRING).length()}
 
 
-#define xstr_const(XS, CONSTSTR)	xstr_init((XS), (uint8_t *)""CONSTSTR, (ssize_t)sizeof(CONSTSTR)-1)
+#define xstr_const(XS, CONSTSTR)	xstr_init((XS), (uint8_t *)"" CONSTSTR, (ssize_t)sizeof(CONSTSTR)-1)
 
 
 /* Used with printf("%.*s", XSTR_P(xs)) */

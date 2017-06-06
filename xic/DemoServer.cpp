@@ -1,7 +1,7 @@
 #include "DemoServant.h"
 #include "xslib/xlog.h"
 
-static char compile_time[] = "$compile: "__DATE__" "__TIME__" $";
+static char compile_time[] = "$compile: " __DATE__ " " __TIME__ " $";
 
 static int run(int argc, char **argv, const xic::EnginePtr& engine)
 {

@@ -16,8 +16,8 @@
 void display_version(const char *program)
 {
 	fprintf(stderr, 
-"secret_check "SECRET_CHECK_VERSION"\n"
-"$build: secret_check-"SECRET_CHECK_VERSION" "__DATE__" "__TIME__" $\n"
+"secret_check " SECRET_CHECK_VERSION "\n"
+"$build: secret_check-" SECRET_CHECK_VERSION " " __DATE__ " " __TIME__ " $\n"
 	);
 	exit(1);
 }

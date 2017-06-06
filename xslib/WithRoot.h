@@ -28,12 +28,12 @@ public:
 		}
 	}
 
-	bool isRoot() const throw()
+	bool isRoot() const noexcept
 	{
 		return _root;
 	}
 
-	void abdicate() const throw() 
+	void abdicate() const noexcept 
 	{
 		if (_uid != 0 && _root)
 		{
