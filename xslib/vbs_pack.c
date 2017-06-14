@@ -481,18 +481,15 @@ static const bset_t _multi_byte_bset =
 
 vbs_type_t vbs_unpack_type(vbs_unpacker_t *job, intmax_t *p_num)
 {
-	if (job->cur < job->end)
-	{
-		uintmax_t num;
-		int type, negative, x;
-		int descriptor = 0;
-		unsigned char *p = job->cur;
+	int type;
+	int descriptor = 0;
+	bool negative = false;
+	uint8_t *p = job->cur;
 again:
-		num = 0;
-		type = 0;
-		negative = 0;
-
-		x = *(unsigned char *)p++;
+	if (p < job->end)
+	{
+		uintmax_t num = 0;
+		int x = *(uint8_t *)p++;
 		if (x < 0x80)
 		{
 			type = x;
@@ -503,7 +500,7 @@ again:
 				if (type == 0x60)
 				{
 					type = VBS_INTEGER;
-					negative = 1;
+					negative = true;
 				}
 			}
 			else if (x >= VBS_BOOL)
@@ -558,7 +555,7 @@ again:
 
 			shift = 7;
 			num = x & 0x7F;
-			for (x = *(unsigned char *)p++; x >= 0x80; x = *(unsigned char *)p++, shift += 7)
+			for (x = *(uint8_t *)p++; x >= 0x80; x = *(uint8_t *)p++, shift += 7)
 			{
 				if (p >= job->end)
 				{
@@ -593,7 +590,7 @@ again:
 				if (type == 0x60)
 				{
 					type = VBS_INTEGER;
-					negative = 1;
+					negative = true;
 				}
 			}
 			else if (x >= VBS_DECIMAL)
