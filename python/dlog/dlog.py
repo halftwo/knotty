@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-__version__ = "20160919.20160919.1312"
+__version__ = "170614.170614.18"
 
 import socket
 import os

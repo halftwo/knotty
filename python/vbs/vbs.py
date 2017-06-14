@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 #
 
-__version__ = "20170522.20170522"
+__version__ = "170614.170614.18"
 
 import sys
 import decimal

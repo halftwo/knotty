@@ -2006,6 +2006,7 @@ XIC_METHOD(EngineI, info)
 	aw.param("dlog.identity", dlog_identity());
 	aw.param("engine.uuid", _uuid);
 	aw.param("engine.name", _name);
+	aw.param("xslib.version", xslib_version_string());
 
 	this->_info(aw);
 

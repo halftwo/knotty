@@ -31,7 +31,7 @@ static int le_xic;
 
   NB, We are providing a php extension (module) instead of a zend extension.
 */
-static char version[] = "$PHPXIC: " XIC_SO_VERSION "-" PHP_XIC_VERSION " module_api=" XS_TOSTR(ZEND_MODULE_API_NO) " " __DATE__ " " __TIME__ " $";
+static char version[] = "$phpxic: " XIC_SO_VERSION "-" PHP_XIC_VERSION " module_api=" XS_TOSTR(ZEND_MODULE_API_NO) " " __DATE__ " " __TIME__ " $";
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_encode, 0, 0, 1)
 	ZEND_ARG_INFO(0, value)

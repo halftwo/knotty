@@ -4,7 +4,7 @@
 * A framework to provide xic service with php in fcgi.
 * @package x4fcgi 
 * @author jiagui
-* @version 20161024.20161024.1800
+* @version 170614.170614.18
 * Following is an example program.
 *
 --------------- BEGIN OF EXAMPLE PROGRAM ------------

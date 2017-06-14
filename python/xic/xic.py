@@ -14,9 +14,9 @@ XXX: It seems this module is not working with gevent.
 """
 from __future__ import print_function
 
-XIC_V_EDITION  = 20160707
-XIC_V_REVISION = 20170520
-XIC_V_RELEASE  = 2300
+XIC_V_EDITION  = 170614
+XIC_V_REVISION = 170614
+XIC_V_RELEASE  = 18
 
 __version__ = str(XIC_V_EDITION) + "." + str(XIC_V_REVISION) + "." + str(XIC_V_RELEASE)
 

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"20170605.1800"
+#define SHADOW_GEN_VERSION	"170614.18"
 
 void display_version(const char *program)
 {

@@ -19,16 +19,15 @@
  * Visible modification means change to the interface, api, log format etc.
  * Invisible modification means performance optimization, minor bug fixes etc.
  * The edition and revision numbers consist of:
- * 	4-digit year
+ * 	2-digit year
  * 	2-digit month
  * 	2-digit day
  * The release number consist of:
- * 	2-digit hour 
- * 	2-digit minute
+ * 	2-digit hour 	start from 10
  */
-#define XIC_V_EDITION 	20170605
-#define XIC_V_REVISION 	20170614
-#define XIC_V_RELEASE 	1800
+#define XIC_V_EDITION 	170614
+#define XIC_V_REVISION 	170614
+#define XIC_V_RELEASE 	18
 
 #define XIC_VERSION	XS_TOSTR(XIC_V_EDITION) "." XS_TOSTR(XIC_V_REVISION) "." XS_TOSTR(XIC_V_RELEASE)
 

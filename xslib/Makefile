@@ -1,14 +1,14 @@
 ##
 ##
 
-EDITION  = 20170522
-REVISION = 20170614
-RELEASE  = 1800
+EDITION  = 170614
+REVISION = 170614
+RELEASE  = 18
 
 XSLIB_VERSION = $(EDITION).$(REVISION).$(RELEASE)
 
-OBJS_C = strbuf.o obpool.o bit.o xnet.o xbase64.o xbase85.o xbase32.o \
-	jenkins.o md5.o sha1.o sha256.o crc.o crc64.o cpu.o \
+OBJS_C = xsdef.o strbuf.o bit.o xnet.o xbase64.o xbase85.o xbase32.o \
+	obpool.o jenkins.o md5.o sha1.o sha256.o crc.o crc64.o cpu.o \
 	xlog.o rdtsc.o hseq.o xbuf.o vbs_build.o rbtree.o \
 	daemon.o strhash.o hdict.o rijndael.o setting.o xutf8.o \
 	wdict.o path.o ratcliff.o cmdpipe.o binary_prefix.o urlparse.o \
@@ -45,7 +45,7 @@ CFLAGS = -g -Wall -fPIC -O2
 
 CXXFLAGS = -g -Wall -fPIC -O2
 
-CPPFLAGS = -DXSLIB_RCSID
+CPPFLAGS = -DXSLIB_VERSION=$(XSLIB_VERSION)
 
 
 #all: libxs.a $(LIBXS_S_SO) $(LIBXS_X_SO) 
