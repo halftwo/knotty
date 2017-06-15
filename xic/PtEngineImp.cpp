@@ -657,6 +657,11 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 
 				memcpy(_cipher->iIV, p, sizeof(_cipher->iIV));
 				iobuf_skip(&_ib, sizeof(_cipher->iIV));
+
+				if (!_cipher->iSeqIncrease())
+					throw XERROR_FMT(ProtocolException, "%s Sequence number exhausted", _info.c_str());
+				if (!_cipher->decryptCheckSequence())
+					throw XERROR_FMT(ProtocolException, "%s Unmatched sequence number", _info.c_str());
 			}
 
 			bodySize = xnet_m32(_iHeader.bodySize);
@@ -1096,89 +1101,108 @@ int PtConnection::do_write()
  */
 int PtConnection::_write_q(Lock& lock)
 {
-again:
-	LOC_BEGIN(&_oloc);
-	while (true)
+	try 
 	{
-		LOC_ANCHOR
+	again:
+		LOC_BEGIN(&_oloc);
+		while (true)
 		{
-			bool empty = (_state < ST_ACTIVE) ? _kq.empty() : (_kq.empty() && _wq.empty());
-			if (empty)
+			LOC_ANCHOR
 			{
-				if (_msg_timeout > 0)
-					_engine->getTimer()->removeTask(_writeTimeoutTask);
-				LOC_PAUSE(0);
-			}
-		}
-
-		_wMsg = !_kq.empty() ? _kq.front() : _wq.front();
-		_ov = get_msg_iovec(_wMsg, &_ov_num, _cipher);
-
-		LOC_ANCHOR
-		{
-		write_more:
-			// NB: Linux seems to limit the 3rd argument of writev() 
-			// to be no more than 1024 
-			int count = (_ov_num < 1024) ? _ov_num : 1024;
-			ssize_t rc = xnet_writev_nonblock(_fd, _ov, count);
-
-			if (rc < 0)
-			{
-				if (xic_dlog_warning)
+				bool empty = (_state < ST_ACTIVE) ? _kq.empty() : (_kq.empty() && _wq.empty());
+				if (empty)
 				{
-					dlog("XIC.WARNING", "peer=%s+%d #=xnet_writev_nonblock()=%zd, errno=%d",
-						_peer_ip, _peer_port, rc, errno);
+					if (_msg_timeout > 0)
+						_engine->getTimer()->removeTask(_writeTimeoutTask);
+					LOC_PAUSE(0);
 				}
-				goto error;
 			}
 
-			int left = xnet_adjust_iovec(&_ov, count, rc);
-			_ov_num -= (count - left);
+			_wMsg = !_kq.empty() ? _kq.front() : _wq.front();
+			_ov = get_msg_iovec(_wMsg, &_ov_num, _cipher);
 
-			if (_ov_num > 0)
+			LOC_ANCHOR
 			{
-				if (left == 0)
-					goto write_more;
-					
-				if (_msg_timeout > 0)
-					_engine->getTimer()->replaceTaskLaterThan(_writeTimeoutTask, _msg_timeout);
-				LOC_PAUSE(0);
+			write_more:
+				// NB: Linux seems to limit the 3rd argument of writev() 
+				// to be no more than 1024 
+				int count = (_ov_num < 1024) ? _ov_num : 1024;
+				ssize_t rc = xnet_writev_nonblock(_fd, _ov, count);
+
+				if (rc < 0)
+				{
+					if (xic_dlog_warning)
+					{
+						dlog("XIC.WARNING", "peer=%s+%d #=xnet_writev_nonblock()=%zd, errno=%d",
+							_peer_ip, _peer_port, rc, errno);
+					}
+					goto error;
+				}
+
+				int left = xnet_adjust_iovec(&_ov, count, rc);
+				_ov_num -= (count - left);
+
+				if (_ov_num > 0)
+				{
+					if (left == 0)
+						goto write_more;
+						
+					if (_msg_timeout > 0)
+						_engine->getTimer()->replaceTaskLaterThan(_writeTimeoutTask, _msg_timeout);
+					LOC_PAUSE(0);
+				}
 			}
-		}
-		free_msg_iovec(_wMsg, _ov);
-		_ov = NULL;
+			free_msg_iovec(_wMsg, _ov);
+			_ov = NULL;
 
-		XicMessagePtr msg;
-		_wMsg.swap(msg);
-		if (!_wq.empty() && msg == _wq.front())
-		{
-			_wq.pop_front();
-			bool isQuest = msg->isQuest();
-			int64_t txid = msg->txid();
-
-			if (isQuest && txid)
+			XicMessagePtr msg;
+			_wMsg.swap(msg);
+			if (!_wq.empty() && msg == _wq.front())
 			{
-				ResultIPtr result = _resultMap.findResult(txid);
+				_wq.pop_front();
+				bool isQuest = msg->isQuest();
+				int64_t txid = msg->txid();
 
-				// Let other threads send waiting msgs.
-				LOC_RESET(&_oloc);
-				lock.release();
-				result->questSent();
-				lock.acquire();
+				if (isQuest && txid)
+				{
+					ResultIPtr result = _resultMap.findResult(txid);
 
-				// NB: other threads may have changed the _oloc.
-				goto again;
+					// Let other threads send waiting msgs.
+					LOC_RESET(&_oloc);
+					lock.release();
+					result->questSent();
+					lock.acquire();
+
+					// NB: other threads may have changed the _oloc.
+					goto again;
+				}
+			}
+			else
+			{
+				_kq.pop_front();
 			}
 		}
-		else
-		{
-			_kq.pop_front();
-		}
+	error:
+		LOC_END(&_oloc);
+		set_exception(new XERROR_FMT(SocketException,
+			"xnet_writev_nonblock() failed, %s errno=%d", _info.c_str(), errno));
+		return -1;
 	}
-error:
-	LOC_END(&_oloc);
-	set_exception(new XERROR_FMT(SocketException,
-		"xnet_writev_nonblock() failed, %s errno=%d", _info.c_str(), errno));
+	catch (XError& ex)
+	{
+		if (xic_dlog_warning)
+			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+
+		set_exception(ex.clone());
+	}
+	catch (std::exception& ex)
+	{
+		if (xic_dlog_warning)
+			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+
+		set_exception(new XERROR_MSG(UnknownException, ex.what()));
+	}
+	LOC_HALT(&_oloc);
 	return -1;
 }
 

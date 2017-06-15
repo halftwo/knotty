@@ -64,7 +64,7 @@ const char *MyCipher::get_cipher_name_from_id(MyCipher::CipherSuite suite)
 	return "UNKNOWN";
 }
 
-MyCipher::MyCipher(MyCipher::CipherSuite suite, const void *keyInfo, size_t keyInfoSize)
+MyCipher::MyCipher(MyCipher::CipherSuite suite, const void *keyInfo, size_t keyInfoSize, bool isServer)
 {
 	size_t key_len = (suite == AES128_EAX) ? 16
 			: (suite == AES192_EAX) ? 24
@@ -93,6 +93,13 @@ MyCipher::MyCipher(MyCipher::CipherSuite suite, const void *keyInfo, size_t keyI
 
 	if (!rijndael_setup_encrypt(&this->aes, key, key_len))
 		throw XERROR_MSG(XError, "rijndael_setup_encrypt() failed");
+
+	memset(this->oSeq, 0, sizeof(this->oSeq));
+	memset(this->iSeq, 0, sizeof(this->iSeq));
+	if (isServer)
+		this->oSeq[0] = 0x80;
+	else
+		this->iSeq[0] = 0x80;
 }
 
 MyCipher::~MyCipher()
@@ -101,12 +108,40 @@ MyCipher::~MyCipher()
 	memset(this->salt, 0, sizeof(this->salt));
 }
 
+
+static inline void counter_increase(uint8_t *counter, size_t size)
+{
+        for (size_t i = size - 1; i >= 0; --i)
+        {
+                ++counter[i];
+                if (counter[i])
+                        break;
+        }
+}
+
+bool MyCipher::oSeqIncrease()
+{
+	uint8_t before = (this->oSeq[0] & 0x80);
+	counter_increase(this->oSeq, sizeof(this->oSeq));
+	uint8_t after = (this->oSeq[0] & 0x80);
+	return (before == after);
+}
+
+bool MyCipher::iSeqIncrease()
+{
+	uint8_t before = (this->iSeq[0] & 0x80);
+	counter_increase(this->iSeq, sizeof(this->iSeq));
+	uint8_t after = (this->iSeq[0] & 0x80);
+	return (before == after);
+}
+
 void MyCipher::encryptStart(const void *header, size_t header_len)
 {
 	uint8_t nonce[32];
 	size_t nonce_len = this->salt_size + sizeof(this->oIV);
 
-	urandom_get_bytes(this->oIV, sizeof(this->oIV));
+	urandom_get_bytes(this->oIV, 8);
+	memcpy(this->oIV + 8, this->oSeq, sizeof(this->oSeq));
 	memcpy(nonce, this->salt, this->salt_size);
 	memcpy(nonce + this->salt_size, this->oIV, sizeof(this->oIV));
 	aes_eax_start(&this->oax, &this->aes, true, nonce, nonce_len, header, header_len);
@@ -122,6 +157,10 @@ void MyCipher::encryptFinish()
 	aes_eax_finish(&this->oax, this->oMAC);
 }
 
+bool MyCipher::decryptCheckSequence()
+{
+	return (memcmp(&this->iIV[8], this->iSeq, sizeof(this->iSeq)) == 0);
+}
 
 void MyCipher::decryptStart(const void *header, size_t header_len)
 {

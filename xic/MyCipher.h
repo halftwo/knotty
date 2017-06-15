@@ -15,9 +15,11 @@ class MyCipher: public XRefCount
 	size_t salt_size;
 
 public:
+	uint8_t oSeq[8];
 	uint8_t oIV[16];	// encrypt
 	uint8_t oMAC[16];	// encrypt
 
+	uint8_t iSeq[8];
 	uint8_t iIV[16];	// decrypt
 	uint8_t iMAC[16];	// decrypt
 
@@ -34,7 +36,7 @@ public:
 	static CipherSuite get_cipher_id_from_name(const std::string& name);
 	static const char *get_cipher_name_from_id(CipherSuite suite);
 
-	MyCipher(CipherSuite suite, const void *key, size_t key_size);
+	MyCipher(CipherSuite suite, const void *key, size_t key_size, bool isServer);
 	virtual ~MyCipher();
 
 	size_t extraSize()
@@ -42,14 +44,23 @@ public:
 		return sizeof(iIV) + sizeof(iMAC);
 	}
 
-	/* After calling encryptStart(), oIV is set */
+	bool oSeqIncrease();
+	bool iSeqIncrease();
+
+	/*
+ 	 * oSeqIncrease() should be called before encryptStart().
+	 * After calling encryptStart(), oIV is set.
+ 	 */
 	void encryptStart(const void *header, size_t header_size);
 	void encryptUpdate(const void *in, void *out, size_t len);
 	/* After calling encryptFinish(), oMAC is set */
 	void encryptFinish();
 
-
-	/* Must set iIV before calling decryptStart() */
+	/* 
+ 	 * iSeqIncrease() should be called before decryptCheckSequence().
+	 * Must set iIV before calling decryptCheckSequence() 
+	 */
+	bool decryptCheckSequence();
 	void decryptStart(const void *header, size_t header_size);
 	void decryptUpdate(const void *in, void *out, size_t len);
 	/* Must set iMAC before calling decryptFinish() */

@@ -152,6 +152,9 @@ struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count, const MyC
 
 	if (cipher)
 	{
+		if (!cipher->oSeqIncrease())
+			throw XERROR_MSG(XError, "Sequence number exhausted");
+
 		uint8_t *secure = OSTK_ALLOC(ostk, uint8_t, msg->bodySize());
 		size_t secure_len = 0;
 		cipher->encryptStart(hdr, sizeof(*hdr));
@@ -1482,7 +1485,7 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			if (suite > 0)
 			{
 				xstr_t K = srp6aClient->compute_K();
-				_cipher = new MyCipher(suite, K.data, K.len);
+				_cipher = new MyCipher(suite, K.data, K.len, false);
 			}
 
 			_ck_state = CK_FINISH;
@@ -1536,7 +1539,7 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			if (xic_cipher > 0)
 			{
 				xstr_t K = srp6aServer->compute_K();
-				_cipher = new MyCipher(xic_cipher, K.data, K.len);
+				_cipher = new MyCipher(xic_cipher, K.data, K.len, true);
 			}
 
 			xstr_t M2 = srp6aServer->compute_M2();

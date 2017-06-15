@@ -302,7 +302,7 @@ void Connection::_check(int *timeout)
 			if (suite > 0)
 			{
 				xstr_t K = srp6a->compute_K();
-				_cipher = new MyCipher(suite, K.data, K.len);
+				_cipher = new MyCipher(suite, K.data, K.len, false);
 			}
 		}
 
@@ -458,6 +458,9 @@ void Connection::_sendMessage(int64_t id, const xstr_t& service, const xstr_t& m
 
 	if (_cipher)
 	{
+		if (!_cipher->oSeqIncrease())
+			throw XERROR_MSG(XError, "Sequence number exhausted");
+
 		int num = k - body_k;
 		_cipher->encryptStart(&hdr, sizeof(hdr));
 		for (int i = 0; i < num; ++i)
@@ -540,6 +543,11 @@ try
 		{
 			_throw_IOError("reading cipher IV", rc);
 		}
+
+		if (!_cipher->iSeqIncrease())
+			throw XERROR_FMT(ProtocolException, "%s Sequence number exhausted", _endpoint.c_str());
+		if (!_cipher->decryptCheckSequence())
+			throw XERROR_FMT(ProtocolException, "%s Unmatched sequence number in IV", _endpoint.c_str());
 	}
 
 	xstr_t body = XSTR_INIT((unsigned char*)malloc(bodySize), bodySize);

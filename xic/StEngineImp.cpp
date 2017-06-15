@@ -635,6 +635,11 @@ int StConnection::recv_msg(XicMessagePtr& msg)
 		{
 			return _check_io_result(n, _state, _info);
 		}
+
+		if (!_cipher->iSeqIncrease())
+			throw XERROR_FMT(ProtocolException, "%s Sequence number exhausted", _info.c_str());
+		if (!_cipher->decryptCheckSequence())
+			throw XERROR_FMT(ProtocolException, "%s Unmatched sequence number", _info.c_str());
 	}
 
 	msg = XicMessage::create(hdr.msgType, bodySize);
