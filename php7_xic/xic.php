@@ -57,6 +57,16 @@ function xic_ctx_cache($second)
 	return array("CACHE" => intval($second));
 }
 
+function xic_setSecret($secret)
+{
+	return xic_engine()->setSecret($secret);
+}
+
+function xic_getSecret()
+{
+	return xic_engine()->getSecret();
+}
+
 function xic_createProxy($proxystr)
 {
 	if (strpos($proxystr, '@') === FALSE)
