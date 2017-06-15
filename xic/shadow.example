@@ -166,8 +166,6 @@ P8192 = 8192:19:
 #
 [verifier]
 
-## complicated
-
 !complex = SRP6a:P8192:SHA1:JC5WNGjGIP5J4Sa7oe4mYPB7c4T1jZtC:
         j9eWQsmuDy7sB5LdqAoRJwIDKLARj4TcAfETql02130REfLZ5ZjmRc8DME32Yfdq
         L_ra1YmekIqr7nwXKdwWYNCwqOM6E9qtsIddDJVHMTgS2XiKVvyTMtYyL9ZYloI4
@@ -192,8 +190,6 @@ P8192 = 8192:19:
         _L0tgBAhh1ED62utlfCLuyZYz__RlvVTL9ms5h5mLq9w_sepJ5X5ILAMNuXORkpP
         npEwG0E39duye1gMpbplew
 
-
-## world
 
 !hello = SRP6a:@2048:SHA256:q5OuKuXrX3TTO6LCjty0EQtWJJ8JMHu4:
         OJgR_AEvqtZ6veJ9xBCVB8riidjF59xQbds1190hRviYUhoRwTO0Af5jE_29bkaj
