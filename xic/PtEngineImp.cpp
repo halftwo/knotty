@@ -1753,10 +1753,16 @@ struct PtEngine::PtThrob: public XTimerTask, private XMutex
 				}
 
 				Lock lock(*this);
+				char shadow[24];
+				if (xic_passport_shadow)
+					snprintf(shadow, sizeof(shadow), "%zd", xic_passport_shadow->count());
+				else
+					strcpy(shadow, "-");
+
 				xdlog(NULL, NULL, "THROB", PT_ENGINE_VERSION,
-					"start=%s uuid=%s info=euser:%s,MHz:%u,cpu:%.1f%%,xlog:%d listen=%s %s",
+					"start=%s uuid=%s info=euser:%s,MHz:%u,cpu:%.1f%%,xlog:%d,shadow:%s listen=%s %s",
 					_start_time, _uuid.c_str(),
-					_euser, (int)(freq / 1000000), cpu, xlog_level,
+					_euser, (int)(freq / 1000000), cpu, xlog_level, shadow,
 					_listen.c_str(), _logword.c_str());
 			}
 		}
