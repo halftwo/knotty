@@ -320,11 +320,11 @@ void xic::prepareEngine(const SettingPtr& setting)
 		xic_allow_ips = new IpMatcher(setting->getString("xic.allow.ips"));
 
 		std::string s;
-		s = setting->getString("xic.passport.secret");
+		s = setting->getPathname("xic.passport.secret");
 		if (!s.empty())
 			xic_passport_secret = SecretBox::createFromFile(s);
 
-		s = setting->getString("xic.passport.shadow");
+		s = setting->getPathname("xic.passport.shadow");
 		if (!s.empty())
 			xic_passport_shadow = ShadowBox::createFromFile(s);
 
@@ -1797,14 +1797,16 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 		{
 			VDict args = quest->args();
 
-			std::vector<xstr_t> marks = args.getXstrVector("marks");
+			std::vector<xstr_t> marks; 
+			args.getXstrSeq("marks", marks);
 			for (size_t i = 0; i < marks.size(); ++i)
 			{
 				const xstr_t& method = marks[i];
 				mtab->mark(method, true);
 			}
 
-			std::vector<xstr_t> nomarks = args.getXstrVector("nomarks");
+			std::vector<xstr_t> nomarks; 
+			args.getXstrSeq("nomarks", nomarks);
 			for (size_t i = 0; i < nomarks.size(); ++i)
 			{
 				const xstr_t& method = nomarks[i];
