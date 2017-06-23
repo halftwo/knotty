@@ -385,42 +385,38 @@ const vbs_dict_t *VDict::get_dict(const char *key) const
 	return NULL;
 }
 
-std::vector<xstr_t> VDict::getXstrVector(const char *key) const
+void VDict::getXstrSeq(const char *key, std::vector<xstr_t>& result) const
 {
 	const vbs_list_t *ls = get_list(key);
-	std::vector<xstr_t> rs;
 	if (ls)
 	{
-		rs.reserve(ls->count);
+		result.reserve(ls->count);
 		vbs_litem_t *ent;
 		for (ent = ls->first; ent; ent = ent->next)
 		{
 			if (ent->value.type == VBS_STRING)
 			{
-				rs.push_back(ent->value.d_xstr);
+				result.push_back(ent->value.d_xstr);
 			}
 		}
 	}
-	return rs;
 }
 
-std::vector<xstr_t> VDict::getBlobVector(const char *key) const
+void VDict::getBlobSeq(const char *key, std::vector<xstr_t>& result) const
 {
 	const vbs_list_t *ls = get_list(key);
-	std::vector<xstr_t> rs;
 	if (ls)
 	{
-		rs.reserve(ls->count);
+		result.reserve(ls->count);
 		vbs_litem_t *ent;
 		for (ent = ls->first; ent; ent = ent->next)
 		{
 			if (ent->value.type == VBS_BLOB || ent->value.type == VBS_STRING)
 			{
-				rs.push_back(ent->value.d_xstr);
+				result.push_back(ent->value.d_xstr);
 			}
 		}
 	}
-	return rs;
 }
 
 static void throwTypeException(const char *key, vbs_data_t *d, const char *needType)
@@ -551,42 +547,38 @@ static void throwListItemException(const char *key, vbs_data_t *d, const char *n
 		key, needType, vbs_type_name(d->type));
 }
 
-std::vector<xstr_t> VDict::wantXstrVector(const char *key) const
+void VDict::wantXstrSeq(const char *key, std::vector<xstr_t>& result) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
 	if (!v || v->type != VBS_LIST)
 		throwTypeException(key, v, "LIST");
 
 	vbs_list_t *ls = v->d_list;
-	std::vector<xstr_t> rs;
-	rs.reserve(ls->count);
+	result.reserve(ls->count);
 	for (vbs_litem_t *ent = ls->first; ent; ent = ent->next)
 	{
 		if (ent->value.type != VBS_STRING)
 			throwListItemException(key, &ent->value, "STRING");
 
-		rs.push_back(ent->value.d_xstr);
+		result.push_back(ent->value.d_xstr);
 	}
-	return rs;
 }
 
-std::vector<xstr_t> VDict::wantBlobVector(const char *key) const
+void VDict::wantBlobSeq(const char *key, std::vector<xstr_t>& result) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
 	if (!v || v->type != VBS_LIST)
 		throwTypeException(key, v, "LIST");
 
 	vbs_list_t *ls = v->d_list;
-	std::vector<xstr_t> rs;
-	rs.reserve(ls->count);
+	result.reserve(ls->count);
 	for (vbs_litem_t *ent = ls->first; ent; ent = ent->next)
 	{
 		if (ent->value.type != VBS_BLOB && ent->value.type != VBS_STRING)
 			throwListItemException(key, &ent->value, "BLOB");
 
-		rs.push_back(ent->value.d_blob);
+		result.push_back(ent->value.d_blob);
 	}
-	return rs;
 }
 
 VList VDict::wantVList(const char *key) const

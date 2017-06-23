@@ -137,14 +137,14 @@ public:
 	const vbs_data_t *get_data(const char *key) const;
 	const vbs_data_t *get_data(intmax_t key) const;
 
-	std::vector<xstr_t> getXstrVector(const char *key) const;
-	std::vector<xstr_t> getBlobVector(const char *key) const;
+	void getXstrSeq(const char *key, std::vector<xstr_t>& value) const;
+	void getBlobSeq(const char *key, std::vector<xstr_t>& value) const;
 
 	template<typename INTEGER>
-	void getInts(const char *key, std::vector<INTEGER>& v) const;
+	void getIntSeq(const char *key, std::vector<INTEGER>& value) const;
 
 	template<typename INTEGER>
-	void getInts(const char *key, std::set<INTEGER>& v) const;
+	void getIntSeq(const char *key, std::set<INTEGER>& value) const;
 
 
 	// The following function will throw exceptions
@@ -163,14 +163,14 @@ public:
 	const vbs_data_t *want_data(const char *key) const;
 	const vbs_data_t *want_data(intmax_t key) const;
 
-	std::vector<xstr_t> wantXstrVector(const char *key) const;
-	std::vector<xstr_t> wantBlobVector(const char *key) const;
+	void wantXstrSeq(const char *key, std::vector<xstr_t>& value) const;
+	void wantBlobSeq(const char *key, std::vector<xstr_t>& value) const;
 
 	template<typename INTEGER>
-	void wantInts(const char *key, std::vector<INTEGER>& v) const;
+	void wantIntSeq(const char *key, std::vector<INTEGER>& value) const;
 
 	template<typename INTEGER>
-	void wantInts(const char *key, std::set<INTEGER>& v) const;
+	void wantIntSeq(const char *key, std::set<INTEGER>& value) const;
 
 	VList wantVList(const char *key) const;
 	VDict wantVDict(const char *key) const;
@@ -322,7 +322,7 @@ inline VDict vdictValue(const vbs_data_t& v)
 
 
 template<typename INTEGER>
-void VDict::getInts(const char *key, std::vector<INTEGER>& v) const
+void VDict::getIntSeq(const char *key, std::vector<INTEGER>& v) const
 {
 	const vbs_list_t *ls = get_list(key);
 	if (ls)
@@ -340,7 +340,7 @@ void VDict::getInts(const char *key, std::vector<INTEGER>& v) const
 }
 
 template<typename INTEGER>
-void VDict::getInts(const char *key, std::set<INTEGER>& v) const
+void VDict::getIntSeq(const char *key, std::set<INTEGER>& v) const
 {
 	const vbs_list_t *ls = get_list(key);
 	if (ls)
@@ -357,7 +357,7 @@ void VDict::getInts(const char *key, std::set<INTEGER>& v) const
 }
 
 template<typename INTEGER>
-void VDict::wantInts(const char *key, std::vector<INTEGER>& v) const
+void VDict::wantIntSeq(const char *key, std::vector<INTEGER>& v) const
 {
 	const vbs_list_t *ls = want_list(key);
 	if (ls)
@@ -381,7 +381,7 @@ void VDict::wantInts(const char *key, std::vector<INTEGER>& v) const
 }
 
 template<typename INTEGER>
-void VDict::wantInts(const char *key, std::set<INTEGER>& v) const
+void VDict::wantIntSeq(const char *key, std::set<INTEGER>& v) const
 {
 	const vbs_list_t *ls = want_list(key);
 	if (ls)
