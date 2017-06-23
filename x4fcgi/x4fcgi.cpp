@@ -17,7 +17,7 @@
 #include <vector>
 
 #define X4FCGI_V_EDITION          170614
-#define X4FCGI_V_REVISION         170614
+#define X4FCGI_V_REVISION         170623
 #define X4FCGI_V_RELEASE          18
 
 #define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
@@ -64,7 +64,7 @@ X4fcgiServant::X4fcgiServant(const SettingPtr& setting)
 	conf.autoretry = setting->getBool("Fcgi.AutoRetry", false);
 	conf.entryfile = setting->getString("Fcgi.EntryFile", "run.php");
 
-	std::string rootdir = setting->wantString("Fcgi.RootDir");
+	std::string rootdir = setting->wantPathname("Fcgi.RootDir");
 	char *buf = XS_ALLOC(char, rootdir.length() + 1);
 	ON_BLOCK_EXIT(free, buf);
 	size_t n = path_normalize_mem(buf, rootdir.data(), rootdir.length());
