@@ -47,19 +47,19 @@ done:
 	return r;
 }
 
-size_t path_join(char *dst, const char *base, const char *path)
+size_t path_join(char *dst, const char *reference, const char *path)
 {
 	char *p;
 	size_t len;
 
-	if (path[0] == '/' || (p = strrchr(base, '/')) == NULL)
+	if (path[0] == '/' || (p = strrchr(reference, '/')) == NULL)
 	{
 		p = cstr_pcopy(dst, NULL, path);
 		return p - dst;
 	}
 
-	len = p + 1 - base;
-	memcpy(dst, base, len);
+	len = p + 1 - reference;
+	memcpy(dst, reference, len);
 	p = cstr_pcopy(dst + len, NULL, path);
 	return p - dst;
 }
