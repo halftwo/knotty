@@ -5,6 +5,8 @@
 #include "ScopeGuard.h"
 #include "binary_prefix.h"
 #include "xstr.h"
+#include "path.h"
+#include <alloca.h>
 #include <stdio.h>
 #include <string.h>
 #include <map>
@@ -26,20 +28,23 @@ public:
 	virtual bool getBool(const std::string& name, bool dft = false);
 	virtual double getReal(const std::string& name, double dft = 0.0);
 
-	virtual std::vector<std::string> getStringList(const std::string& name);
+	virtual std::string getPathname(const std::string& name, const std::string& dft = std::string());
+	virtual void getStringSeq(const std::string& name, std::vector<std::string>& value);
 
 	virtual std::string wantString(const std::string& name);
 	virtual intmax_t wantInt(const std::string& name);
 	virtual bool wantBool(const std::string& name);
 	virtual double wantReal(const std::string& name);
 
-	virtual std::vector<std::string> wantStringList(const std::string& name);
+	virtual std::string wantPathname(const std::string& name);
+	virtual void wantStringSeq(const std::string& name, std::vector<std::string>& value);
 
 	virtual void set(const std::string& name, const std::string& value);
 	virtual bool insert(const std::string& name, const std::string& value);
 	virtual bool update(const std::string& name, const std::string& value);
 
 	virtual void load(const std::string& file);
+	virtual std::string myFileName();
 	virtual SettingPtr clone();
 
 private:
@@ -49,8 +54,8 @@ private:
 
 	std::string* _find(const std::string& key);
 
+	std::string _fileName;
 	typedef std::map<std::string, std::string> MapType;
-
 	MapType _map;
 };
 
@@ -115,6 +120,12 @@ void SettingI::load(const std::string& file)
 
 		_map[make_string(k)] = make_string(v);
 	}
+	_fileName = file;
+}
+
+std::string SettingI::myFileName()
+{
+	return _fileName;
 }
 
 std::string* SettingI::_find(const std::string& key)
@@ -303,24 +314,45 @@ double SettingI::getReal(const std::string& name, double dft)
 	return dft;
 }
 
-static xstr_t _delimit_xs = XSTR_CONST(", \t\r\n");
+std::string SettingI::getPathname(const std::string& name, const std::string& dft)
+{
+	std::string v = getString(name, dft);
+	const char *s = v.c_str();
+	if (s[0] == 0 || s[0] == '/')
+		return v;
 
-std::vector<std::string> SettingI::wantStringList(const std::string& name)
+	char *pathname = (char *)alloca(_fileName.length() + v.length() + 1);
+	int len = path_join(pathname, _fileName.c_str(), s);
+	return std::string(pathname, len);
+}
+
+std::string SettingI::wantPathname(const std::string& name)
 {
 	std::string v = wantString(name);
-	std::vector<std::string> result;
+	const char *s = v.c_str();
+	if (s[0] == '/')
+		return v;
+
+	char *pathname = (char *)alloca(_fileName.length() + v.length() + 1);
+	int len = path_join(pathname, _fileName.c_str(), s);
+	return std::string(pathname, len);
+}
+
+static xstr_t _delimit_xs = XSTR_CONST(",; \t\r\n");
+
+void SettingI::wantStringSeq(const std::string& name, std::vector<std::string>& result)
+{
+	std::string v = wantString(name);
 	xstr_t xs = XSTR_CXX(v);
 	xstr_t s;
 	while (xstr_token(&xs, &_delimit_xs, &s))
 	{
 		result.push_back(make_string(s));
 	}
-	return result;
 }
 
-std::vector<std::string> SettingI::getStringList(const std::string& name)
+void SettingI::getStringSeq(const std::string& name, std::vector<std::string>& result)
 {
-	std::vector<std::string> result;
 	std::string *v = _find(name);
 	if (v)
 	{
@@ -331,7 +363,6 @@ std::vector<std::string> SettingI::getStringList(const std::string& name)
 			result.push_back(make_string(s));
 		}
 	}
-	return result;
 }
 
 void SettingI::set(const std::string& name, const std::string& value)
