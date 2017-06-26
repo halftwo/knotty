@@ -421,7 +421,8 @@ ssize_t rope_join(rope_t *rope, rope_t *joined)
 
 ssize_t rope_insert(rope_t *rope, size_t pos, const void *buffer, size_t size)
 {
-	ssize_t top;
+	ssize_t top, avail, num2move;
+	unsigned char *ptr;
 	rope_block_t *current, *next;
 
 	assert(size <= INT_MAX);
@@ -447,44 +448,51 @@ ssize_t rope_insert(rope_t *rope, size_t pos, const void *buffer, size_t size)
 			break;
 	} while (current != rope->_last);
 
-	if ((size_t)top >= pos)
+	assert((size_t)top >= pos);
+
+	avail = RB_AVAIL(current);
+	num2move = top - pos;
+	ptr = RB_CUR(current) - num2move;
+	if (size <= (size_t)avail)
 	{
-		ssize_t left = RB_AVAIL(current);
-		ssize_t num = top - pos;
-		unsigned char *p = RB_CUR(current) - num;
-		if (size <= (size_t)left)
-		{
-			if (num > 0)
-				memmove(p + size, p, num);
-			memcpy(p, buffer, size);
-			current->len += size;
-		}
-		else
-		{
-			ssize_t right = size - left;
-			rope_block_t *rb = rb_alloc(rope, right + num, 0);
-			if (!rb)
-				return -1;
-
-			if (num > 0)
-				memcpy(rb->buf + right, p, num);
-			if (left > 0)
-				memcpy(p, buffer, left);
-			memcpy(rb->buf, (unsigned char *)buffer + left, right);
-			rb->len = right + num;
-
-			current->next = rb;
-			rb->next = next;
-			if (current == rope->_last)
-				rope->_last = rb;
-			rope->block_count++;
-		}
-		rope->length += size;
+		if (num2move > 0)
+			memmove(ptr + size, ptr, num2move);
+		memcpy(ptr, buffer, size);
+		current->len += size;
 	}
 	else
 	{
-		assert(!"Can't reach here!");
+		ssize_t more = size - avail;
+		rope_block_t *rb = rb_alloc(rope, more, 0);
+		if (!rb)
+			return -1;
+
+		if (more < num2move)
+		{
+			size_t k = num2move - more;
+			memcpy(rb->buf, RB_CUR(current) - more , more);
+			memmove(current->buf + current->capacity - k, ptr, k);
+			memcpy(ptr, buffer, size);
+		}
+		else
+		{
+			size_t k = more - num2move;
+			if (num2move > 0)
+				memcpy(rb->buf + k, ptr, num2move);
+			if (k > 0)
+				memcpy(rb->buf, buffer + size - k, k);
+			memcpy(ptr, buffer, size - k);
+		}
+		current->len = current->capacity;
+		rb->len = more;
+
+		current->next = rb;
+		rb->next = next;
+		if (current == rope->_last)
+			rope->_last = rb;
+		rope->block_count++;
 	}
+	rope->length += size;
 
 	return size;
 }
@@ -652,8 +660,8 @@ ssize_t rope_erase(rope_t *rope, size_t pos, size_t size)
 		{
 			if ((size_t)num > size)
 			{
-				unsigned char *p = RB_CUR(current) - num;
-				memmove(p, p + size, num - size);
+				unsigned char *ptr = RB_CUR(current) - num;
+				memmove(ptr, ptr + size, num - size);
 			}
 			current->len -= size;
 		}
