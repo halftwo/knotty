@@ -189,6 +189,11 @@ bool bitmap_lsb_equal(const uint8_t *bmap1, const uint8_t *bmap2, size_t prefix)
 
 bool bit_msb32_equal(uint32_t a, uint32_t b, size_t prefix)
 {
+	// NB: a >>= 32 seems doing nothing.
+	// So we need to check if prefix == 0
+	if (prefix == 0)
+		return true;
+
 	if (prefix < 32)
 	{
 		a >>= (32 - prefix);
@@ -199,6 +204,9 @@ bool bit_msb32_equal(uint32_t a, uint32_t b, size_t prefix)
 
 bool bit_lsb32_equal(uint32_t a, uint32_t b, size_t prefix)
 {
+	if (prefix == 0)
+		return true;
+
 	if (prefix < 32)
 	{
 		a <<= (32 - prefix);
@@ -209,6 +217,9 @@ bool bit_lsb32_equal(uint32_t a, uint32_t b, size_t prefix)
 
 bool bit_msb64_equal(uint64_t a, uint64_t b, size_t prefix)
 {
+	if (prefix == 0)
+		return true;
+
 	if (prefix < 64)
 	{
 		a >>= (64 - prefix);
@@ -219,6 +230,9 @@ bool bit_msb64_equal(uint64_t a, uint64_t b, size_t prefix)
 
 bool bit_lsb64_equal(uint64_t a, uint64_t b, size_t prefix)
 {
+	if (prefix == 0)
+		return true;
+
 	if (prefix < 64)
 	{
 		a <<= (64 - prefix);
@@ -226,4 +240,19 @@ bool bit_lsb64_equal(uint64_t a, uint64_t b, size_t prefix)
 	}
 	return a == b;
 }
+
+#ifdef TEST_BIT
+
+#include <stdio.h>
+
+int main(int argc, char **argv)
+{
+	uint32_t a = 0xF2345678;
+	uint32_t b = 0x82345678;
+	int x = bit_msb32_equal(a, b, 0);
+	printf("%d\n", x);
+	return 0;
+}
+
+#endif
 
