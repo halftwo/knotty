@@ -2202,12 +2202,14 @@ ssize_t xstr_key_value(const xstr_t *xs, char delimiter, xstr_t *key/*NULL*/, xs
 
 	if (key)
 	{
-		*key = *xs;
-		xstr_trim(key);
+		*key = xstr_null;
 	}
 
 	if (value)
-		*value = xstr_null;
+	{
+		*value = *xs;
+		xstr_trim(value);
+	}
 
 	return -1;
 }

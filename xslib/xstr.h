@@ -236,6 +236,9 @@ ssize_t xstr_rfind_not_in_mem(const xstr_t *str, ssize_t pos, const void *chset,
 ssize_t xstr_rfind_not_in_bset(const xstr_t *str, ssize_t pos, const bset_t *bset);
 
 
+/* Return the position of the first delimiter found in `str`.
+ * If no delimiter found, return -1 and key == xstr_null, value == xstr_trim(str).
+ */
 ssize_t xstr_key_value(const xstr_t *str, char delimiter, xstr_t *key/*NULL*/, xstr_t *value/*NULL*/);
 
 xstr_t xstr_prefix(const xstr_t *str, ssize_t end);			/* [0, end) */
