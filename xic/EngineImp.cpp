@@ -889,6 +889,16 @@ ProxyI::~ProxyI()
 	}
 }
 
+ConnectionPtr ProxyI::makeConnection()
+{
+	if (_loadBalance == LB_NORMAL)
+	{
+		return pickConnection(QuestPtr());
+	}
+
+	return ConnectionPtr();
+}
+
 ConnectionIPtr ProxyI::pickConnection(const QuestPtr& quest)
 {
 	ConnectionIPtr con;

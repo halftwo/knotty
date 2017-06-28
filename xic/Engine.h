@@ -25,9 +25,9 @@
  * The release number consist of:
  * 	2-digit hour 	start from 10
  */
-#define XIC_V_EDITION 	170615
-#define XIC_V_REVISION 	170626
-#define XIC_V_RELEASE 	18
+#define XIC_V_EDITION 	170628
+#define XIC_V_REVISION 	170628
+#define XIC_V_RELEASE 	21
 
 #define XIC_VERSION	XS_TOSTR(XIC_V_EDITION) "." XS_TOSTR(XIC_V_REVISION) "." XS_TOSTR(XIC_V_RELEASE)
 
@@ -219,6 +219,7 @@ public:
 
 	// Only meaningful when LoadBalance == LB_NORMAL
 	virtual ConnectionPtr getConnection() const 	= 0;
+	virtual ConnectionPtr makeConnection() 		= 0;
 	virtual void resetConnection()			= 0;
 
 	virtual LoadBalance loadBalance() const		= 0;
