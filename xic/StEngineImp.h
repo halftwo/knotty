@@ -190,7 +190,7 @@ class StProxy: public ProxyI
 public:
 	virtual ContextPtr getContext() const;
 	virtual void setContext(const ContextPtr& ctx);
-	virtual ConnectionPtr getConnection() const		{ return _cons[_idx]; }
+	virtual ConnectionPtr getConnection() const;
 	virtual void resetConnection();
 	virtual ResultPtr emitQuest(const QuestPtr& quest, const CompletionPtr& cp);
 	virtual bool retryQuest(const ResultIPtr& r);

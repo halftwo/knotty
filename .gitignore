@@ -15,6 +15,7 @@ dlog/dlog_write
 dlog/dlogd
 dlog/dstsd
 x4fcgi/x4fcgi
+xic/DemoCallback
 xic/DemoClient
 xic/DemoClientSt
 xic/DemoServer

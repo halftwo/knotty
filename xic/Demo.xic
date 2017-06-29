@@ -4,7 +4,7 @@ Demo
 ===============
 
 => time { ?time^%i; }
-<= { con^%s; time^%i; utc^%s; local^%s; }
+<= { con^%s; time^%i; strftime^{utc^%s; local^%s;}; }
 
 => echo { ... }
 <= { ... }
@@ -25,4 +25,15 @@ Demo
 
 => selfProxy {}
 <= { proxy^%s }
+
+=> setCallback { callback^%s; }
+<= {}
+
+
+
+DemoCallback
+================
+
+=> cb_time {}
+<= { con^%s; time^%i; strftime^{utc^%s; local^%s;}; }
 

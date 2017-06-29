@@ -1357,6 +1357,16 @@ void StProxy::setContext(const ContextPtr& ctx)
 	_ctx = ctx && !ctx->empty() ? ctx: ContextPtr();
 }
 
+ConnectionPtr StProxy::getConnection() const
+{
+	ConnectionPtr con;
+	if (_cons.size())
+	{
+		con = _cons[_idx];
+	}
+	return con;
+}
+
 void StProxy::resetConnection()
 {
 	for (size_t i = 0; i < _cons.size(); ++i)

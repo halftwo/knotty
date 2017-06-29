@@ -3,7 +3,7 @@
 
 #include "ServantI.h"
 
-#define CMD_LIST		\
+#define DEMOSERVANT_CMDS	\
 	CMD(time)		\
 	CMD(echo)		\
 	CMD(rubbish)		\
@@ -12,7 +12,8 @@
 	CMD(rmi)		\
 	CMD(throwException)	\
 	CMD(selfProxy)		\
-	/* end list */
+	CMD(setCallback)	\
+	/* END OF CMDS */
 
 class DemoServant: public xic::ServantI
 {
@@ -21,12 +22,16 @@ class DemoServant: public xic::ServantI
 
 	xic::EnginePtr _engine;
 	xic::ProxyPtr _selfPrx;
+	xic::ProxyPtr _callbackPrx;
 public:
 	DemoServant(const SettingPtr& setting, const xic::AdapterPtr& adapter);
 	virtual ~DemoServant();
 
+private:
+	void callback_fiber();
+
 #define CMD(X)  XIC_METHOD_DECLARE(X);
-	CMD_LIST
+	DEMOSERVANT_CMDS
 #undef CMD
 };
 

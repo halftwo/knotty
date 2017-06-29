@@ -18,6 +18,10 @@
 namespace xic
 {
 
+const xstr_t x00ping = XSTR_CONST("\x00ping");
+const xstr_t x00stat = XSTR_CONST("\x00stat");
+const xstr_t x00mark = XSTR_CONST("\x00mark");
+
 static int _do_unpack_args(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie, bool ctx)
 {
 	int kind;

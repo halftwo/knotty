@@ -239,7 +239,6 @@ protected:
 	ConnectionIPtr pickConnection(const QuestPtr& quest);
 
 public:
-	virtual ConnectionPtr makeConnection();
 	virtual EnginePtr getEngine() const			{ return _engine; }
 	virtual std::string str() const 			{ return _proxy; }
 	virtual std::string service() const 			{ return _service; }

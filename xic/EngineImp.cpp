@@ -861,12 +861,9 @@ ProxyI::ProxyI(const std::string& service, EngineI* engine, ConnectionI* con)
 			_endpoints.push_back(make_string(endpoint));
 	}
 
-	if (_endpoints.empty())
-		throw XERROR_FMT(XArgumentError, "invalid proxy(%s), no endpoint", _proxy.c_str());
-
 	_cons.resize(_endpoints.size());
 
-	if (_loadBalance == LB_HASH)
+	if (_loadBalance == LB_HASH && _endpoints.size())
 	{
 		std::vector<uint64_t> members;
 		members.reserve(_endpoints.size());
@@ -889,21 +886,13 @@ ProxyI::~ProxyI()
 	}
 }
 
-ConnectionPtr ProxyI::makeConnection()
-{
-	if (_loadBalance == LB_NORMAL)
-	{
-		return pickConnection(QuestPtr());
-	}
-
-	return ConnectionPtr();
-}
-
 ConnectionIPtr ProxyI::pickConnection(const QuestPtr& quest)
 {
+	if (_endpoints.empty())
+		throw XERROR_FMT(EndpointMissingException, "%s", _service.c_str());
+
 	ConnectionIPtr con;
 	Connection::State st;
-
 	if (_loadBalance == LB_RANDOM)
 	{
 		size_t k = urandom_get_int(0, _cons.size());
@@ -1769,9 +1758,6 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 	}
 	else
 	{
-		static const xstr_t x00ping = XSTR_CONST("\x00ping");
-		static const xstr_t x00stat = XSTR_CONST("\x00stat");
-		static const xstr_t x00mark = XSTR_CONST("\x00mark");
 		static const xstr_t x00 = XSTR_CONST("\x00");
 
 		if (xstr_equal(&method, &x00ping))

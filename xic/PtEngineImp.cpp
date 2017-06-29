@@ -1432,7 +1432,7 @@ PtAdapter::~PtAdapter()
 void PtAdapter::activate()
 {
 	Lock lock(*this);
-	if (_state >= ADAPTER_ACTIVE)
+	if (_state >= ADAPTER_ACTIVE && _listeners.size())
 		throw XERROR_FMT(XError, "Adapter(%s) already activated", _name.c_str());
 
 	_state = ADAPTER_ACTIVE;
@@ -1472,7 +1472,8 @@ ProxyPtr PtAdapter::addServant(const std::string& service, Servant* servant)
 			_srvMap[service] = ServantPtr(servant);
 			_hint = _srvMap.begin();
 		}
-		prx = _engine->stringToProxy(service + ' ' + _endpoints);
+		std::string proxy = _endpoints.empty() ? service : (service + ' ' + _endpoints);
+		prx = _engine->stringToProxy(proxy);
 	}
 	return prx;
 }
@@ -1564,8 +1565,13 @@ void PtProxy::setContext(const ContextPtr& ctx)
 
 ConnectionPtr PtProxy::getConnection() const
 {
-	Lock lock(*this);
-	return _cons[_idx];
+	ConnectionPtr con;
+	if (_cons.size())
+	{
+		Lock lock(*this);
+		con = _cons[_idx];
+	}
+	return con;
 }
 
 void PtProxy::resetConnection()

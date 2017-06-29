@@ -1,10 +1,13 @@
 #include "DemoServant.h"
 #include "EngineImp.h"
+#include "dlog/dlog.h"
+#include "xslib/XThread.h"
 #include <time.h>
+#include <unistd.h>
 
 xic::MethodTab::PairType DemoServant::_methodpairs[] = {
 #define CMD(X)  { XS_TOSTR(X), XIC_METHOD_CAST(DemoServant, X) },
-	CMD_LIST
+	DEMOSERVANT_CMDS
 #undef CMD
 };
 xic::MethodTab DemoServant::_methodtab(_methodpairs, XS_ARRCOUNT(_methodpairs));
@@ -16,12 +19,32 @@ DemoServant::DemoServant(const SettingPtr& setting, const xic::AdapterPtr& adapt
 
 	xref_inc();
 	_selfPrx = adapter->addServant("Demo", this);
-	adapter->addServant("Tester", this);
+	XThread::create(this, &DemoServant::callback_fiber);
 	xref_dec_only();
 }
 
 DemoServant::~DemoServant()
 {
+}
+
+void DemoServant::callback_fiber()
+{
+	while (true)
+	{
+		sleep(10);
+		if (_callbackPrx)
+		{
+			try {
+				xic::QuestWriter qw("cb_time");
+				_callbackPrx->request(qw);
+			}
+			catch (std::exception& ex)
+			{
+				dlog("EXCEPTION", "%s", ex.what());
+				_callbackPrx.reset();
+			}
+		}
+	}
 }
 
 XIC_METHOD(DemoServant, time)
@@ -123,5 +146,24 @@ XIC_METHOD(DemoServant, throwException)
 XIC_METHOD(DemoServant, selfProxy)
 {
 	return xic::AnswerWriter()("proxy", _selfPrx->str());
+}
+
+XIC_METHOD(DemoServant, setCallback)
+{
+	xic::VDict args = quest->args();
+	std::string callback = make_string(args.wantXstr("callback"));
+
+	if (!_callbackPrx || current.con != _callbackPrx->getConnection())
+	{
+		xic::ProxyPtr prx = current.con->createProxy(callback);
+		_callbackPrx = prx;
+	}
+
+	xic::WaiterPtr waiter = current.asynchronous();
+	waiter->response(xic::AnswerWriter());
+
+	xic::QuestWriter qw("cb_time");
+	_callbackPrx->request(qw);
+	return xic::ASYNC_ANSWER;
 }
 

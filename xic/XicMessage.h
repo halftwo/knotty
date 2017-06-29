@@ -35,10 +35,13 @@ class QuestWriter;
 class AnswerWriter;
 
 
+extern const xstr_t x00ping;
+extern const xstr_t x00stat;
+extern const xstr_t x00mark;
+
 std::string exanswer2string(const AnswerPtr& answer);
 void unpack_args(ostk_t *ostk, xstr_t* xs, vbs_dict_t *dict, bool ctx);
 void prepare_xstr(ostk_t *ostk, rope_t *rope, xstr_t* xs);
-
 
 class XicMessage: public XRefCount
 {
