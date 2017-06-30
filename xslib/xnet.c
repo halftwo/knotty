@@ -65,11 +65,13 @@ int xnet_unix_listen(const char *pathname, int queue_size)
 	return sock;
 }
 
-static bool _ip2addr(const char *ip, uint16_t port, xnet_inet_sockaddr_t *addr)
+static bool _ip2addr(const char *ip, uint16_t port, bool ipv6, xnet_inet_sockaddr_t *addr)
 {
 	bool ok = false;
 	if (ip == NULL || ip[0] == 0)
-		ip = "::";
+	{
+		ip = ipv6 ? "::" : "0.0.0.0";
+	}
 
 	memset(addr, 0, sizeof(*addr));
 	if (strchr(ip, ':'))
@@ -92,13 +94,22 @@ int xnet_tcp_bind(const char *ip, uint16_t port)
 	xnet_inet_sockaddr_t addr;
 	int sock = -1;
 	int on = 1;
-
-	if (!_ip2addr(ip, port, &addr))
+	bool ipv6 = true;
+again:
+	if (!_ip2addr(ip, port, ipv6, &addr))
 		goto error;
 
 	sock = socket((addr.family == AF_INET6) ? PF_INET6 : PF_INET, SOCK_STREAM, 0);
 	if (sock == -1)
+	{
+		if (errno == EAFNOSUPPORT && (ip == NULL || ip[0] == 0) && ipv6)
+		{
+			ipv6 = false;
+			goto again;
+		}
+			
 		goto error;
+	}
 
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
@@ -116,13 +127,22 @@ int xnet_udp_bind(const char *ip, uint16_t port)
 {
 	xnet_inet_sockaddr_t addr;
 	int sock = -1;
-
-	if (!_ip2addr(ip, port, &addr))
+	bool ipv6 = true;
+again:
+	if (!_ip2addr(ip, port, ipv6, &addr))
 		goto error;
 
 	sock = socket((addr.family == AF_INET6) ? PF_INET6 : PF_INET, SOCK_DGRAM, 0);
 	if (sock == -1)
+	{
+		if (errno == EAFNOSUPPORT && (ip == NULL || ip[0] == 0) && ipv6)
+		{
+			ipv6 = false;
+			goto again;
+		}
+			
 		goto error;
+	}
 
 	if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) == -1)
 		goto error;
