@@ -879,11 +879,6 @@ ProxyI::ProxyI(const std::string& service, EngineI* engine, ConnectionI* con)
 
 ProxyI::~ProxyI()
 {
-	for (size_t i = 0; i < _cons.size(); ++i)
-	{
-		if (_cons[i])
-			_cons[i]->close(false);
-	}
 }
 
 ConnectionIPtr ProxyI::pickConnection(const QuestPtr& quest)

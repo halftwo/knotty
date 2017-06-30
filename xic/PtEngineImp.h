@@ -268,6 +268,8 @@ public:
 
 	int check_stop();
 private:
+	friend class PtConnection;
+	ProxyPtr _makeFixedProxy(const std::string& service, PtConnection* con);
 	virtual void runTimerTask(const XTimerPtr& timer);
 	virtual void _doom(int seconds);
 	virtual void _info(AnswerWriter& aw);

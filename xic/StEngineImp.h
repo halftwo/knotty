@@ -279,6 +279,8 @@ public:
 	st_thread_t create_client_thread(T* obj, void (T::*mf)());
 
 private:
+	friend class StConnection;
+	ProxyPtr _makeFixedProxy(const std::string& service, StConnection* con);
 	virtual void runTimerTask(const STimerPtr& timer);
 	virtual void _doom(int seconds);
 	virtual void _info(AnswerWriter& aw);

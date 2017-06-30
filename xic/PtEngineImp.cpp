@@ -458,8 +458,8 @@ ProxyPtr PtConnection::createProxy(const std::string& service)
 {
 	if (service.find('@') != std::string::npos)
 		throw XERROR_MSG(ServiceParseException, service);
-	ProxyPtr prx = ProxyPtr(new PtProxy(service, _engine.get(), this));
-	return prx;
+
+	return _engine->_makeFixedProxy(service, this);
 }
 
 void PtConnection::setAdapter(const AdapterPtr& adapter)
@@ -1900,6 +1900,29 @@ void PtEngine::_createClientDispatcher()
 	_cliDispatcher = XEvent::Dispatcher::create();
 	_cliDispatcher->setThreadPool(thrSize, thrMax, stackSize);
 	_cliDispatcher->start();
+}
+
+ProxyPtr PtEngine::_makeFixedProxy(const std::string& service, PtConnection* con)
+{
+	PtProxyPtr prx;
+
+	Lock lock(*this);
+	if (_stopped)
+		throw XERROR(EngineStoppedException);
+
+	ProxyMap::iterator iter = _proxyMap.find(service);
+	if (iter != _proxyMap.end())
+	{
+		prx = iter->second;
+		if (prx->getConnection().get() == con)
+			return prx;
+
+		_proxyMap.erase(iter);
+	}
+
+	prx.reset(new PtProxy(service, this, con));
+	_proxyMap.insert(std::make_pair(service, prx));
+	return prx;
 }
 
 ProxyPtr PtEngine::stringToProxy(const std::string& proxy)

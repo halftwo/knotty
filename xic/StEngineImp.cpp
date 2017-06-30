@@ -427,8 +427,8 @@ ProxyPtr StConnection::createProxy(const std::string& service)
 {
 	if (service.find('@') != std::string::npos)
 		throw XERROR_MSG(ServiceParseException, service);
-	ProxyPtr prx(new StProxy(service, _engine.get(), this));
-	return prx;
+
+	return _engine->_makeFixedProxy(service, this);
 }
 
 int StConnection::disconnect()
@@ -1713,6 +1713,27 @@ void StEngine::runTimerTask(const STimerPtr& timer)
 	}
 
 	timer->addTask(this, CON_REAP_INTERVAL);
+}
+
+ProxyPtr StEngine::_makeFixedProxy(const std::string& service, StConnection *con)
+{
+	if (_stopped)
+		throw XERROR(EngineStoppedException);
+
+	StProxyPtr prx;
+	ProxyMap::iterator iter = _proxyMap.find(service);
+	if (iter != _proxyMap.end())
+	{
+		prx = iter->second;
+		if (prx->getConnection().get() == con)
+			return prx;
+
+		_proxyMap.erase(iter);
+	}
+
+	prx.reset(new StProxy(service, this, con));
+	_proxyMap[service] = prx;
+	return prx;
 }
 
 ProxyPtr StEngine::stringToProxy(const std::string& proxy)
