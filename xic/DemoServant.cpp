@@ -1,5 +1,6 @@
 #include "DemoServant.h"
 #include "EngineImp.h"
+#include "sthread.h"
 #include "dlog/dlog.h"
 #include "xslib/XThread.h"
 #include <time.h>
@@ -31,17 +32,24 @@ void DemoServant::callback_fiber()
 {
 	while (true)
 	{
-		sleep(10);
-		if (_callbackPrx)
+		_engine->sleep(10);
+		CallbackProxyMap cbMap;
+		{
+			Lock lock(*this);
+			cbMap = _callbackMap;
+		}
+
+		for (CallbackProxyMap::iterator iter = cbMap.begin(); iter != cbMap.end(); ++iter)
 		{
 			try {
 				xic::QuestWriter qw("cb_time");
-				_callbackPrx->request(qw);
+				iter->second->request(qw);
 			}
 			catch (std::exception& ex)
 			{
 				dlog("EXCEPTION", "%s", ex.what());
-				_callbackPrx.reset();
+				Lock lock(*this);
+				_callbackMap.erase(iter->first);
 			}
 		}
 	}
@@ -153,17 +161,26 @@ XIC_METHOD(DemoServant, setCallback)
 	xic::VDict args = quest->args();
 	std::string callback = make_string(args.wantXstr("callback"));
 
-	if (!_callbackPrx || current.con != _callbackPrx->getConnection())
+	xic::ProxyPtr prx;
 	{
-		xic::ProxyPtr prx = current.con->createProxy(callback);
-		_callbackPrx = prx;
+		Lock lock(*this);
+		CallbackProxyMap::iterator iter = _callbackMap.find(callback);
+		if (iter != _callbackMap.end() && iter->second->getConnection() == current.con)
+		{
+			prx = iter->second;
+		}
+		else
+		{
+			prx = current.con->createProxy(callback);
+			_callbackMap.insert(std::make_pair(callback, prx));
+		}
 	}
 
 	xic::WaiterPtr waiter = current.asynchronous();
 	waiter->response(xic::AnswerWriter());
 
 	xic::QuestWriter qw("cb_time");
-	_callbackPrx->request(qw);
+	prx->request(qw);
 	return xic::ASYNC_ANSWER;
 }
 

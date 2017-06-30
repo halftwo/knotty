@@ -2,6 +2,9 @@
 #define DemoServant_h_
 
 #include "ServantI.h"
+#include "xslib/XLock.h"
+#include <string>
+#include <map>
 
 #define DEMOSERVANT_CMDS	\
 	CMD(time)		\
@@ -15,14 +18,16 @@
 	CMD(setCallback)	\
 	/* END OF CMDS */
 
-class DemoServant: public xic::ServantI
+class DemoServant: public xic::ServantI, private XMutex
 {
 	static xic::MethodTab::PairType _methodpairs[];
 	static xic::MethodTab _methodtab;
 
 	xic::EnginePtr _engine;
 	xic::ProxyPtr _selfPrx;
-	xic::ProxyPtr _callbackPrx;
+
+	typedef std::map<std::string, xic::ProxyPtr> CallbackProxyMap;
+	CallbackProxyMap _callbackMap;
 public:
 	DemoServant(const SettingPtr& setting, const xic::AdapterPtr& adapter);
 	virtual ~DemoServant();

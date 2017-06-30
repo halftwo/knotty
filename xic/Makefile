@@ -8,7 +8,7 @@ LIBXIC_OBJS = XicMessage.o XicCheck.o XicException.o Context.o \
 
 LIBXIC = libxic.a
 
-EXES = shadow_gen secret_check DemoServer DemoClient DemoServerSt DemoClientSt DemoCallback
+EXES = shadow_gen secret_check DemoServer DemoClient DemoClientSt DemoCallback
 
 
 CFLAGS = -g -Wall -O2
@@ -43,9 +43,6 @@ DemoCallback: DemoCallback.cpp
 
 DemoServer: DemoServer.cpp DemoServant.o
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LIBS)
-
-DemoServerSt: DemoServerSt.cpp DemoServant.o
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LIBS) -lst
 
 DemoClient: DemoClient.cpp DemoClientImp.o
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -o $@ $^ $(LIBS)

@@ -13,6 +13,8 @@ xic.SThreadPool.Server.SizeMax = 10k
 xic.rlimit.nofile = 2000
 
 xic.sample.server = 1
+xic.sample.client = 1
+
 xic.passport.shadow = shadow.example
 xic.passport.secret = secret.example
 

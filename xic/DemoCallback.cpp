@@ -1,4 +1,5 @@
 #include "ServantI.h"
+#include "dlog/dlog.h"
 #include "xslib/XThread.h"
 #include <unistd.h>
 
@@ -57,20 +58,25 @@ void CallbackServant::ping_fiber()
 	xic::ConnectionPtr lastCon;
 	while(true)
 	{
-		xic::QuestWriter ping(xic::x00ping);
-		_demoPrx->request(ping);
-		xic::ConnectionPtr con = _demoPrx->getConnection();
+		try {
+			xic::QuestWriter ping(xic::x00ping);
+			_demoPrx->request(ping);
+			xic::ConnectionPtr con = _demoPrx->getConnection();
 
-		while (lastCon != con)
-		{
-			lastCon = con;
-			con->setAdapter(_adapter);
-			xic::QuestWriter qw("setCallback");
-			qw("callback", _selfPrx->service());
-			_demoPrx->request(qw);
-			con = _demoPrx->getConnection();
+			while (lastCon != con)
+			{
+				lastCon = con;
+				con->setAdapter(_adapter);
+				xic::QuestWriter qw("setCallback");
+				qw("callback", _selfPrx->service());
+				_demoPrx->request(qw);
+				con = _demoPrx->getConnection();
+			}
 		}
-
+		catch (std::exception& ex)
+		{
+			dlog("EXCEPTION", "%s", ex.what());
+		}
 		sleep(55);
 	}
 }
