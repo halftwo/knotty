@@ -1213,7 +1213,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	sock = xnet_tcp_listen("::", port, 256);
+	sock = xnet_tcp_listen(NULL, port, 256);
 	if (sock < 0)
 	{
 		fprintf(stderr, "xnet_tcp_listen() failed, port=%d\n", port);
