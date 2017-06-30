@@ -882,7 +882,7 @@ ProxyI::~ProxyI()
 	for (size_t i = 0; i < _cons.size(); ++i)
 	{
 		if (_cons[i])
-			_cons[i]->disconnect();
+			_cons[i]->close(false);
 	}
 }
 
