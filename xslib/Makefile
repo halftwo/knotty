@@ -14,7 +14,7 @@ OBJS_C = xsdef.o strbuf.o bit.o xnet.o xbase64.o xbase85.o xbase32.o \
 	wdict.o path.o ratcliff.o cmdpipe.o binary_prefix.o urlparse.o \
 	cirqueue.o minilzo.o mlzo.o cstr.o hmap.o calltrace.o mp.o \
 	hex.o ostk.o hashint.o zlog.o unixfs.o xio.o xmem.o dirwalk.o \
-	xmalloc.o xformat.o xstr.o xstr_cxx.o bset.o msec.o \
+	xmalloc.o xformat.o xstr.o bset.o msec.o \
 	vbs_pack.o vbs_stream.o vbs.o vbs_json.o carp.o iconv_convert.o \
 	iobuf.o uuid.o unix_user.o rope.o escape.o \
 	httpcode.o httpmisc.o urandom.o gzipper.o lz4.o xxhash.o \
@@ -24,7 +24,7 @@ OBJS_C = xsdef.o strbuf.o bit.o xnet.o xbase64.o xbase85.o xbase32.o \
 	
 
 OBJS_CXX = XRefCount.o xptr.o XLock.o XError.o XEvent.o StringHashSet.o \
-	cxxstr.o xmalloc_cxx.o xio_cxx.o Setting.o XThread.o \
+	xstr_cxx.o cxxstr.o xmalloc_cxx.o xio_cxx.o Setting.o XThread.o \
 	XTimer.o HSequence.o CarpSequence.o Srp6a.o
 
 
