@@ -483,7 +483,29 @@ void xic::parseEndpoint(const xstr_t& endpoint, xic::EndpointInfo& ei)
 size_t xic::getIps(const xstr_t& host, uint32_t ipv4s[], int *v4num, uint8_t ipv6s[][16], int *v6num, bool& any)
 {
 	assert(*v4num > 0 || *v6num > 0);
-	any = false;
+
+	any = (host.len == 0);
+	if (xstr_equal_cstr(&host, "::"))
+	{
+		any = true;
+		*v4num = 0;
+	}
+	else if (xstr_equal_cstr(&host, "0.0.0.0"))
+	{
+		any = true;
+		*v6num = 0;
+	}
+
+	if (any)
+	{
+		int n = xnet_get_all_ips(ipv6s, v6num, ipv4s, v4num); 
+		if (n < 0)
+			throw XERROR_FMT(XError, "xnet_get_all_ips() failed, errno=%d", errno);
+		else if (n == 0)
+			return 0;
+
+		return *v4num + *v6num;
+	}
 
 	char ipstr[128];
 	int pos = xstr_find_char(&host, 0, '/');
@@ -502,18 +524,6 @@ size_t xic::getIps(const xstr_t& host, uint32_t ipv4s[], int *v4num, uint8_t ipv
 	else
 	{
 		xstr_copy_to(&host, ipstr, sizeof(ipstr));
-	}
-
-	if (ipstr[0] == 0 || strcmp(ipstr, "::") == 0)
-	{
-		int n = xnet_get_all_ips(ipv6s, v6num, ipv4s, v4num); 
-		if (n < 0)
-			throw XERROR_FMT(XError, "xnet_get_all_ips() failed, errno=%d", errno);
-		else if (n == 0)
-			return 0;
-
-		any = true;
-		return *v4num + *v6num;
 	}
 
 	uint8_t the_ipv6[16];
