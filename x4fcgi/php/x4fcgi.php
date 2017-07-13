@@ -76,7 +76,7 @@ class xic_Quest
 		$input = vbs_unpack($input_bytes, 0, 0, $used);
 		if (!(is_array($input) && count($input) == 5))
 		{
-			throw xic_MarshalException("vbs_unpack() failed", 400);
+			throw new xic_MarshalException("vbs_unpack() failed", 400);
 		}
 
 		$q = new xic_Quest();
