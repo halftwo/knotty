@@ -13,8 +13,15 @@ extern "C" {
 #define CENTER_HOST_SIZE	256
 
 extern char dlog_center_host[CENTER_HOST_SIZE];
-extern unsigned short dlog_center_port;
-extern int dlog_center_revision;
+extern volatile unsigned short dlog_center_port;
+extern volatile int dlog_center_revision;
+
+
+#define BLOCK_POOL_SIZE_MIN	64
+#define BLOCK_POOL_SIZE_DFT	1024
+#define BLOCK_POOL_SIZE_MAX	65536
+
+extern volatile size_t dlog_block_pool_size;
 
 
 typedef void luadlog_callback(struct dlog_record *rec);

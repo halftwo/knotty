@@ -52,8 +52,7 @@
 #include <sstream>
 
 
-#define MAX_NUM_BLOCK	512
-
+#define BATCH_SIZE	128
 #define BLOCK_SIZE	(DLOG_PACKET_MAX_SIZE + offsetof(struct block, pkt))
 
 struct block
@@ -201,7 +200,7 @@ static void do_log(struct dlog_record *rec)
 		if (_b)
 			TAILQ_INSERT_TAIL(&_q, _b, link);
 
-		if (_bpl.num_acquire < MAX_NUM_BLOCK)
+		if (_bpl.num_acquire < dlog_block_pool_size)
 			_b = (struct block *)obpool_acquire(&_bpl);
 		else
 		{
@@ -372,19 +371,12 @@ static void ipstr_to_ip64(const char *ipstr, uint8_t ip64[], bool& is6)
 
 static void *sender_thread(void *arg)
 {
-	struct block_queue todo;
-	
 	current_center_revision = dlog_center_revision;
 
 	while (run_logger || TAILQ_FIRST(&_q))
 	{
 		if (!run_logger)
 			dispatcher->cancel();
-
-		char buf[MAX_NUM_BLOCK];
-		struct block *b;
-		size_t num_todo = 0;
-		size_t num_done = 0;
 
 		if (current_center_revision != dlog_center_revision)
 		{
@@ -418,7 +410,8 @@ static void *sender_thread(void *arg)
 			++dlog_idle;
 			if (dlog_idle % 60 == 0 && center_sock != -1)
 			{
-				int n = recv(center_sock, buf, 1, MSG_PEEK | MSG_DONTWAIT);
+				uint8_t onebyte;
+				int n = recv(center_sock, &onebyte, sizeof(onebyte), MSG_PEEK | MSG_DONTWAIT);
 				if (n == 0 || (n < 0 && errno != EAGAIN && errno != EINTR))
 				{
 					xlog(XLOG_NOTICE, "recv()=%d errno=%d", n, errno);
@@ -465,19 +458,23 @@ static void *sender_thread(void *arg)
 			}
 		}
 
+		size_t num_todo = 0;
+		struct block_queue todo;
 		TAILQ_INIT(&todo);
 
+		struct block *b;
 		pthread_mutex_lock(&mutex);
 		while ((b = TAILQ_FIRST(&_q)) != NULL)
 		{
 			TAILQ_REMOVE(&_q, b, link);
 			TAILQ_INSERT_TAIL(&todo, b, link);
 
-			if (++num_todo > MAX_NUM_BLOCK / 16)
+			if (++num_todo > BATCH_SIZE)
 				break;
 		}
 		pthread_mutex_unlock(&mutex);
 	
+		size_t num_done = 0;
 		TAILQ_FOREACH(b, &todo, link)
 		{
 			struct dlog_packet *pkt = NULL;
@@ -542,9 +539,10 @@ static void *sender_thread(void *arg)
 		size_t num_ack = 0;
 		if (center_sock != -1)
 		{
+			uint8_t acks[BATCH_SIZE];
 			int timeout = 60*1000;
 			num_ack = num_done;
-			if (xnet_read_resid(center_sock, buf, &num_done, &timeout) < 0)
+			if (xnet_read_resid(center_sock, acks, &num_done, &timeout) < 0)
 			{
 				xlog(XLOG_NOTICE, "xnet_read_resid() failed: expect=%zd left=%zd", num_ack, num_done);
 				close(center_sock);
@@ -737,10 +735,10 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		uint64_t freq = get_cpu_frequency(0);
 
 		rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "THROB", NULL, "v1 version=%s start=%s now=%s active=%s client=%d"
+		dlog_make(rec, NULL, _program_name, "THROB", NULL, "v2 version=%s start=%s now=%s active=%s client=%d"
 					" info=euser:%s,MHz:%u,cpu:%.1f%%"
 					" record=bad:%ld,take:%llu,cooked:%llu,overflow:%ld,overflow_time:%s"
-					" block=send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
+					" block=pool:%zd,send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
 				DLOG_VERSION,
 				start_time_str, current_ts, active_ts, xatomic_get(&num_client),
@@ -748,7 +746,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 				xatomiclong_get(&num_record_bad), 
 				num_record_take, num_record_cooked,
 				xatomiclong_get(&num_record_overflow), record_overflow_ts,
-				num_block_send, num_compressed_block, 
+				dlog_block_pool_size, num_block_send, num_compressed_block, 
 				num_block_overflow, block_overflow_ts,
 				plugin_file, plugin_md5, plugin_ts, (plugin ? '#' : plugin_mtime ? '*' : '-'),
 				plugin_run, plugin_discard, plugin_error);

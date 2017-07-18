@@ -12,8 +12,9 @@
 #define LUA_DLOGLIBNAME		"dlog"
 
 char dlog_center_host[CENTER_HOST_SIZE];
-unsigned short dlog_center_port = DLOG_CENTER_PORT;
-int dlog_center_revision;
+volatile unsigned short dlog_center_port = DLOG_CENTER_PORT;
+volatile int dlog_center_revision;
+volatile size_t dlog_block_pool_size = BLOCK_POOL_SIZE_DFT;
 
 static struct dlog_record _record_prototype = { .version = DLOG_RECORD_VERSION, .type = DLOG_TYPE_COOKED, };
 static luadlog_callback *_callback;
@@ -70,6 +71,21 @@ static int ldlog_set_center(lua_State *L)
 		dlog_center_port = port;
 		++dlog_center_revision;
 	}
+
+	return 0;
+}
+
+static int ldlog_set_pool_size(lua_State *L)
+{
+	int pool_size = luaL_checkint(L, 1);
+	if (pool_size <= 0)
+		pool_size = BLOCK_POOL_SIZE_DFT;
+	else if (pool_size < BLOCK_POOL_SIZE_MIN)
+		pool_size = BLOCK_POOL_SIZE_MIN;
+	else if (pool_size > BLOCK_POOL_SIZE_MAX)
+		pool_size = BLOCK_POOL_SIZE_MAX;
+
+	dlog_block_pool_size = pool_size;
 
 	return 0;
 }
@@ -148,6 +164,7 @@ static int ldlog_cook(lua_State *L)
 static const luaL_Reg dloglib[] = {
 	{ "cook", ldlog_cook },
 	{ "set_center", ldlog_set_center },
+	{ "set_pool_size", ldlog_set_pool_size },
 	{ NULL, NULL },
 };
 
