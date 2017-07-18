@@ -968,15 +968,16 @@ void *logger(void *arg)
 
 			uint64_t freq = get_cpu_frequency(0);
 
-			xdlog(NULL, _program_name, "THROB", NULL, "v1 version=%s start=%s active=%s client=%d"
+			xdlog(NULL, _program_name, "THROB", NULL, "v2 version=%s start=%s active=%s client=%d"
 					" info=euser:%s,MHz:%u,cpu:%.1f%%"
 					" record=get:%llu,error:%llu"
-					" block=get:%jd,error:%jd,zip:%jd,unzip_error:%jd"
+					" block=pool:%lu,get:%jd,error:%jd,zip:%jd,unzip_error:%jd"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
 				DLOG_VERSION,
 				start_time_str, active_ts, xatomic_get(&num_client),
 				_euser, (int)(freq / 1000000), self_cpu,
 				num_record, num_record_error,
+				_block_pool.num_limit,
 				(intmax_t)xatomic64_get(&num_block), (intmax_t)xatomic64_get(&num_block_error),
 				(intmax_t)xatomic64_get(&num_zip_block), (intmax_t)xatomic64_get(&num_unzip_fail),
 				plugin_file, plugin_md5, plugin_ts, (plugin ? '#' : plugin_mtime ? '*' : '-'),
