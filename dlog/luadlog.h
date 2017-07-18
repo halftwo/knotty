@@ -17,7 +17,7 @@ extern volatile unsigned short dlog_center_port;
 extern volatile int dlog_center_revision;
 
 
-#define BLOCK_POOL_SIZE_MIN	64
+#define BLOCK_POOL_SIZE_MIN	16
 #define BLOCK_POOL_SIZE_DFT	1024
 #define BLOCK_POOL_SIZE_MAX	65536
 
