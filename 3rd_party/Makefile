@@ -5,11 +5,11 @@ INSTALL_DIR=/usr/local
 TOP_DIR=..
 
 
-all: lua st
+all: lua st lz4
 
 install: st-install
 
-clean: lua-clean st-clean
+clean: lua-clean st-clean lz4-clean
 
 
 lua:
@@ -45,4 +45,18 @@ st-clean:
 	$(RM) st
 	$(RM) -r st-1.9
 	$(RM) $(TOP_DIR)/include/st.h
+
+
+lz4:
+	tar -xf lz4-1.7.5.tar.gz
+	(cd lz4-1.7.5 					\
+		&& make 				\
+		&& cd ..				\
+		&& ln -s lz4-1.7.5 lz4 			\
+	)
+
+lz4-clean:
+	$(RM) lz4
+	$(RM) -r lz4-1.7.5
+
 
