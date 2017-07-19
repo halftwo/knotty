@@ -10,6 +10,8 @@ include
 3rd_party/lua-5.1.5/
 3rd_party/st
 3rd_party/st-1.9/
+3rd_party/lz4
+3rd_party/lz4-1.7.5/
 dlog/dlog_center
 dlog/dlog_write
 dlog/dlogd
