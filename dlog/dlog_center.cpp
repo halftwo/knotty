@@ -93,7 +93,7 @@ static int _endian;
 static char _log_dir[PATH_MAX];
 static char _log_pathname[PATH_MAX];
 static FILE *_logfile_fp;
-static int32_t _logfile_time;
+static time_t _logfile_time;
 static int _logfile_size;
 static int _logfile_switch = LOGFILE_SWITCH_DFT;
 static cabin_t *_cab;
@@ -113,7 +113,6 @@ static char the_ip[40];
 static unsigned long long num_banned;
 static unsigned long long num_record_error;
 static unsigned long long num_record;
-static unsigned long idle;
 
 static xatomic64_t num_block;
 static xatomic64_t num_block_error;
@@ -139,14 +138,14 @@ static int64_t usec_diff(const struct timeval* t1, const struct timeval* t2)
 	return x1 - x2;
 }
 
-static FILE *_open_log_file(const char *dir, int32_t *fp_time)
+static FILE *_open_log_file(const char *dir, time_t *fp_time)
 {
 	char time_str[32];
 	char subdir[PATH_MAX];
 	FILE *fp = NULL;
 
-	int tm = dispatcher->msecRealtime() / 1000;
-	get_time_str(tm, time_str);
+	time_t current_time = dispatcher->msecRealtime() / 1000;
+	get_time_str(current_time, time_str);
 	snprintf(subdir, sizeof(subdir), "%s/%.6s", dir, time_str);
 	snprintf(_log_pathname, sizeof(_log_pathname), "%s/%s%s", subdir, LOGFILE_PREFIX, time_str);
 
@@ -169,7 +168,7 @@ static FILE *_open_log_file(const char *dir, int32_t *fp_time)
 		symlink(_log_pathname + dir_len + 1, pathname);
 
 		if (fp_time)
-			*fp_time = tm;
+			*fp_time = current_time;
 	}
 
 	return fp;
@@ -760,9 +759,10 @@ void log_cooked(struct dlog_record *rec)
 
 void *logger(void *arg)
 {
+	const struct timespec ms10 = { 0, 1000*1000*10 };
+	const struct timespec ms500 = { 0, 1000*1000*500 };
 	struct block_queue *queue = NULL;
 	struct packet_block *block = NULL;
-	struct timespec nap = { 0, 1000*1000*50 };
 	time_t last_time = 0;
 	char last_record_time_str[32];
 
@@ -771,6 +771,7 @@ void *logger(void *arg)
 		if (!run_logger)
 			dispatcher->cancel();
 
+		time_t current_time = dispatcher->msecRealtime() / 1000;
 		queue = switch_current_queue();
 		TAILQ_FOREACH(block, queue, link)
 		{
@@ -911,7 +912,7 @@ void *logger(void *arg)
 					total_size += rc;
 					++num_record;
 
-					if (_logfile_size > _logfile_switch && block->time.tv_sec > _logfile_time)
+					if (_logfile_size > _logfile_switch && current_time > _logfile_time)
 						_switch_log_file();
 				}
 			}
@@ -1026,13 +1027,11 @@ void *logger(void *arg)
 				TAILQ_REMOVE(queue, block, link);
 				release_block(block);
 			}
-			nanosleep(&nap, NULL);
-			idle = 0;
+			nanosleep(&ms10, NULL);
 		}
 		else
 		{
-			sleep(1);
-			++idle;
+			nanosleep(&ms500, NULL);
 		}
 	}
 
