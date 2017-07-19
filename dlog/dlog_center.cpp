@@ -90,6 +90,7 @@ TAILQ_HEAD(block_queue, packet_block);
 static struct block_queue _queue_pair[2], *_current_queue;
 static int _endian;
 
+static volatile time_t _current_time;
 static char _log_dir[PATH_MAX];
 static char _log_pathname[PATH_MAX];
 static FILE *_logfile_fp;
@@ -144,8 +145,8 @@ static FILE *_open_log_file(const char *dir, time_t *fp_time)
 	char subdir[PATH_MAX];
 	FILE *fp = NULL;
 
-	time_t current_time = dispatcher->msecRealtime() / 1000;
-	get_time_str(current_time, time_str);
+	time_t now = dispatcher->msecRealtime() / 1000;
+	get_time_str(now, time_str);
 	snprintf(subdir, sizeof(subdir), "%s/%.6s", dir, time_str);
 	snprintf(_log_pathname, sizeof(_log_pathname), "%s/%s%s", subdir, LOGFILE_PREFIX, time_str);
 
@@ -168,7 +169,7 @@ static FILE *_open_log_file(const char *dir, time_t *fp_time)
 		symlink(_log_pathname + dir_len + 1, pathname);
 
 		if (fp_time)
-			*fp_time = current_time;
+			*fp_time = now;
 	}
 
 	return fp;
@@ -682,7 +683,7 @@ public:
 
 private:
 	time_t _last_load;
-	int _minute;
+	long _min;
 	int _hour;
 	int _day;
 };
@@ -692,7 +693,7 @@ MyTimer::MyTimer()
 	struct tm tm;
 	_last_load = time(NULL);
 	localtime_r(&_last_load, &tm);
-	_minute = tm.tm_min;
+	_min = _last_load / 60;
 	_hour = tm.tm_hour;
 	_day = tm.tm_mday;
 }
@@ -701,24 +702,23 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 {
 	int64_t current_ms = dispatcher->msecRealtime();
 	time_t t = current_ms / 1000;
+	_current_time = t;
 
-	flush_timer_expire = true;
+	flush_timer_expire = bool(t / 2);
+
 	if (t - _last_load >= LOAD_INTERVAL)
 	{
 		load_expire = true;
 		_last_load = t;
 	}
 
-	struct tm tm;
-	localtime_r(&t, &tm);
-	if (_minute != tm.tm_min)
+	if (t / 60 != _min)
 	{
-		char ip[40];
-		if (get_ip(ip, false) && strncmp(ip, the_ip, sizeof(the_ip)))
-			memcpy(the_ip, ip, sizeof(the_ip));
-
-		_minute = tm.tm_min;
+		_min = t / 60;
 		minute_expire = true;
+
+		struct tm tm;
+		localtime_r(&t, &tm);
 		if (_hour != tm.tm_hour)
 		{
 			_hour = tm.tm_hour;
@@ -729,9 +729,15 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 				day_expire = true;
 			}
 		}
+
+		char ip[40];
+		if (get_ip(ip, false) && strncmp(ip, the_ip, sizeof(the_ip)))
+		{
+			memcpy(the_ip, ip, sizeof(the_ip));
+		}
 	}
 
-	int timeout = FLUSH_INTERVAL - current_ms % FLUSH_INTERVAL;
+	int timeout = 1000 - current_ms % 1000;
 	dispatcher->addTask(this, timeout);
 }
 
@@ -771,7 +777,6 @@ void *logger(void *arg)
 		if (!run_logger)
 			dispatcher->cancel();
 
-		time_t current_time = dispatcher->msecRealtime() / 1000;
 		queue = switch_current_queue();
 		TAILQ_FOREACH(block, queue, link)
 		{
@@ -912,7 +917,7 @@ void *logger(void *arg)
 					total_size += rc;
 					++num_record;
 
-					if (_logfile_size > _logfile_switch && current_time > _logfile_time)
+					if (_logfile_size > _logfile_switch && _current_time > _logfile_time)
 						_switch_log_file();
 				}
 			}
