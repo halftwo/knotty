@@ -26,9 +26,9 @@
 #include "xslib/loc.h"
 #include "xslib/queue.h"
 #include "xslib/obpool.h"
-#include "xslib/lz4.h"
 #include "xslib/cstr.h"
 #include "xslib/iobuf.h"
+#include <lz4.h>
 #include <libgen.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -478,16 +478,16 @@ static void *sender_thread(void *arg)
 		TAILQ_FOREACH(b, &todo, link)
 		{
 			struct dlog_packet *pkt = NULL;
-			unsigned char pktbuf[DLOG_PACKET_MAX_SIZE + (DLOG_PACKET_MAX_SIZE / 255) + 16 + 4096];
+			unsigned char pktbuf[LZ4_COMPRESSBOUND(DLOG_PACKET_MAX_SIZE) + 4096];
 			bool compressed = false;
 
 			if (compress_threshold && b->pkt.size >= compress_threshold)
 			{
 				pkt = (struct dlog_packet *)pktbuf;
 				int in_len = b->pkt.size - DLOG_PACKET_HEAD_SIZE;
-				int out_len = LZ4_compress(b->pkt.buf, pkt->buf, in_len);
+				int out_len = LZ4_compress_default(b->pkt.buf, pkt->buf, in_len, LZ4_COMPRESSBOUND(DLOG_PACKET_MAX_SIZE));
 
-				if (out_len < 0)
+				if (out_len <= 0)
 				{
 					++num_compress_failure;
 				}

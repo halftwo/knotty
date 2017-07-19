@@ -11,9 +11,9 @@ CFLAGS= -g -Wall -fPIC -O2
 
 CXXFLAGS = -g -Wall -fPIC -O2
 
-CPPFLAGS= -DXSLIB_RCSID -I. -I.. -I../3rd_party/lua/src
+CPPFLAGS= -DXSLIB_RCSID -I. -I.. -I../3rd_party/lua/src -I../3rd_party/lz4/lib
 
-LIBS= -rdynamic -pthread -L. -L../lib -L../3rd_party/lua/src -lxs -llua -ldl -lm -lrt
+LIBS= -rdynamic -pthread -Wl,-static -L../lib -L../3rd_party/lua/src -L../3rd_party/lz4/lib -lxs -llua -llz4 -Wl,-call_shared -ldl -lm -lrt
 
 all: $(OBJS) $(LIBRARY) $(EXES)
 

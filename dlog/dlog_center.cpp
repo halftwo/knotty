@@ -24,7 +24,7 @@
 #include "xslib/daemon.h"
 #include "xslib/dirwalk.h"
 #include "xslib/mlzo.h"
-#include "xslib/lz4.h"
+#include <lz4.h>
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -52,9 +52,9 @@
 #define LOGFILE_PREFIX		"xl."
 #define ZIPFILE_SUFFIX		".lz4"
 
-#define MINIMUM_LOG_MAX_SIZE	(1024*1024*1)
-#define DEFAULT_LOG_MAX_SIZE	(1024*1024*1024)
-
+#define LOGFILE_RESERVE 	(DLOG_RECORD_MAX_SIZE - 256)
+#define LOGFILE_SWITCH_MIN	(1024*1024*1 - LOGFILE_RESERVE)
+#define LOGFILE_SWITCH_DFT	(1024*1024*1024 - LOGFILE_RESERVE)
 
 #define BLOCK_SIZE	(DLOG_PACKET_MAX_SIZE + offsetof(struct packet_block, pkt))
 
@@ -92,9 +92,10 @@ static int _endian;
 
 static char _log_dir[PATH_MAX];
 static char _log_pathname[PATH_MAX];
-static FILE *_log_fp;
-static int _log_size;
-static int _log_max_size = DEFAULT_LOG_MAX_SIZE;
+static FILE *_logfile_fp;
+static int32_t _logfile_time;
+static int _logfile_size;
+static int _logfile_switch = LOGFILE_SWITCH_DFT;
 static cabin_t *_cab;
 
 static int _euid = -1;
@@ -138,13 +139,14 @@ static int64_t usec_diff(const struct timeval* t1, const struct timeval* t2)
 	return x1 - x2;
 }
 
-static FILE *_open_log_file(const char *dir)
+static FILE *_open_log_file(const char *dir, int32_t *fp_time)
 {
 	char time_str[32];
 	char subdir[PATH_MAX];
 	FILE *fp = NULL;
 
-	get_time_str(dispatcher->msecRealtime() / 1000, time_str);
+	int tm = dispatcher->msecRealtime() / 1000;
+	get_time_str(tm, time_str);
 	snprintf(subdir, sizeof(subdir), "%s/%.6s", dir, time_str);
 	snprintf(_log_pathname, sizeof(_log_pathname), "%s/%s%s", subdir, LOGFILE_PREFIX, time_str);
 
@@ -165,7 +167,11 @@ static FILE *_open_log_file(const char *dir)
 		snprintf(pathname, sizeof(pathname), "%s/zlog", dir);
 		unlink(pathname);
 		symlink(_log_pathname + dir_len + 1, pathname);
+
+		if (fp_time)
+			*fp_time = tm;
 	}
+
 	return fp;
 }
 
@@ -230,14 +236,14 @@ static void *compressor(void *arg)
 
 static void _switch_log_file()
 {
-	fclose(_log_fp);
+	fclose(_logfile_fp);
 
 	pthread_t thr;
 	pthread_create(&thr, NULL, compressor, strdup(_log_pathname));
 
-	_log_size = 0;
-	_log_fp = _open_log_file(_log_dir);
-	if (_log_fp == NULL)
+	_logfile_size = 0;
+	_logfile_fp = _open_log_file(_log_dir, &_logfile_time);
+	if (_logfile_fp == NULL)
 	{
 		fprintf(stderr, "_open_log_file() failed, pathname=%s, errno=%d, %m\nexit(1)", _log_pathname, errno);
 		exit(1);
@@ -882,7 +888,7 @@ void *logger(void *arg)
 					{
 						char *p = (char *)memrchr(recstr, ' ', rec->locus_end);
 						int len = p ? p - recstr : 0;
-						rc = fprintf(_log_fp, "%c%s %s %d+%d %.*s %s %s%s\n",
+						rc = fprintf(_logfile_fp, "%c%s %s %d+%d %.*s %s %s%s\n",
 							TYPECODE[rec->type], last_record_time_str,
 							block->pkt_ip, rec->pid, rec->port,
 							len, recstr, block->out_addr,
@@ -890,7 +896,7 @@ void *logger(void *arg)
 					}
 					else
 					{
-						rc = fprintf(_log_fp, "%c%s %s %d+%d %s%s\n",
+						rc = fprintf(_logfile_fp, "%c%s %s %d+%d %s%s\n",
 							TYPECODE[rec->type], last_record_time_str,
 							block->pkt_ip, rec->pid, rec->port,
 							recstr, rec->truncated ? "\a ..." : "");
@@ -901,12 +907,11 @@ void *logger(void *arg)
 						fprintf(stderr, "fprintf() failed, pathname=%s\nexit(1)", _log_pathname);
 						exit(1);
 					}
-					_log_size += rc;
+					_logfile_size += rc;
 					total_size += rc;
 					++num_record;
 
-					// Make sure the size of log file less than _log_max_size
-					if (_log_size > _log_max_size - DLOG_RECORD_MAX_SIZE - 256)
+					if (_logfile_size > _logfile_switch && block->time.tv_sec > _logfile_time)
 						_switch_log_file();
 				}
 			}
@@ -915,7 +920,7 @@ void *logger(void *arg)
 		if (flush_timer_expire)
 		{
 			flush_timer_expire = false;
-			fflush(_log_fp);
+			fflush(_logfile_fp);
 			if (_cab)
 				cabin_flush(_cab);
 
@@ -1074,8 +1079,8 @@ static void sig_handler(int sig)
 
 static void cleanup()
 {
-	if (_log_fp)
-		fclose(_log_fp);
+	if (_logfile_fp)
+		fclose(_logfile_fp);
 
 	do_compress(_log_pathname);
 }
@@ -1084,12 +1089,12 @@ static int _dlog_callback(void *state, const char *str, size_t length)
 {
 	static int pid = getpid();
 
-	if (_log_fp)
+	if (_logfile_fp)
 	{
 		char time_str[32];
 		time_t t = dispatcher->msecRealtime() / 1000;
 		get_time_str(t, time_str);
-		fprintf(_log_fp, "%c%s %s %d+0 %.*s\n", TYPECODE[DLOG_TYPE_SYS], time_str, the_ip, pid, (int)length, str);
+		fprintf(_logfile_fp, "%c%s %s %d+0 %.*s\n", TYPECODE[DLOG_TYPE_SYS], time_str, the_ip, pid, (int)length, str);
 	}
 	return 0;
 }
@@ -1153,9 +1158,9 @@ int main(int argc, char **argv)
 		user = OPT_EARG(usage(prog));
 		break;
 	case 's':
-		_log_max_size = atoi(OPT_EARG(usage(prog))) * 1024 * 1024;
-		if (_log_max_size < MINIMUM_LOG_MAX_SIZE)
-			_log_max_size = MINIMUM_LOG_MAX_SIZE;
+		_logfile_switch = atoi(OPT_EARG(usage(prog))) * 1024 * 1024 - LOGFILE_RESERVE;
+		if (_logfile_switch < LOGFILE_SWITCH_MIN)
+			_logfile_switch = LOGFILE_SWITCH_MIN;
 		break;
 	case 'x':
 		xlog_level = atoi(OPT_EARG(usage(prog)));
@@ -1231,8 +1236,8 @@ int main(int argc, char **argv)
 		goto error;
 	}
 
-	_log_fp = _open_log_file(_log_dir);
-	if (!_log_fp)
+	_logfile_fp = _open_log_file(_log_dir, &_logfile_time);
+	if (!_logfile_fp)
 	{
 		fprintf(stderr, "_open_log_file() failed, pathname=%s, errno=%d, %m\n", _log_pathname, errno);
 		goto error;
