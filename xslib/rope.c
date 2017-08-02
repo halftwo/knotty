@@ -708,6 +708,124 @@ ssize_t rope_erase(rope_t *rope, size_t pos, size_t size)
 	return r;
 }
 
+
+static bool _equal(rope_block_t *rb, rope_block_t *end, ssize_t i, const void *needle, size_t size)
+{
+	for (; true; rb = rb->next, i = 0)
+	{
+		ssize_t n = rb->len - i;
+		if (n > size)
+			n = size;
+
+		if (memcmp(rb->buf + i, needle, n) != 0)
+			return false;
+
+		needle += n;
+		size -= n;
+
+		if (size == 0)
+			return true;
+
+		if (rb == end)
+			break;
+	}
+	return false;
+}
+
+ssize_t rope_find(const rope_t *rope, ssize_t pos, const void *needle, size_t size)
+{
+	unsigned char byte0;
+	rope_block_t *rb, *next;
+	ssize_t i;
+
+	if (pos < 0)
+	{
+		pos += rope->length;
+		if (pos < 0)
+			pos = 0;
+	}
+
+	if ((ssize_t)size <= 0)
+		return (size_t)pos <= rope->length ? pos : -1;
+
+	if ((size_t)pos + size > rope->length)
+		return -1;
+
+	byte0 = *(unsigned char *)needle;
+	needle = (unsigned char*)needle + 1;
+	size -= 1;
+
+	i = pos;
+	next = rope->_last->next;
+	do
+	{
+		rb = next;
+		next = rb->next;
+		for (; i < rb->len; ++pos, ++i)
+		{
+			if (rb->buf[i] == byte0)
+			{
+				if (size == 0 || _equal(rb, rope->_last, i + 1, needle, size))
+					return pos;
+			}
+		}
+
+		i -= rb->len;
+	} while (rb != rope->_last);
+
+	return -1;
+}
+
+size_t rope_substr_copy(const rope_t *rope, ssize_t pos, void *out, size_t size)
+{
+	rope_block_t *block;
+	unsigned char *buf;
+	ssize_t len, n;
+
+	if ((ssize_t)size <= 0)
+		return 0;
+
+	if (pos < 0)
+	{
+		pos += rope->length;
+		if (pos < 0)
+			pos = 0;
+	}
+
+	if ((size_t)pos >= rope->length)
+		return 0;
+
+	len = rope->length - pos;
+	if (size > (size_t)len)
+		size = len;
+
+	block = NULL;
+	while (rope_next_block(rope, &block, &buf, &len))
+	{
+		if (pos < len)
+			break;
+
+		pos -= len;
+	}
+
+	n = len - pos;
+	if (n > size)
+		n = size;
+	memcpy(out, buf + pos, n);
+
+	while (n < size && rope_next_block(rope, &block, &buf, &len))
+	{
+		ssize_t left = size - n;
+		if (len > left)
+			len = left;
+		memcpy((unsigned char *)out + n, buf, len);
+		n += len;
+	}
+
+	assert(n == size);
+	return n;
+}
+
 bool rope_next_block(const rope_t *rope, rope_block_t **p_block, unsigned char **p_buf, ssize_t *p_size)
 {
 	rope_block_t *rb = *p_block;
@@ -806,12 +924,26 @@ int main()
 	const char *ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	rope_t rp;
 	struct iovec iov[100];
+	ssize_t rc;
 
-	rope_init(&rp, 0, NULL, NULL);
-	rope_strcat(&rp, alphabet);
-	rope_strcat(&rp, alphabet);
-	rope_strcat(&rp, alphabet);
-	rope_insert(&rp, 16, ALPHABET, 7);
+	rope_init(&rp, 5, NULL, NULL);
+	rope_puts(&rp, alphabet);
+	rope_write(&rp, ALPHABET, 10);
+	rope_puts(&rp, ALPHABET);
+	rope_write(&rp, alphabet, 10);
+	rope_puts(&rp, alphabet);
+	rope_puts(&rp, alphabet);
+
+	printf("block_count=%d\nblock_size=%d\n", rp.block_count, rp.block_size);
+
+	rc = rope_find(&rp, 0, ALPHABET, 20);
+	printf("rc=%zd\n", rc);
+
+	rc = rope_find(&rp, rc, alphabet, 20);
+	printf("rc=%zd\n", rc);
+
+	rope_dump(&rp, stdio_xio.write, stdout);
+
 	rope_erase(&rp, 16, 7);
 	rope_erase(&rp, 15, 87);
 	rope_iovec(&rp, iov);
