@@ -776,7 +776,19 @@ ssize_t rope_find(const rope_t *rope, ssize_t pos, const void *needle, size_t si
 	return -1;
 }
 
-size_t rope_substr_copy(const rope_t *rope, ssize_t pos, void *out, size_t size)
+size_t rope_substr_copy_cstr(const rope_t *rope, ssize_t pos, void *out, size_t size)
+{
+	size_t len;
+
+	if ((ssize_t)size <= 0)
+		return 0;
+
+	len = rope_substr_copy_mem(rope, pos, out, size - 1);
+	((unsigned char *)out)[len] = 0;
+	return len;	
+}
+
+size_t rope_substr_copy_mem(const rope_t *rope, ssize_t pos, void *out, size_t size)
 {
 	rope_block_t *block;
 	unsigned char *buf;
@@ -924,11 +936,12 @@ int main()
 	const char *ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	rope_t rp;
 	struct iovec iov[100];
-	ssize_t rc;
+	ssize_t rc0, rc1;
+	unsigned char buf[256];
 
 	rope_init(&rp, 5, NULL, NULL);
 	rope_puts(&rp, alphabet);
-	rope_write(&rp, ALPHABET, 10);
+	rope_puts(&rp, "ABABCABBCC");
 	rope_puts(&rp, ALPHABET);
 	rope_write(&rp, alphabet, 10);
 	rope_puts(&rp, alphabet);
@@ -936,13 +949,17 @@ int main()
 
 	printf("block_count=%d\nblock_size=%d\n", rp.block_count, rp.block_size);
 
-	rc = rope_find(&rp, 0, ALPHABET, 20);
-	printf("rc=%zd\n", rc);
+	rc0 = rope_find(&rp, 0, ALPHABET, 25);
+	printf("rc=%zd\n", rc0);
 
-	rc = rope_find(&rp, rc, alphabet, 20);
-	printf("rc=%zd\n", rc);
+	rc1 = rope_find(&rp, rc0, alphabet, 25);
+	printf("rc=%zd\n", rc1);
+
+	rope_substr_copy_cstr(&rp, rc0, buf, (rc1 - rc0) + 1);
+	printf("#%s#\n", buf);
 
 	rope_dump(&rp, stdio_xio.write, stdout);
+	printf("\n");
 
 	rope_erase(&rp, 16, 7);
 	rope_erase(&rp, 15, 87);

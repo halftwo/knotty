@@ -86,11 +86,14 @@ rope_block_t *rope_insert_external(rope_t *rope, size_t pos, const void *buffer,
 ssize_t rope_join(rope_t *rope, rope_t *joined);
 
 
-bool rope_next_block(const rope_t *rope, rope_block_t **pblock, unsigned char **pbuf, ssize_t *psize);
-
 ssize_t rope_find(const rope_t *rope, ssize_t pos, const void *needle, size_t size);
 
-size_t rope_substr_copy(const rope_t *rope, ssize_t pos, void *out, size_t n);
+size_t rope_substr_copy_cstr(const rope_t *rope, ssize_t pos, void *out, size_t n);
+
+size_t rope_substr_copy_mem(const rope_t *rope, ssize_t pos, void *out, size_t n);
+
+
+bool rope_next_block(const rope_t *rope, rope_block_t **pblock, unsigned char **pbuf, ssize_t *psize);
 
 void rope_copy_to(const rope_t *rope, unsigned char *buf);
 
