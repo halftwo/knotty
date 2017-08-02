@@ -113,7 +113,7 @@ public:
 	const rope_t* get_stderr();
 
 	ssize_t xic_answer_size();
-	void xic_answer_copy(uint8_t *buf);
+	ssize_t xic_answer_copy(uint8_t *buf);	// return _answer_size;
 
 	const char* request_uri() const		{ return _request_uri; } 
 

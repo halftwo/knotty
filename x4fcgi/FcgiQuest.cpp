@@ -301,9 +301,13 @@ error:
 	return -1;
 }
 
-void FcgiAnswer::xic_answer_copy(uint8_t *buf)
+ssize_t FcgiAnswer::xic_answer_copy(uint8_t *buf)
 {
-	rope_substr_copy(&_content, _answer_begin, buf, _answer_size);
+	if (xic_answer_size() > 0)
+	{
+		rope_substr_copy_mem(&_content, _answer_begin, buf, _answer_size);
+	}
+	return _answer_size;
 }
 
 void FcgiAnswer::append_header(const void *data, size_t len)
