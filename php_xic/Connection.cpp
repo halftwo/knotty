@@ -66,7 +66,7 @@ Connection::Connection(const EnginePtr& engine, const std::string& endpoint)
 	else if (xstr_find_char(&host, 0, ':') >= 0 && host.len < 40)
 	{
 		char buf[40];
-		xstr_copy_to(&host, buf, sizeof(buf));
+		xstr_copy_cstr(&host, buf, sizeof(buf));
 		uint8_t ipv6[16];
 		if (xnet_ipv6_aton(buf, ipv6))
 		{
@@ -91,7 +91,7 @@ Connection::Connection(const EnginePtr& engine, const std::string& endpoint)
 	else if (xstr_char_in_bset(&host, 0, &digit_bset) && host.len < 16)
 	{
 		char buf[16];
-		xstr_copy_to(&host, buf, sizeof(buf));
+		xstr_copy_cstr(&host, buf, sizeof(buf));
 		uint32_t ip;
 		if (xnet_ipv4_aton(buf, &ip))
 		{
