@@ -143,7 +143,7 @@ void SecretBox::_init(uint8_t *content, ssize_t size)
 		if (secret.host.len > 0 && secret.host.len < 40)
 		{
 			char buf[40];
-			xstr_copy_to(&secret.host, buf, sizeof(buf));
+			xstr_copy_cstr(&secret.host, buf, sizeof(buf));
 			if (!xnet_ip46_aton(buf, secret.ip6))
 				secret.prefix = 128;
 			else if (xstr_find_char(&secret.host, 0, ':') < 0 && secret.prefix <= 32)
@@ -236,7 +236,7 @@ bool SecretBox::find(const xstr_t& service, const xstr_t& protocol, const xstr_t
 	if (host.len < 40)
 	{
 		char buf[40];
-		xstr_copy_to(&host, buf, sizeof(buf));
+		xstr_copy_cstr(&host, buf, sizeof(buf));
 		if (xnet_ip46_aton(buf, ip6))
 		{
 			host.len = 0;

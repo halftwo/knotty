@@ -513,8 +513,9 @@ size_t xic::getIps(const xstr_t& host, uint32_t ipv4s[], int *v4num, uint8_t ipv
 	int prefix_len = -1;
 	if (pos > 0)
 	{
-		xstr_slice_copy_to(&host, 0, pos, ipstr, sizeof(ipstr));
-		xstr_t tmp = xstr_suffix(&host, pos + 1);
+		xstr_t tmp = xstr_slice(&host, 0, pos);
+		xstr_copy_cstr(&tmp, ipstr, sizeof(ipstr));
+		tmp = xstr_suffix(&host, pos + 1);
 		prefix_len = xstr_atoi(&tmp);
 		if (is_ipv6 && prefix_len >= 128)
 			prefix_len = -1;
@@ -523,7 +524,7 @@ size_t xic::getIps(const xstr_t& host, uint32_t ipv4s[], int *v4num, uint8_t ipv
 	}
 	else
 	{
-		xstr_copy_to(&host, ipstr, sizeof(ipstr));
+		xstr_copy_cstr(&host, ipstr, sizeof(ipstr));
 	}
 
 	uint8_t the_ipv6[16];

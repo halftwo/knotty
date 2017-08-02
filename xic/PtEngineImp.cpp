@@ -284,7 +284,7 @@ PtConnection::PtConnection(PtEngine* engine, const std::string& service, const s
 
 	char buf[128];
 	if (ei.host.len)
-		xstr_copy_to(&ei.host, buf, sizeof(buf));
+		xstr_copy_cstr(&ei.host, buf, sizeof(buf));
 	else
 		strcpy(buf, "127.0.0.1");
 

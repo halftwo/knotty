@@ -150,8 +150,11 @@ char *strdup_xstr(const xstr_t *str);
 char *strdup_mem(const void *s, size_t n);
 
 
-/* If n > 0, buf will always be terminated by '\0'. */
-size_t xstr_copy_to(const xstr_t *str, void *buf, size_t n);
+/* If n > 0, out will always be terminated by '\0'. */
+size_t xstr_copy_cstr(const xstr_t *str, void *out, size_t n);
+
+/* out will NOT be terminated by '\0'. */
+size_t xstr_copy_mem(const xstr_t *str, void *out, size_t n);
 
 
 int xstr_compare(const xstr_t *s1, const xstr_t *s2);
@@ -245,9 +248,6 @@ xstr_t xstr_prefix(const xstr_t *str, ssize_t end);			/* [0, end) */
 xstr_t xstr_suffix(const xstr_t *str, ssize_t start);			/* [start, XSTR_MAXLEN) */
 xstr_t xstr_slice(const xstr_t *str, ssize_t start, ssize_t end);	/* [start, end) */
 xstr_t xstr_substr(const xstr_t *str, ssize_t pos, size_t length);
-
-size_t xstr_slice_copy_to(const xstr_t *str, ssize_t start, ssize_t end, void *buf, size_t n);
-size_t xstr_substr_copy_to(const xstr_t *str, ssize_t pos, size_t length, void *buf, size_t n);
 
 
 size_t xstr_count(const xstr_t *str, const xstr_t *needle);

@@ -175,7 +175,7 @@ try
 			fprintf(stderr, "ERROR: the password contains invalid char '%c'\n", xs.data[rc]);
 			exit(1);
 		}
-		xstr_copy_to(&xs, passbuf, sizeof(passbuf));
+		xstr_copy_cstr(&xs, passbuf, sizeof(passbuf));
 		password = passbuf;
 	}
 	else

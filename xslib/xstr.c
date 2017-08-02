@@ -209,7 +209,7 @@ char *strdup_xstr(const xstr_t *str)
 	return strdup_mem(str->data, str->len);
 }
 
-size_t xstr_copy_to(const xstr_t *str, void *buf, size_t n)
+size_t xstr_copy_cstr(const xstr_t *str, void *buf, size_t n)
 {
 	if (n > 0)
 	{
@@ -217,6 +217,17 @@ size_t xstr_copy_to(const xstr_t *str, void *buf, size_t n)
 		if (n > 0)
 			memcpy(buf, str->data, n);
 		((uint8_t*)buf)[n] = 0;
+	}
+	return n;
+}
+
+size_t xstr_copy_mem(const xstr_t *str, void *buf, size_t n)
+{
+	if (n > 0)
+	{
+		n = (n <= str->len) ? n : str->len;
+		if (n > 0)
+			memcpy(buf, str->data, n);
 	}
 	return n;
 }
@@ -1362,12 +1373,6 @@ xstr_t xstr_slice(const xstr_t *xs, ssize_t start, ssize_t end)
 	return sub;
 }
 
-size_t xstr_slice_copy_to(const xstr_t *str, ssize_t start, ssize_t end, void *buf, size_t n)
-{
-	xstr_t tmp = xstr_slice(str, start, end);
-	return xstr_copy_to(&tmp, buf, n);
-}
-
 xstr_t xstr_prefix(const xstr_t *xs, ssize_t end)
 {
 	xstr_t sub;
@@ -1433,12 +1438,6 @@ xstr_t xstr_substr(const xstr_t *xs, ssize_t pos, size_t length)
 	}
 
 	return sub;
-}
-
-size_t xstr_substr_copy_to(const xstr_t *str, ssize_t pos, size_t length, void *buf, size_t n)
-{
-	xstr_t tmp = xstr_substr(str, pos, length);
-	return xstr_copy_to(&tmp, buf, n);
 }
 
 xstr_t *xstr_advance(xstr_t *xs, size_t n)

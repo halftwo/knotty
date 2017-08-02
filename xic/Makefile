@@ -17,7 +17,7 @@ CXXFLAGS = -g -Wall -O2
 
 CPPFLAGS = -I. -I.. -I../include
 
-LIBS = -rdynamic -pthread -L../lib -lxic -ldlog -lxs -lrt
+LIBS = -rdynamic -pthread -Wl,-static -L../lib -lxic -ldlog -lxs -Wl,-call_shared -lrt
 
 
 all: $(LIBXIC_OBJS) $(LIBXIC) $(EXES)

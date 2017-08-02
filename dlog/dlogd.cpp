@@ -901,7 +901,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		xstr_init(&s, _buf, n > 0 ? n : 0);
 		xstr_trim(&s);
 		xstr_replace_char(&s, ' ', ',');
-		xstr_copy_to(&s, loadavg, sizeof(loadavg));
+		xstr_copy_cstr(&s, loadavg, sizeof(loadavg));
 
 		long memTotal = 0, memFree = 0, memBuffer = 0, memCache = 0;
 		long swapTotal = 0, swapFree = 0;
