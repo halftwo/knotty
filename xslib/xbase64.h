@@ -12,7 +12,8 @@
 extern "C" {
 #endif
 
-#define XBASE64_LEN(n)	(((n) * 4 + 2) / 3)
+#define XBASE64_LEN(n)		(((n) * 8 + 5) / 6)	/* without padding */
+#define XBASE64_TOTAL_LEN(n) 	(((n) + 2) / 3 * 4)	/* with padding */
 
 typedef struct xbase64_t xbase64_t;
 
