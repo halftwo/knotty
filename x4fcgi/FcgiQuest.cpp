@@ -197,7 +197,7 @@ struct iovec* FcgiQuest::get_iovec(int* count)
 	_params_add(SCRIPT_FILENAME_XS, _script_filename);
 	_params_add(DOCUMENT_ROOT_XS, conf.rootdir.data(), conf.rootdir.length());
 
-	_params_add(XIC4FCGI_VERSION_XS, XS_SNL("1"));
+	_params_add(XIC4FCGI_VERSION_XS, XS_SNL("2"));
 	_params_add(XIC_SERVICE_XS, _kq->service());
 	_params_add(XIC_METHOD_XS, _kq->method());
 	_params_add(XIC_ENDPOINT_XS, _endpoint.data(), _endpoint.length());
@@ -240,6 +240,8 @@ FcgiAnswer::FcgiAnswer(ostk_t *ostk, const xstr_t& request_uri)
 	_xic4fcgi = 0;
 	_status = 200;
 	_request_uri = ostk_strdup_xstr(_ostk, &request_uri);
+	_answer_begin = -1;
+	_answer_size = 0;
 }
 
 FcgiAnswer::~FcgiAnswer()
@@ -256,15 +258,52 @@ FcgiAnswer* FcgiAnswer::create(const xstr_t& request_uri)
 	NEW_OBJ_WITH_OSTK_ARGS(FcgiAnswer, NULL, request_uri);
 }
 
-bool FcgiAnswer::is_valid_xic() const
+ssize_t FcgiAnswer::xic_answer_size()
 {
-	if (_xic4fcgi != 1)
-		return false;
+	static const xstr_t BEGIN = XSTR_CONST("\x00\x00\x00\x00XiC4fCgI\x00\x00\x00\x00");
+	static const xstr_t END = XSTR_CONST("\x00\x00\x00\x00xIc4FcGi\x00\x00\x00\x00");
 
-	if (_content.length < 4)
-		return false;
+	if (_answer_size == 0)
+	{
+		if (_xic4fcgi != 2)
+			goto error;
 
-	return true;
+		if (_content.length < 36)
+			goto error;
+
+		ssize_t start = rope_find(&_content, 0, BEGIN.data, BEGIN.len);
+		if (start < 0)
+			goto error;
+
+		_answer_begin = start + BEGIN.len;
+
+		ssize_t end = rope_find(&_content, _answer_begin, END.data, END.len);
+		if (end < 0)
+			goto error;
+
+		_answer_size = end - _answer_begin;
+
+		if (_answer_size + 32 != (ssize_t)_content.length)
+		{
+			rope_block_t *block = NULL;
+			xstr_t body = xstr_null;
+			rope_next_block(&_content, &block, &body.data, &body.len);
+			const char *more_body = (_content.block_count > 1) ? " ... " : ""; 
+
+			xdlog(NULL, NULL, "STDOUT", _request_uri, "%.*s%s", XSTR_P(&body), more_body);
+			xdlog(NULL, NULL, "WARNING", _request_uri, "require_once(\"x4fcgi.php\") should be the first statement in the entry file run.php");
+		}
+	}
+	return _answer_size;
+
+error:
+	_answer_size = -1;
+	return -1;
+}
+
+void FcgiAnswer::xic_answer_copy(uint8_t *buf)
+{
+	rope_substr_copy(&_content, _answer_begin, buf, _answer_size);
 }
 
 void FcgiAnswer::append_header(const void *data, size_t len)

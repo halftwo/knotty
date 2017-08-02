@@ -95,6 +95,8 @@ class FcgiAnswer: public XRefCount
 	int _xic4fcgi;
 	int _status;
 	const char *_request_uri;
+	ssize_t _answer_begin;
+	ssize_t _answer_size;
 
 	FcgiAnswer(ostk_t *ostk, const xstr_t& request_uri);
 	virtual ~FcgiAnswer();
@@ -110,13 +112,15 @@ public:
 	const rope_t* get_content();
 	const rope_t* get_stderr();
 
+	ssize_t xic_answer_size();
+	void xic_answer_copy(uint8_t *buf);
+
 	const char* request_uri() const		{ return _request_uri; } 
 
 	int status() const			{ return _status; }
 	void set_status(int status)		{ _status = status; }
 
 	void set_xic4fcgi(int ver)		{ _xic4fcgi = ver; }
-	bool is_valid_xic() const;
 
 	ostk_t *ostk() const			{ return _ostk; }
 };

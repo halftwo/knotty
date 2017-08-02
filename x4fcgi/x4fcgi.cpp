@@ -16,9 +16,9 @@
 #include <errno.h>
 #include <vector>
 
-#define X4FCGI_V_EDITION          170614
-#define X4FCGI_V_REVISION         170623
-#define X4FCGI_V_RELEASE          18
+#define X4FCGI_V_EDITION          170802
+#define X4FCGI_V_REVISION         170802
+#define X4FCGI_V_RELEASE          23
 
 #define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
 
@@ -107,7 +107,8 @@ void FCallback::response(const FcgiAnswerPtr& fa)
 {
 	try {
 		assert(fa);
-		if (!fa->is_valid_xic())
+		ssize_t answer_size = fa->xic_answer_size();
+		if (answer_size <= 0)
 		{
 			rope_block_t *block;
 
@@ -122,12 +123,13 @@ void FCallback::response(const FcgiAnswerPtr& fa)
 			const char *more_body = (fa->get_content()->block_count > 1) ? " ... " : ""; 
 
 			xstr_t err_xs = xstr_null;
+			block = NULL;
 			rope_next_block(fa->get_stderr(), &block, &err_xs.data, &err_xs.len);
 			const char *more_err = (fa->get_stderr()->block_count > 1) ? " ... " : ""; 
 			const char *stderr_prefix = err_xs.len > 0 ? "\n__STDERR__:\n" : "";
 
-			xdlog(NULL, NULL, "STDOUT", fa->request_uri(), "%.*s%s%.*s%s",
-				XSTR_P(&header), more_header, XSTR_P(&body), more_body);
+			xdlog(NULL, NULL, "STDOUT", fa->request_uri(), "%.*s%s", XSTR_P(&body), more_body);
+			xdlog(NULL, NULL, "WARNING", fa->request_uri(), "Invalid x4fcgi answer from the fcgi server");
 
 			if (fa->status() != 200)
 			{
@@ -154,18 +156,16 @@ void FCallback::response(const FcgiAnswerPtr& fa)
 				stderr_prefix, XSTR_P(&err_xs), more_err);
 		}
 
-		const rope_t *content = fa->get_content();
 		const rope_t *err = fa->get_stderr();
 		xic::AnswerPtr answer;
 		if (_displayError && err->length > 0)
 		{
 			xstr_t stderr_xs = XSTR_CONST("__stderr__");
 			int len = vbs_size_of_string(stderr_xs.len) + vbs_size_of_string(err->length);
-			answer = xic::Answer::create(content->length + len);
+			answer = xic::Answer::create(answer_size + len);
 			xstr_t body = answer->body();
-			rope_copy_to(content, body.data);
-			/* XXX: We assume the vbs dict is packed without the dict body size encoded. */
-			char *p = (char *)body.data + content->length - 1;
+			fa->xic_answer_copy(body.data);
+			char *p = (char *)body.data + answer_size - 1;
 			vbs_packer_t pk = VBS_PACKER_INIT(pptr_xio.write, &p, -1);
 			pk.depth = 1;	// We already in the dict.
 			vbs_pack_xstr(&pk, &stderr_xs);
@@ -175,12 +175,12 @@ void FCallback::response(const FcgiAnswerPtr& fa)
 		}
 		else
 		{
-			answer = xic::Answer::create(content->length);
+			answer = xic::Answer::create(answer_size);
 			xstr_t body = answer->body();
-			rope_copy_to(content, body.data);
+			fa->xic_answer_copy(body.data);
 		}
 
-		/* unpack to check it's valid vbs encoded answer. */
+		/* unpack to check it's a valid vbs encoded answer. */
 		answer->unpack_body();
 		answer->args_dict();
 		_waiter->response(answer);

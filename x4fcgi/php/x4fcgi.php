@@ -4,11 +4,12 @@
 * A framework to provide xic service with php in fcgi.
 * @package x4fcgi 
 * @author jiagui
-* @version 170614.170614.18
+* @version 170802.170802.23
 * Following is an example program.
 *
 --------------- BEGIN OF EXAMPLE PROGRAM ------------
 
+# NB: This require_once("x4fcgi.php") should be the first statement.
 require_once("x4fcgi.php");
 
 // You are not supposed to echo or print to the output directly.
@@ -247,14 +248,20 @@ function x4fcgi_serve($callback)
 
 	if (!$iscli)
 	{
-		header("XIC4FCGI_VERSION: 1");
+		$ver = intval($_SERVER['XIC4FCGI_VERSION']);
+		$ver = ($ver < 1) ? 1 : ($ver > 2) ? 2 : $ver;
+		header("XIC4FCGI_VERSION: ".$ver);
 		header("Content-Type: application/octet-stream");
 
 		// output: %d %d {...}
 		$output_fp = fopen("php://output", "wb");
+		if ($ver == 2)
+			fwrite($output_fp, "\x00\x00\x00\x00XiC4fCgI\x00\x00\x00\x00", 16);
 		vbs_encode_write($output_fp, intval($txid));
 		vbs_encode_write($output_fp, intval($status));
 		vbs_encode_write($output_fp, $out_args);
+		if ($ver == 2)
+			fwrite($output_fp, "\x00\x00\x00\x00xIc4FcGi\x00\x00\x00\x00", 16);
 		fclose($output_fp);
 	}
 	else

@@ -6,6 +6,7 @@
 * @author jiagui 
 */
 
+# NB: This require_once("x4fcgi.php") should be the first statement.
 require_once("x4fcgi.php");
 
 require_once("ExampleServant.php");
