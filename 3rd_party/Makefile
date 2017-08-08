@@ -51,6 +51,8 @@ lz4:
 	tar -xf lz4-1.7.5.tar.gz
 	(cd lz4-1.7.5 					\
 		&& make 				\
+		&& cp -p lib/lz4.h ../$(TOP_DIR)/include	\
+		&& cp -p lib/liblz4.a ../$(TOP_DIR)/lib 	\
 		&& cd ..				\
 		&& ln -s lz4-1.7.5 lz4 			\
 	)
