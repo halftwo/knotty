@@ -231,7 +231,7 @@ struct iovec* FcgiQuest::get_iovec(int* count)
 	return &_iov[0];
 }
 
-FcgiAnswer::FcgiAnswer(ostk_t *ostk, const xstr_t& request_uri)
+FcgiAnswer::FcgiAnswer(ostk_t *ostk, const xstr_t& script_filename, const xstr_t& request_uri)
 	: _ostk(ostk)
 {
 	rope_init(&_header, FCGI_MAX_LENGTH + ROPE_BLOCK_HEAD_SIZE, &ostk_xmem, _ostk);
@@ -239,6 +239,7 @@ FcgiAnswer::FcgiAnswer(ostk_t *ostk, const xstr_t& request_uri)
 	rope_init(&_stderr, FCGI_MAX_LENGTH + ROPE_BLOCK_HEAD_SIZE, &ostk_xmem, _ostk);
 	_xic4fcgi = 0;
 	_status = 200;
+	_script_filename = ostk_strdup_xstr(_ostk, &script_filename);
 	_request_uri = ostk_strdup_xstr(_ostk, &request_uri);
 	_answer_begin = -1;
 	_answer_size = 0;
@@ -253,9 +254,9 @@ void FcgiAnswer::xref_destroy()
 	DESTROY_OBJ_WITH_OSTK(FcgiAnswer, _ostk);
 }
 
-FcgiAnswer* FcgiAnswer::create(const xstr_t& request_uri)
+FcgiAnswer* FcgiAnswer::create(const xstr_t& script_filename, const xstr_t& request_uri)
 {
-	NEW_OBJ_WITH_OSTK_ARGS(FcgiAnswer, NULL, request_uri);
+	NEW_OBJ_WITH_OSTK_ARGS(FcgiAnswer, NULL, script_filename, request_uri);
 }
 
 ssize_t FcgiAnswer::xic_answer_size()

@@ -115,7 +115,7 @@ void FcgiConnection::_operate(const FcgiQuestPtr& quest)
 	assert(_state == ST_IDLE);
 	assert(!_quest);
 	_quest = quest;
-	_answer.reset(FcgiAnswer::create(_quest->request_uri()));
+	_answer.reset(FcgiAnswer::create(_quest->script_filename(), _quest->request_uri()));
 	_state = ST_WRITE;
 
 	if (do_write(dispatcher) < 0)
@@ -489,7 +489,7 @@ int FcgiConnection::do_write(const XEvent::DispatcherPtr& dispatcher)
 		if (_quest)
 		{
 			_state = ST_WRITE;
-			_answer.reset(FcgiAnswer::create(_quest->request_uri()));
+			_answer.reset(FcgiAnswer::create(_quest->script_filename(), _quest->request_uri()));
 			dispatcher->replaceTask(this, _timeout);
 		}
 	}

@@ -17,8 +17,8 @@
 #include <vector>
 
 #define X4FCGI_V_EDITION          170802
-#define X4FCGI_V_REVISION         170803
-#define X4FCGI_V_RELEASE          15
+#define X4FCGI_V_REVISION         171010
+#define X4FCGI_V_RELEASE          16
 
 #define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
 
@@ -129,7 +129,7 @@ void FCallback::response(const FcgiAnswerPtr& fa)
 			const char *stderr_prefix = err_xs.len > 0 ? "\n__STDERR__:\n" : "";
 
 			xdlog(NULL, NULL, "STDOUT", fa->request_uri(), "%.*s%s", XSTR_P(&body), more_body);
-			xdlog(NULL, NULL, "WARNING", fa->request_uri(), "Invalid x4fcgi answer from the fcgi server");
+			xdlog(NULL, NULL, "WARNING", fa->request_uri(), "Invalid x4fcgi answer from the fcgi server [%s]", fa->script_filename());
 
 			if (fa->status() != 200)
 			{
@@ -140,7 +140,8 @@ void FCallback::response(const FcgiAnswerPtr& fa)
 				}
 
 				throw XERROR_CODE_FMT(XError, fa->status(),
-					"Status(%d) returned from fcgi server:\n%.*s%s%.*s%s%s%.*s%s", fa->status(),
+					"Status(%d) returned from fcgi server [%s]:\n%.*s%s%.*s%s%s%.*s%s", fa->status(),
+					fa->script_filename(),
 					XSTR_P(&header), more_header, XSTR_P(&body), more_body,
 					stderr_prefix, XSTR_P(&err_xs), more_err);
 			}
@@ -151,7 +152,8 @@ void FCallback::response(const FcgiAnswerPtr& fa)
 			}
 
 			throw XERROR_CODE_FMT(XError, 500, 
-				"Invalid x4fcgi answer from fcgi server:\n%.*s%s%.*s%s%s%.*s%s",
+				"Invalid x4fcgi answer from fcgi server [%s]:\n%.*s%s%.*s%s%s%.*s%s",
+				fa->script_filename(),
 				XSTR_P(&header), more_header, XSTR_P(&body), more_body,
 				stderr_prefix, XSTR_P(&err_xs), more_err);
 		}

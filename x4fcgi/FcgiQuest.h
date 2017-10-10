@@ -75,6 +75,7 @@ public:
 		_callback->response(ex);
 	}
 
+	const xstr_t& script_filename() const	{ return _script_filename; } 
 	const xstr_t& request_uri() const	{ return _request_uri; } 
 	int64_t txid() const			{ return _txid; } 
 	uint16_t requestId() const		{ return _rid; }
@@ -94,15 +95,16 @@ class FcgiAnswer: public XRefCount
 	rope_t _stderr;
 	int _xic4fcgi;
 	int _status;
+	const char *_script_filename;
 	const char *_request_uri;
 	ssize_t _answer_begin;
 	ssize_t _answer_size;
 
-	FcgiAnswer(ostk_t *ostk, const xstr_t& request_uri);
+	FcgiAnswer(ostk_t *ostk, const xstr_t& script_filename, const xstr_t& request_uri);
 	virtual ~FcgiAnswer();
 	virtual void xref_destroy();
 public:
-	static FcgiAnswer* create(const xstr_t& request_uri);
+	static FcgiAnswer* create(const xstr_t& script_filename, const xstr_t& request_uri);
 
 	void append_header(const void *data, size_t len);
 	void append_content(const void *data, size_t len);
@@ -115,6 +117,7 @@ public:
 	ssize_t xic_answer_size();
 	ssize_t xic_answer_copy(uint8_t *buf);	// return _answer_size;
 
+	const char* script_filename() const	{ return _script_filename; } 
 	const char* request_uri() const		{ return _request_uri; } 
 
 	int status() const			{ return _status; }
