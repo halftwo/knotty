@@ -4,7 +4,7 @@
 * A framework to provide xic service with php in fcgi.
 * @package x4fcgi 
 * @author jiagui
-* @version 170802.170802.23
+* @version 170802.171108.20
 * Following is an example program.
 *
 --------------- BEGIN OF EXAMPLE PROGRAM ------------
@@ -134,6 +134,11 @@ function x4fcgi_serve($callback)
 			$program = $argv[0];
 			$method = $argv[1];
 			$service = basename(dirname(realpath($program)));
+
+			$_SERVER['XIC_SERVICE'] = $service;
+			$_SERVER['XIC_METHOD'] = $method;
+			$_SERVER['XIC_ENDPOINT'] = 'loopback';
+
 			$quest = xic_Quest::withMembers($method, array(), array(), $service);
 
 			for ($i = 2; $i < $argc; ++$i)
@@ -266,7 +271,7 @@ function x4fcgi_serve($callback)
 	}
 	else
 	{
-		printf("status=%d\nargs=", $status);
+		printf("answer_status=%d\nanswer_args=", $status);
 		var_export($out_args);
 		echo "\n";
 	}
