@@ -139,9 +139,62 @@ struct vbs_ditem_t
 const char *vbs_type_name(vbs_type_t type);
 
 
+static inline bool vbs_data_is_null(const vbs_data_t *v)
+{
+	return (v->type == VBS_NULL);
+}
+
+static inline intmax_t vbs_data_get_integer(const vbs_data_t *v, intmax_t dft)
+{
+	return (v->type == VBS_INTEGER) ? v->d_int : dft;
+}
+
+static inline bool vbs_data_get_bool(const vbs_data_t *v, bool dft)
+{
+	return (v->type == VBS_BOOL) ? v->d_bool : dft;
+}
+
+static inline double vbs_data_get_floating(const vbs_data_t *v, double dft)
+{
+	return (v->type == VBS_FLOATING) ? v->d_floating
+		: (v->type == VBS_INTEGER) ? (double)v->d_int
+		: dft;
+}
+
+decimal64_t vbs_data_get_decimal64(const vbs_data_t *v, decimal64_t dft);
+
+static inline xstr_t vbs_data_get_xstr(const vbs_data_t *v)
+{
+	return (v->type == VBS_STRING) ? v->d_xstr : xstr_null;
+}
+
+static inline xstr_t vbs_data_get_blob(const vbs_data_t *v)
+{
+	return (v->type == VBS_BLOB) ? v->d_blob
+		: (v->type == VBS_STRING) ? v->d_xstr
+		: xstr_null;
+}
+
+static inline vbs_list_t *vbs_data_get_list(const vbs_data_t *v)
+{
+	return (v->type == VBS_LIST) ? v->d_list : NULL;
+}
+
+static inline vbs_dict_t *vbs_data_get_dict(const vbs_data_t *v)
+{
+	return (v->type == VBS_DICT) ? v->d_dict : NULL;
+}
+
+
+
 static inline void vbs_data_init(vbs_data_t *dat)
 {
 	memset(dat, 0, sizeof(*dat));
+}
+
+static inline void vbs_data_set_null(vbs_data_t *dat)
+{
+	dat->type = VBS_NULL;
 }
 
 static inline void vbs_data_set_integer(vbs_data_t *dat, intmax_t v)
@@ -192,11 +245,6 @@ static inline void vbs_data_set_decimal64(vbs_data_t *dat, decimal64_t v)
 	dat->d_decimal64 = v;
 }
 
-static inline void vbs_data_set_null(vbs_data_t *dat)
-{
-	dat->type = VBS_NULL;
-}
-
 static inline void vbs_data_set_list(vbs_data_t *dat, vbs_list_t *list)
 {
 	dat->type = VBS_LIST;
@@ -207,6 +255,13 @@ static inline void vbs_data_set_dict(vbs_data_t *dat, vbs_dict_t *dict)
 {
 	dat->type = VBS_DICT;
 	dat->d_dict = dict;
+}
+
+
+
+static inline void vbs_litem_init(vbs_litem_t *item)
+{
+	memset(item, 0, sizeof(*item));
 }
 
 static inline void vbs_list_init(vbs_list_t *list, int kind)
@@ -247,6 +302,12 @@ static inline vbs_litem_t *vbs_list_pop_front(vbs_list_t *list)
 }
 
 
+
+static inline void vbs_ditem_init(vbs_ditem_t *item)
+{
+	memset(item, 0, sizeof(*item));
+}
+
 static inline void vbs_dict_init(vbs_dict_t *dict, int kind)
 {
 	dict->first = NULL;
@@ -284,125 +345,6 @@ static inline vbs_ditem_t *vbs_dict_pop_front(vbs_dict_t *dict)
 	return entry;
 }
 
-
-static inline void vbs_ditem_init(vbs_ditem_t *item)
-{
-	memset(item, 0, sizeof(*item));
-}
-
-static inline intmax_t vbs_ditem_key_integer(const vbs_ditem_t *item, intmax_t dft)
-{
-	return (item->key.type == VBS_INTEGER) ? item->key.d_int : dft;
-}
-
-static inline xstr_t vbs_ditem_key_xstr(const vbs_ditem_t *item)
-{
-	return (item->key.type == VBS_STRING) ? item->key.d_xstr : xstr_null;
-}
-
-static inline bool vbs_ditem_value_is_null(const vbs_ditem_t *item)
-{
-	return (item->value.type == VBS_NULL);
-}
-
-static inline intmax_t vbs_ditem_value_integer(const vbs_ditem_t *item, intmax_t dft)
-{
-	return (item->value.type == VBS_INTEGER) ? item->value.d_int : dft;
-}
-
-static inline bool vbs_ditem_value_bool(const vbs_ditem_t *item, bool dft)
-{
-	return (item->value.type == VBS_BOOL) ? item->value.d_bool : dft;
-}
-
-static inline double vbs_ditem_value_floating(const vbs_ditem_t *item, double dft)
-{
-	return (item->value.type == VBS_FLOATING) ? item->value.d_floating
-		: (item->value.type == VBS_INTEGER) ? item->value.d_int
-		: dft;
-}
-
-static inline decimal64_t vbs_ditem_value_decimal64(const vbs_ditem_t *item, decimal64_t dft)
-{
-	return (item->value.type == VBS_DECIMAL) ? item->value.d_decimal64 : dft;
-}
-
-static inline xstr_t vbs_ditem_value_xstr(const vbs_ditem_t *item)
-{
-	return (item->value.type == VBS_STRING) ? item->value.d_xstr : xstr_null;
-}
-
-static inline xstr_t vbs_ditem_value_blob(const vbs_ditem_t *item)
-{
-	return (item->value.type == VBS_BLOB) ? item->value.d_blob
-		: (item->value.type == VBS_STRING) ? item->value.d_xstr
-		: xstr_null;
-}
-
-static inline vbs_list_t *vbs_ditem_value_list(const vbs_ditem_t *item)
-{
-	return (item->value.type == VBS_LIST) ? item->value.d_list : NULL;
-}
-
-static inline vbs_dict_t *vbs_ditem_value_dict(const vbs_ditem_t *item)
-{
-	return (item->value.type == VBS_DICT) ? item->value.d_dict : NULL;
-}
-
-
-static inline void vbs_litem_init(vbs_litem_t *item)
-{
-	memset(item, 0, sizeof(*item));
-}
-
-static inline bool vbs_litem_value_is_null(const vbs_litem_t *item)
-{
-	return (item->value.type == VBS_NULL);
-}
-
-static inline intmax_t vbs_litem_value_integer(const vbs_litem_t *item, intmax_t dft)
-{
-	return (item->value.type == VBS_INTEGER) ? item->value.d_int : dft;
-}
-
-static inline bool vbs_litem_value_bool(const vbs_litem_t *item, bool dft)
-{
-	return (item->value.type == VBS_BOOL) ? item->value.d_bool : dft;
-}
-
-static inline double vbs_litem_value_floating(const vbs_litem_t *item, double dft)
-{
-	return (item->value.type == VBS_FLOATING) ? item->value.d_floating
-		: (item->value.type == VBS_INTEGER) ? item->value.d_int
-		: dft;
-}
-
-static inline decimal64_t vbs_litem_value_decimal64(const vbs_litem_t *item, decimal64_t dft)
-{
-	return (item->value.type == VBS_DECIMAL) ? item->value.d_decimal64 : dft;
-}
-
-static inline xstr_t vbs_litem_value_xstr(const vbs_litem_t *item)
-{
-	return (item->value.type == VBS_STRING) ? item->value.d_xstr : xstr_null;
-}
-
-static inline xstr_t vbs_litem_value_blob(const vbs_litem_t *item)
-{
-	return (item->value.type == VBS_BLOB) ? item->value.d_blob
-		: (item->value.type == VBS_STRING) ? item->value.d_xstr
-		: xstr_null;
-}
-
-static inline vbs_list_t *vbs_litem_value_list(const vbs_litem_t *item)
-{
-	return (item->value.type == VBS_LIST) ? item->value.d_list : NULL;
-}
-
-static inline vbs_dict_t *vbs_litem_value_dict(const vbs_litem_t *item)
-{
-	return (item->value.type == VBS_DICT) ? item->value.d_dict : NULL;
-}
 
 
 intmax_t vbs_dict_get_integer(const vbs_dict_t *d, const char *key, intmax_t dft);

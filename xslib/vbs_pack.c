@@ -2109,3 +2109,16 @@ vbs_dict_t *vbs_dict_get_dict(const vbs_dict_t *d, const char *key)
 	return (v && v->type == VBS_DICT) ? v->d_dict : NULL;
 }
 
+decimal64_t vbs_data_get_decimal64(const vbs_data_t *v, decimal64_t dft)
+{
+	if (v->type == VBS_DECIMAL)
+		return v->d_decimal64;
+	else if (v->type == VBS_INTEGER)
+	{
+		decimal64_t d;
+		if (decimal64_from_integer(&d, v->d_int) == 0)
+			return d;
+	}
+	return dft;
+}
+
