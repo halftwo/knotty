@@ -225,8 +225,13 @@ inline const xstr_t& xstrValue(const vbs_data_t& v)
 
 inline const xstr_t& blobValue(const vbs_data_t* v)
 {
-	if (VDATA_NOT_TYPE(v, BLOB) && VDATA_NOT_TYPE(v, STRING))
+	if (VDATA_NOT_TYPE(v, BLOB))
+	{
+		if (v->type == VBS_STRING)
+			return v->d_xstr;
+
 		_vdata_throw_TypeException(v, "BLOB");
+	}
 	return v->d_blob;
 }
 
@@ -252,7 +257,12 @@ inline bool boolValue(const vbs_data_t& v)
 inline double floatingValue(const vbs_data_t* v)
 {
 	if (VDATA_NOT_TYPE(v, FLOATING))
+	{
+		if (v->type == VBS_INTEGER)
+			return (double)v->d_int;
+
 		_vdata_throw_TypeException(v, "FLOATING");
+	}
 	return v->d_floating;
 }
 
@@ -264,7 +274,16 @@ inline double floatingValue(const vbs_data_t& v)
 inline decimal64_t decimal64Value(const vbs_data_t* v)
 {
 	if (VDATA_NOT_TYPE(v, DECIMAL))
+	{
+		if (v->type == VBS_INTEGER)
+		{
+			decimal64_t d;
+			if (decimal64_from_integer(&d, v->d_int) == 0)
+				return d;
+		}
+
 		_vdata_throw_TypeException(v, "DECIMAL");
+	}
 	return v->d_decimal64;
 }
 

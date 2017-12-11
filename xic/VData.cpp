@@ -62,8 +62,13 @@ const xstr_t& VList::Node::xstrValue() const
 
 const xstr_t& VList::Node::blobValue() const
 {
-	if (!_ent || (_ent->value.type != VBS_BLOB && _ent->value.type != VBS_STRING))
+	if (!_ent || _ent->value.type != VBS_BLOB)
+	{
+		if (_ent && _ent->value.type == VBS_STRING)
+			return _ent->value.d_xstr;
+
 		throwListNodeException(_ent, "BLOB");
+	}
 	return _ent->value.d_blob;
 }
 
@@ -75,8 +80,30 @@ bool VList::Node::boolValue() const
 
 double VList::Node::floatingValue() const
 {
-	CHECK(_ent, FLOATING);
+	if (!_ent || _ent->value.type != VBS_FLOATING)
+	{
+		if (_ent && _ent->value.type == VBS_INTEGER)
+			return (double)_ent->value.d_int;
+
+		throwListNodeException(_ent, "FLOATING");
+	}
 	return _ent->value.d_floating;
+}
+
+decimal64_t VList::Node::decimal64Value() const
+{
+	if (!_ent || _ent->value.type != VBS_DECIMAL)
+	{
+		if (_ent && _ent->value.type == VBS_INTEGER)
+		{
+			decimal64_t d;
+			if (decimal64_from_integer(&d, _ent->value.d_int) == 0)
+				return d;
+		}
+
+		throwListNodeException(_ent, "DECIMAL");
+	}
+	return _ent->value.d_decimal64;
 }
 
 VList VList::Node::vlistValue() const
@@ -231,8 +258,13 @@ const xstr_t& VDict::Node::xstrValue() const
 
 const xstr_t& VDict::Node::blobValue() const
 {
-	if (!_ent || (_ent->value.type != VBS_BLOB && _ent->value.type != VBS_STRING))
+	if (!_ent || _ent->value.type != VBS_BLOB)
+	{
+		if (_ent && _ent->value.type == VBS_STRING)
+			return _ent->value.d_xstr;
+
 		throwDictValueException(_ent, "BLOB");
+	}
 	return _ent->value.d_blob;
 }
 
@@ -244,8 +276,30 @@ bool VDict::Node::boolValue() const
 
 double VDict::Node::floatingValue() const
 {
-	CHECK_VALUE(_ent, FLOATING);
+	if (!_ent || _ent->value.type != VBS_FLOATING)
+	{
+		if (_ent && _ent->value.type == VBS_INTEGER)
+			return (double)_ent->value.d_int;
+
+		throwDictValueException(_ent, "FLOATING");
+	}
 	return _ent->value.d_floating;
+}
+
+decimal64_t VDict::Node::decimal64Value() const
+{
+	if (!_ent || _ent->value.type != VBS_DECIMAL)
+	{
+		if (_ent && _ent->value.type == VBS_INTEGER)
+		{
+			decimal64_t d;
+			if (decimal64_from_integer(&d, _ent->value.d_int) == 0)
+				return d;
+		}
+
+		throwDictValueException(_ent, "DECIMAL");
+	}
+	return _ent->value.d_decimal64;
 }
 
 VList VDict::Node::vlistValue() const
@@ -348,6 +402,8 @@ double VDict::getFloating(const char *key, double dft) const
 	vbs_data_t *v = _find_key(_dict, key);
 	if (v && v->type == VBS_FLOATING)
 		return v->d_floating;
+	else if (v && v->type == VBS_INTEGER)
+		return (double)v->d_int;
 	return dft;
 }
 
@@ -356,6 +412,12 @@ decimal64_t VDict::getDecimal64(const char *key, decimal64_t dft) const
 	vbs_data_t *v = _find_key(_dict, key);
 	if (v && v->type == VBS_DECIMAL)
 		return v->d_decimal64;
+	else if (v && v->type == VBS_INTEGER)
+	{
+		decimal64_t d;
+		if (decimal64_from_integer(&d, v->d_int) == 0)
+			return d;
+	}
 	return dft;
 }
 
@@ -492,7 +554,12 @@ double VDict::wantFloating(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
 	if (!v || v->type != VBS_FLOATING)
+	{
+		if (v && v->type == VBS_INTEGER)
+			return (double)v->d_int;
+
 		throwTypeException(key, v, "FLOATING");
+	}
 	return v->d_floating;
 }
 
@@ -500,7 +567,16 @@ decimal64_t VDict::wantDecimal64(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
 	if (!v || v->type != VBS_DECIMAL)
+	{
+		if (v && v->type == VBS_INTEGER)
+		{
+			decimal64_t d;
+			if (decimal64_from_integer(&d, v->d_int) == 0)
+				return d;
+		}
+
 		throwTypeException(key, v, "DECIMAL");
+	}
 	return v->d_decimal64;
 }
 
