@@ -856,11 +856,11 @@ void StConnection::recv_fiber()
 				if (_state < ST_ACTIVE)
 					throw XERROR_MSG(ProtocolException, "Unexpected Quest message");
 
-				CurrentI current(_adapter, this, static_cast<Quest*>(msg.get()));
+				CurrentI current(this, static_cast<Quest*>(msg.get()));
 
 				if (current._txid)
 					++_processing;
-				handle_quest(current);
+				handle_quest(_adapter, current);
 			}
 		}
 		else if (msgType == 'A')

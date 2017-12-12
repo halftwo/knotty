@@ -1010,7 +1010,7 @@ int PtConnection::do_read(const XEvent::DispatcherPtr& dispatcher)
 		int msgType = msg->msgType();
 		if (msgType == 'Q')
 		{
-			CurrentI current(_adapter, this, static_cast<Quest*>(msg.get()));
+			CurrentI current(this, static_cast<Quest*>(msg.get()));
 			{
 				Lock lock(*this);
 				if (_state >= ST_CLOSE)
@@ -1022,7 +1022,7 @@ int PtConnection::do_read(const XEvent::DispatcherPtr& dispatcher)
 					++_processing;
 			}
 
-			handle_quest(current);
+			handle_quest(_adapter, current);
 		}
 		else if (msgType == 'A')
 		{

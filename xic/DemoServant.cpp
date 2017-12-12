@@ -135,7 +135,7 @@ XIC_METHOD(DemoServant, rmi)
 	xstr_t raw = xstr_slice(&rmi_args->_raw, 1, -1);
 	qw.raw(raw.data, raw.len);
 
-	xic::ProxyPtr prx = current.adapter->getEngine()->stringToProxy(make_string(rmi_proxy));
+	xic::ProxyPtr prx = _engine->stringToProxy(make_string(rmi_proxy));
 	xic::ContextBuilder ctx("CALLER", "Demo");
 	prx->setContext(ctx.build());
 	prx->emitQuest(qw, xic::Completion::createPassThrough(current.asynchronous()));

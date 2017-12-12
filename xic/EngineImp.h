@@ -308,7 +308,7 @@ protected:
 	int _attempt;		// Number of connecting attempt to the same endpoint.
 
 protected:
-	void handle_quest(CurrentI& current);
+	void handle_quest(const AdapterPtr& adapter, CurrentI& current);
 	void handle_answer(AnswerPtr& answer, const ResultIPtr& result);
 	void handle_check(const CheckPtr& check);
 
@@ -347,10 +347,9 @@ public:
 
 struct CurrentI: public Current
 {
-	CurrentI(const AdapterPtr& adapter, Connection* c, Quest* q)
+	CurrentI(Connection* c, Quest* q)
 		: _quest(q)
 	{
-		this->adapter = adapter;
 		this->con.reset(c);
 		_txid = q->txid();
 		_service = q->service();

@@ -1097,9 +1097,9 @@ static const char *set_locus(char *locus, const char *str, bool cipher)
 	return locus;
 }
 
-void ConnectionI::handle_quest(CurrentI& current)
+void ConnectionI::handle_quest(const AdapterPtr& ad, CurrentI& current)
 {
-	Adapter* adapter = current.adapter.get();
+	Adapter* adapter = ad.get();
 	Quest* q = current._quest.get();
 	int64_t txid = current._txid;
 	const xstr_t& service = current._service;

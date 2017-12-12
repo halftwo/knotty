@@ -27,7 +27,7 @@
  */
 #define XIC_V_EDITION 	171212
 #define XIC_V_REVISION 	171212
-#define XIC_V_RELEASE 	10
+#define XIC_V_RELEASE 	20
 
 #define XIC_VERSION	XS_TOSTR(XIC_V_EDITION) "." XS_TOSTR(XIC_V_REVISION) "." XS_TOSTR(XIC_V_RELEASE)
 
@@ -144,7 +144,6 @@ struct Current
 	virtual AnswerPtr trace(const AnswerPtr& answer) const = 0;
 	virtual void logIt(bool on) const 		= 0;
 
-	AdapterPtr adapter;
 	ConnectionPtr con;
 };
 
