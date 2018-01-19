@@ -118,7 +118,7 @@ ContextBuilder::ContextBuilder(const VDict& d)
 			continue;
 		}
 
-		vbs_ditem_t *ent = (vbs_ditem_t *)ostk_alloc(_ostk, sizeof(*ent));
+		vbs_ditem_t *ent = (vbs_ditem_t *)ostk_calloc(_ostk, sizeof(*ent));
 
 		ent->key.type = VBS_STRING;
 		ent->key.d_xstr = ostk_xstr_dup(_ostk, &re->key.d_xstr);
@@ -156,7 +156,7 @@ vbs_ditem_t* ContextBuilder::_put_item(const char *name)
 		}
 	}
 
-	ent = (vbs_ditem_t *)ostk_alloc(_ostk, sizeof(*ent));
+	ent = (vbs_ditem_t *)ostk_calloc(_ostk, sizeof(*ent));
 	ent->key.type = VBS_STRING;
 	ent->key.d_xstr = ostk_xstr_dup_mem(_ostk, name, len);
 	vbs_dict_push_back(_dict, ent);
