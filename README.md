@@ -1,5 +1,5 @@
 # knotty
-A RPC framework named XIC and its dependence.
+A RPC framework named XIC and its dependencies.
 
 The XIC RPC is implemented in C++, PHP (as an extension), and Python (partially implemented).
 
