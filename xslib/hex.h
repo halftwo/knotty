@@ -6,6 +6,7 @@
 #ifndef hex_h_
 #define hex_h_
 
+#include "xsdef.h"
 #include <stdlib.h>
 
 #ifdef __cplusplus

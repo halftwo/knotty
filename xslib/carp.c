@@ -1,3 +1,4 @@
+#include "xsdef.h"
 #include "carp.h"
 #include "heap.h"
 #include <endian.h>

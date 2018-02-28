@@ -2,6 +2,7 @@
 #ifndef URANDOM_H_
 #define URANDOM_H_
 
+#include "xsdef.h"
 #include <stdlib.h>
 #include <stdbool.h>
 

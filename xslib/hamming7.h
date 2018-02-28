@@ -1,6 +1,7 @@
 #ifndef HAMMING7_H_
 #define HAMMING7_H_
 
+#include "xsdef.h"
 #include <stdlib.h>
 #include <stdint.h>
 

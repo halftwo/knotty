@@ -6,6 +6,7 @@
 #ifndef BIT_H_
 #define BIT_H_ 1
 
+#include "xsdef.h"
 #include <limits.h>
 #include <stdlib.h>
 #include <stdint.h>

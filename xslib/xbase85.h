@@ -8,6 +8,7 @@
 #ifndef XBASE85_H_
 #define XBASE85_H_ 1
 
+#include "xsdef.h"
 #include <stdlib.h>
 
 #ifdef __cplusplus

@@ -6,6 +6,7 @@
 #ifndef XBASE64_H_
 #define XBASE64_H_ 1
 
+#include "xsdef.h"
 #include <stdlib.h>
 
 #ifdef __cplusplus

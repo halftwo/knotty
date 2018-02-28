@@ -8,6 +8,7 @@
 #ifndef XBASE32_H_
 #define XBASE32_H_ 1
 
+#include "xsdef.h"
 #include <stdlib.h>
 #include <stdbool.h>
 

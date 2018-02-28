@@ -2,6 +2,7 @@
 #ifndef GZIPPER_H_
 #define GZIPPER_H_
 
+#include "xsdef.h"
 #include <stdlib.h>
 
 #ifdef __cplusplus
