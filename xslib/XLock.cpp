@@ -22,7 +22,7 @@ static int init_xattr()
 {
 	int rc = pthread_mutexattr_init(&_xattr_);
 	if (rc == 0)
-		rc = pthread_mutexattr_settype(&_xattr_, PTHREAD_MUTEX_ERRORCHECK_NP);
+		rc = pthread_mutexattr_settype(&_xattr_, PTHREAD_MUTEX_ERRORCHECK);
 	return rc;
 }
 
@@ -30,7 +30,7 @@ static int init_xrecattr()
 {
 	int rc = pthread_mutexattr_init(&_xrecattr_);
 	if (rc == 0)
-		rc = pthread_mutexattr_settype(&_xrecattr_, PTHREAD_MUTEX_RECURSIVE_NP);
+		rc = pthread_mutexattr_settype(&_xrecattr_, PTHREAD_MUTEX_RECURSIVE);
 	return rc;
 }
 
