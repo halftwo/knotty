@@ -7,7 +7,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#if defined(__x86_64)
 #define HAVE_UINT128
+#endif
 
 #ifdef __cplusplus
 extern "C" {
