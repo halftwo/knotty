@@ -1545,9 +1545,8 @@ again:
 
 			case REF (form_strerror):      	/* for 'm' */
 				work_buf[0] = 0;
-				value.str = strerror_r(saved_errno, work_buf, sizeof(work_buf));
-				if (value.str == 0)
-					value.str = work_buf;
+				strerror_r(saved_errno, work_buf, sizeof(work_buf));
+				value.str = work_buf;
 				str_len = -1;
 				sp.is_long = false;
 				goto handle_print_string;
