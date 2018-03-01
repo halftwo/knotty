@@ -1484,7 +1484,7 @@ int main(int argc, char **argv)
 	init_global();
 
 	strcpy(pathbuf, prog);
-	path_realpath(prog_dirname, NULL, dirname(strdupa(prog)));
+	path_realpath(prog_dirname, NULL, dirname(strdup(prog)));
 
 	if (daemon && daemon_init() < 0)
 	{
