@@ -34,9 +34,16 @@ uint64_t rdtsc()
 		uint64_t ll;
 	} t;
 
+#if (defined(__i386) || defined(__x86_64))
 	__asm__ __volatile__ ("rdtsc"
 		: "=a" (t.l.low), "=d" (t.l.high));
 
+#else
+	/* XXX: we simulate a 100MHz processor */
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	t.ll = (uint64_t)ts.tv_sec * (1000*1000*100) + ts.tv_nsec/10;
+#endif
 	return t.ll;
 }
 
