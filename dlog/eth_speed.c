@@ -25,7 +25,7 @@ int eth_speed(const char *ethname, int *speed, int *duplex_full)
 		goto error;
 
 	ecmd.cmd = ETHTOOL_GSET;
-	ifr.ifr_data = (caddr_t)&ecmd;
+	ifr.ifr_data = (void*)&ecmd;
 	if (ioctl(fd, SIOCETHTOOL, &ifr) != 0)
 		goto error;
 
