@@ -7,7 +7,7 @@
 a.out
 include
 3rd_party/lua
-3rd_party/lua-5.1.5/
+3rd_party/lua-5.1.5a/
 3rd_party/st
 3rd_party/st-1.9/
 3rd_party/lz4
