@@ -115,10 +115,10 @@ static unsigned long long num_banned;
 static unsigned long long num_record_error;
 static unsigned long long num_record;
 
-static xatomic64_t num_block;
-static xatomic64_t num_block_error;
-static xatomic64_t num_zip_block;
-static xatomic64_t num_unzip_fail;
+static xatomiclong_t num_block;
+static xatomiclong_t num_block_error;
+static xatomiclong_t num_zip_block;
+static xatomiclong_t num_unzip_fail;
 
 static plugin_t *plugin;
 static char plugin_file[PATH_MAX];
@@ -616,10 +616,10 @@ int Worker::do_read()
 				_block->pkt._reserved2 = 0;
 			}
 
-			xatomic64_inc(&num_block);
+			xatomiclong_inc(&num_block);
 			if (_block->pkt.flag & (DLOG_PACKET_FLAG_LZO | DLOG_PACKET_FLAG_LZ4))
 			{
-				xatomic64_inc(&num_zip_block);
+				xatomiclong_inc(&num_zip_block);
 				struct packet_block *b = acquire_block();
 				if (_decompress(b, _block))
 				{
@@ -628,8 +628,8 @@ int Worker::do_read()
 				}
 				else
 				{
-					xatomic64_inc(&num_unzip_fail);
-					xatomic64_inc(&num_block_error);
+					xatomiclong_inc(&num_unzip_fail);
+					xatomiclong_inc(&num_block_error);
 				}
 			}
 
@@ -982,15 +982,15 @@ void *logger(void *arg)
 			xdlog(NULL, _program_name, "THROB", NULL, "v2 version=%s start=%s active=%s client=%d"
 					" info=euser:%s,MHz:%u,cpu:%.1f%%"
 					" record=get:%llu,error:%llu"
-					" block=pool:%lu,get:%jd,error:%jd,zip:%jd,unzip_error:%jd"
+					" block=pool:%lu,get:%ld,error:%ld,zip:%ld,unzip_error:%ld"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
 				DLOG_VERSION,
 				start_time_str, active_ts, xatomic_get(&num_client),
 				_euser, (int)(freq / 1000000), self_cpu,
 				num_record, num_record_error,
 				_block_pool.num_limit,
-				(intmax_t)xatomic64_get(&num_block), (intmax_t)xatomic64_get(&num_block_error),
-				(intmax_t)xatomic64_get(&num_zip_block), (intmax_t)xatomic64_get(&num_unzip_fail),
+				xatomiclong_get(&num_block), xatomiclong_get(&num_block_error),
+				xatomiclong_get(&num_zip_block), xatomiclong_get(&num_unzip_fail),
 				plugin_file, plugin_md5, plugin_ts, (plugin ? '#' : plugin_mtime ? '*' : '-'),
 				plugin_run, plugin_discard, plugin_error);
 
