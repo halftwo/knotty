@@ -8,7 +8,7 @@ LIBXIC_OBJS = XicMessage.o XicCheck.o XicException.o Context.o \
 
 LIBXIC = libxic.a
 
-EXES = shadow_gen secret_check DemoServer DemoClient DemoClientSt DemoCallback
+EXES = shadow_gen secret_check DemoServer DemoCallback DemoClient DemoClientSt 
 
 
 CFLAGS = -g -Wall -O2
