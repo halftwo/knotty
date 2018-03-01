@@ -11,9 +11,13 @@
 #include <pthread.h>
 #include <limits.h>
 #include <cxxabi.h>
-#include <execinfo.h>
 #include <typeinfo>
 #include <sstream>
+
+#if defined(__linux) && (defined(__i386) || defined(__x86_64))
+#include <execinfo.h>
+#define HAVE_BACKTRACE
+#endif
 
 #ifdef XSLIB_RCSID
 static const char rcsid[] = "$Id: XError.cpp,v 1.37 2015/04/08 08:43:10 gremlin Exp $";
@@ -46,7 +50,10 @@ const std::string& XCallTrace::Data::str() throw()
 			if (n <= 0)
 				goto done;
 
-			char **symbols = backtrace_symbols(_stk + INNER_SKIP, n);
+			char **symbols = NULL;
+#ifdef HAVE_BACKTRACE
+			symbols = backtrace_symbols(_stk + INNER_SKIP, n);
+#endif
 			if (!symbols)
 				goto done;
 
@@ -122,7 +129,10 @@ XCallTrace::XCallTrace()
 {
 	_dat = new Data();
 	_dat->_how = INT_MAX;
+	_dat->_num = 0;
+#ifdef HAVE_BACKTRACE
 	_dat->_num = backtrace(_dat->_stk, sizeof(_dat->_stk) / sizeof(_dat->_stk[0]));
+#endif
 }
 
 XCallTrace::XCallTrace(int how)
@@ -131,7 +141,10 @@ XCallTrace::XCallTrace(int how)
 	{
 		_dat = new Data();
 		_dat->_how = how;
+		_dat->_num = 0;
+#ifdef HAVE_BACKTRACE
 		_dat->_num = backtrace(_dat->_stk, sizeof(_dat->_stk) / sizeof(_dat->_stk[0]));
+#endif
 	}
 	else
 	{

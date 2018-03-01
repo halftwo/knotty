@@ -3,7 +3,11 @@
 #endif
 #include "calltrace.h"
 #include "cstr.h"
+
+#if defined(__linux) && (defined(__i386) || defined(__x86_64))
 #include <execinfo.h>
+#define HAVE_BACKTRACE
+#endif
 
 #ifdef XSLIB_RCSID
 static const char rcsid[] = "$Id: calltrace.c,v 1.5 2010/08/06 12:31:11 jiagui Exp $";
@@ -14,9 +18,10 @@ static const char rcsid[] = "$Id: calltrace.c,v 1.5 2010/08/06 12:31:11 jiagui E
 
 ssize_t calltrace(int level, char *buf, size_t size)
 {
+#ifdef HAVE_BACKTRACE
+	char *p = buf, *end = buf + size;
 	void *stack[STACK_SIZE];
 	void **stk = stack;
-	char *p = buf, *end = buf + size;
 	int i, num;
 	char **strs;
 
@@ -47,10 +52,16 @@ ssize_t calltrace(int level, char *buf, size_t size)
 		free(strs);
 	}
 	return p < end ? p - buf : size - 1;
+#else
+	if ((ssize_t)size > 0)
+		buf[0] = 0;
+	return 0;
+#endif
 }
 
 ssize_t calltrace_iobuf(int level, iobuf_t *ob)
 {
+#ifdef HAVE_BACKTRACE
 	void *stack[STACK_SIZE];
 	void **stk = stack;
 	ssize_t r = 0, n = 0;
@@ -84,5 +95,8 @@ ssize_t calltrace_iobuf(int level, iobuf_t *ob)
 		free(strs);
 	}
 	return r < 0 ? r : n;
+#else
+	return 0;
+#endif
 }
 
