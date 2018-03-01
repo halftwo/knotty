@@ -71,7 +71,7 @@ MethodTab::NodeType* MethodTab::find(const xstr_t& key) const
 	uint32_t slot = (hash & _mask);
 	for (node = _tab[slot]; node; node = node->hash_next)
 	{
-		if (node->hash == hash && node->nlen == key.len && memcmp(node->name, key.data, key.len) == 0)
+		if (node->hash == hash && node->nlen == (uint32_t)key.len && memcmp(node->name, key.data, key.len) == 0)
 			return node;
 	}
 	return NULL;

@@ -25,7 +25,7 @@ struct MethodTab
 		NodeType(const char *name, size_t nlen, const Servant::MethodFunction& func);
 		NodeType* hash_next;
 	public:
-		mutable xatomic64_t ncall;
+		mutable xatomiclong_t ncall;
 		Servant::MethodFunction func;
 		uint32_t hash;
 		uint32_t nlen;
@@ -42,7 +42,7 @@ struct MethodTab
 
 	void mark(const xstr_t& method, bool on) const;
 
-	mutable xatomic64_t notFound;
+	mutable xatomiclong_t notFound;
 private:
 	ostk_t *_ostk;
 	NodeType **_tab;
