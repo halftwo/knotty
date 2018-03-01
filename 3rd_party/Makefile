@@ -13,16 +13,16 @@ clean: lua-clean st-clean lz4-clean
 
 
 lua:
-	tar -xf lua-5.1.5.tar.gz
-	(cd lua-5.1.5 					\
-		&& make linux 				\
+	tar -xf lua-5.1.5a.tar.gz
+	(cd lua-5.1.5a 					\
+		&& make posix 				\
 		&& cd ..				\
-		&& ln -s lua-5.1.5 lua 			\
+		&& ln -s lua-5.1.5a lua 		\
 	)
 
 lua-clean:
 	$(RM) lua
-	$(RM) -r lua-5.1.5
+	$(RM) -r lua-5.1.5a
 
 
 st:
