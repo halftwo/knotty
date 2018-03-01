@@ -17,7 +17,7 @@ OBJS_C = xsdef.o strbuf.o bit.o xnet.o xbase64.o xbase85.o xbase32.o \
 	xmalloc.o xformat.o xstr.o bset.o msec.o xatomic.o \
 	vbs_pack.o vbs_stream.o vbs.o vbs_json.o carp.o iconv_convert.o \
 	iobuf.o uuid.o unix_user.o rope.o escape.o \
-	httpcode.o httpmisc.o urandom.o gzipper.o \
+	httpcode.o httpmisc.o urandom.o  \
 	decContext.o decSingle.o decDouble.o decQuad.o decimal64.o \
 	unit_prefix.o hamming12.o hamming7.o golay24.o \
 	hmac_sha1.o cmac_aes.o aes_ccm.o aes_eax.o
@@ -28,17 +28,10 @@ OBJS_CXX = XRefCount.o xptr.o XLock.o XError.o XEvent.o StringHashSet.o \
 	XTimer.o HSequence.o CarpSequence.o Srp6a.o
 
 
-# For C
-LIBXS_S_SO = libxs_s.so
-LIBXS_S_SONAME = $(LIBXS_S_SO).$(EDITION)
-LIBXS_S_REVISION = $(LIBXS_S_SONAME).$(REVISION)
-LIBXS_S_RELEASE = $(LIBXS_S_REVISION).$(RELEASE)
+OBJS_C_XTRA = gzipper.o
 
-# For C++
-LIBXS_X_SO = libxs_x.so
-LIBXS_X_SONAME = $(LIBXS_X_SO).$(EDITION)
-LIBXS_X_REVISION = $(LIBXS_X_SONAME).$(REVISION)
-LIBXS_X_RELEASE = $(LIBXS_X_REVISION).$(RELEASE)
+OBJS_CXX_XTRA = 
+
 
 
 CFLAGS = -g -Wall -fPIC -O2
@@ -48,32 +41,14 @@ CXXFLAGS = -g -Wall -fPIC -O2
 CPPFLAGS = -DXSLIB_VERSION=$(XSLIB_VERSION)
 
 
-#all: libxs.a $(LIBXS_S_SO) $(LIBXS_X_SO) 
-all: libxs.a
+all: libxs.a libxsxtra.a
 
 
 libxs.a: $(OBJS_C) $(OBJS_CXX)
 	$(AR) -rcs $@ $(OBJS_C) $(OBJS_CXX)
 
-
-$(LIBXS_S_SO): $(LIBXS_S_SONAME)
-	ln -sf $(LIBXS_S_SONAME) $@
-
-$(LIBXS_S_SONAME): $(LIBXS_S_RELEASE)
-	ln -sf $(LIBXS_S_RELEASE) $@
-
-$(LIBXS_S_RELEASE): $(OBJS_C)
-	$(CC) -shared -o $@ -Wl,-soname,$(LIBXS_S_SONAME) $(OBJS_C)
-
-
-$(LIBXS_X_SO): $(LIBXS_X_SONAME)
-	ln -sf $(LIBXS_X_SONAME) $@
-
-$(LIBXS_X_SONAME): $(LIBXS_X_RELEASE)
-	ln -sf $(LIBXS_X_RELEASE) $@
-
-$(LIBXS_X_RELEASE): $(OBJS_CXX)
-	$(CC) -shared -o $@ -Wl,-soname,$(LIBXS_X_SONAME) $(OBJS_CXX)
+libxsxtra.a: $(OBJS_C_XTRA) $(OBJS_CXX_XTRA)
+	$(AR) -rcs $@ $(OBJS_C_XTRA) $(OBJS_CXX_XTRA)
 
 
 .c.o:
@@ -83,18 +58,9 @@ $(LIBXS_X_RELEASE): $(OBJS_CXX)
 	$(CXX) -c $(CXXFLAGS) $(CPPFLAGS) -o $@ $<
 
 
-install_so:
-	cp -fa $(LIBXS_S_RELEASE) /usr/local/lib
-	( cd /usr/local/lib; ln -sf $(LIBXS_S_RELEASE) $(LIBXS_S_SONAME); ln -sf $(LIBXS_S_SONAME) $(LIBXS_S_SO) )
-	cp -fa $(LIBXS_X_RELEASE) /usr/local/lib
-	( cd /usr/local/lib; ln -sf $(LIBXS_X_RELEASE) $(LIBXS_X_SONAME); ln -sf $(LIBXS_X_SONAME) $(LIBXS_X_SO) )
-	ldconfig
-
 clean:
 	find . -name \*.lo -o -name \*.o | xargs rm -f
 	find . -name \*.la -o -name \*.a | xargs rm -f 
 	find . -name \*.so | xargs rm -f
 	find . -name .libs -a -type d | xargs rm -rf
-	rm -f $(LIBXS_X_SO) $(LIBXS_X_SONAME) $(LIBXS_X_RELEASE)
-	rm -f $(LIBXS_S_SO) $(LIBXS_S_SONAME) $(LIBXS_S_RELEASE)
 
