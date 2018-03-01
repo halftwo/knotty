@@ -72,6 +72,10 @@ struct xatomiclong_t
 
 #if !((defined(__linux) || defined(__FreeBSD__)) && (defined(__i386) || defined(__x86_64)))
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void xatomic_add(xatomic_t *v, int i);
 void xatomic_sub(xatomic_t *v, int i);
 bool xatomic_sub_and_test(xatomic_t *v, int i);
@@ -99,6 +103,9 @@ long xatomiclong_sub_return(xatomiclong_t *v, long i);
 long xatomiclong_xchg(xatomiclong_t *v, long x);
 long xatomiclong_cmpxchg(xatomiclong_t *v, long old, long new_value);
 
+#ifdef __cplusplus
+}
+#endif
 
 #else /* (__linux || __FreeBSD__) && (__i386 || __x86_64) */
 
