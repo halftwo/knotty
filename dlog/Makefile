@@ -15,7 +15,7 @@ CPPFLAGS= -DXSLIB_RCSID -I. -I.. -I../3rd_party/lua/src -I../3rd_party/lz4/lib
 
 LIBS= -rdynamic -pthread -Wl,-static -L../lib -L../3rd_party/lua/src -L../3rd_party/lz4/lib -lxs -llua -llz4 -Wl,-call_shared -ldl -lm -lrt
 
-all: $(OBJS) $(LIBRARY) $(EXES)
+all: $(LIBRARY) $(EXES)
 
 xslib.make:
 	(cd ../xslib; make)
