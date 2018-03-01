@@ -9,7 +9,7 @@
 #include "xslib/ScopeGuard.h"
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/param.h>		/* for HZ */
+#include <linux/param.h>	/* for HZ */
 #include <unistd.h>
 #include <dirent.h>
 
