@@ -19,6 +19,7 @@
 #include "xslib/ScopeGuard.h"
 #include "xslib/Enforce.h"
 #include <unistd.h>
+#include <libgen.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
@@ -1757,7 +1758,7 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 	const MethodTab::NodeType *node = mtab->find(method);
 	if (node)
 	{
-		xatomic64_inc(&node->ncall);
+		xatomiclong_inc(&node->ncall);
 		if (node->mark)
 			current.logIt(true);
 		answer = (srv->*node->func)(quest, current);
@@ -1776,11 +1777,11 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 			AnswerWriter aw;
 
 			VDictWriter dw = aw.paramVDict("counter");
-			int64_t notFound = xatomic64_get(&mtab->notFound);
+			int64_t notFound = xatomiclong_get(&mtab->notFound);
 			dw.kv("__METHOD_NOT_FOUND__", notFound);
 			for (node = NULL; (node = mtab->next(node)) != NULL; )
 			{
-				int64_t ncall = xatomic64_get(&node->ncall);
+				int64_t ncall = xatomiclong_get(&node->ncall);
 				dw.kv(node->name, ncall);
 			}
 
@@ -1826,7 +1827,7 @@ AnswerPtr xic::process_servant_method(Servant* srv, const MethodTab* mtab,
 		else
 		{
 			if (!xstr_start_with(&method, &x00))
-				xatomic64_inc(&mtab->notFound);
+				xatomiclong_inc(&mtab->notFound);
 			throw XERROR_MSG(MethodNotFoundException, make_string(method));
 		}
 	}
