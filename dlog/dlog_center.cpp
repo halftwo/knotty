@@ -44,6 +44,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#define STACK_SIZE		(256*1024)
 
 #define FLUSH_INTERVAL		(2*1000)	/* in milliseconds */
 #define LOAD_INTERVAL		10		/* in seconds */
@@ -1234,7 +1235,11 @@ int main(int argc, char **argv)
 
 	dispatcher = XEvent::Dispatcher::create(NULL);
 
-	if (pthread_create(&thr, NULL, logger, NULL) != 0)
+	pthread_attr_t thr_attr;
+	pthread_attr_init(&thr_attr);
+	pthread_attr_setstacksize(&thr_attr, STACK_SIZE);
+
+	if (pthread_create(&thr, &thr_attr, logger, NULL) != 0)
 	{
 		fprintf(stderr, "pthread_create() failed\n");
 		goto error;
@@ -1288,7 +1293,7 @@ int main(int argc, char **argv)
 
 	get_time_str(time(NULL), start_time_str);
 
-	dispatcher->setThreadPool(4, 32, 256*1024);
+	dispatcher->setThreadPool(4, 32, STACK_SIZE);
 	dispatcher->start();
 
 	pthread_join(thr, NULL);

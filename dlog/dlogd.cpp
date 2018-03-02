@@ -51,6 +51,7 @@
 #include <map>
 #include <sstream>
 
+#define STACK_SIZE	(256*1024)
 
 #define BATCH_SIZE	128
 #define BLOCK_SIZE	(DLOG_PACKET_MAX_SIZE + offsetof(struct block, pkt))
@@ -1552,13 +1553,17 @@ int main(int argc, char **argv)
 
 	dispatcher = XEvent::Dispatcher::create(NULL);
 
-	if (pthread_create(&thr, NULL, log_thread, NULL) != 0)
+	pthread_attr_t thr_attr;
+	pthread_attr_init(&thr_attr);
+	pthread_attr_setstacksize(&thr_attr, STACK_SIZE);
+
+	if (pthread_create(&thr, &thr_attr, log_thread, NULL) != 0)
 	{
 		fprintf(stderr, "pthread_create() failed\n");
 		exit(1);
 	}
 
-	if (pthread_create(&thr, NULL, sender_thread, NULL) != 0)
+	if (pthread_create(&thr, &thr_attr, sender_thread, NULL) != 0)
 	{
 		fprintf(stderr, "pthread_create() failed\n");
 		exit(1);
@@ -1607,7 +1612,7 @@ int main(int argc, char **argv)
 		log_sys(rec, false);
 	}
 
-	dispatcher->setThreadPool(2, 4, 256*1024);
+	dispatcher->setThreadPool(2, 4, STACK_SIZE);
 	dispatcher->start();
 
 	pthread_join(thr, NULL);
