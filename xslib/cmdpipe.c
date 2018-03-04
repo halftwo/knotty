@@ -19,8 +19,8 @@ static const char rcsid[] = "$Id: cmdpipe.c,v 1.4 2015/10/26 07:03:04 gremlin Ex
 #endif
 
 #define MAX_NUM_ARG	128
-#define IBUF_SIZE	(1024*4)
-#define OBUF_SIZE	(1024*4)
+#define BSIZE_MIN	512
+#define BSIZE_DFT	(1024*16)
 
 
 int cmdpipe_execl(struct cmdpipe_info *cpi, const char *mode, const char *path, const char *arg, ...)
@@ -247,14 +247,14 @@ static int64_t get_mono_msec()
 	return (int64_t)now.tv_sec * 1000 + now.tv_nsec / 1000000;
 }
 
-int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout, 
+int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout, int bufsize,
 		xio_read_function in, void *ictx, 
 		xio_write_function out, void *octx, 
 		xio_write_function err, void *ectx)
 {
 	int err_ret = -1;
 	int status;
-	unsigned char ibuf[IBUF_SIZE];
+	unsigned char *ibuf = NULL, *obuf = NULL;
 	int ipos = 0;
 	int icapacity = 0;
 
@@ -268,8 +268,15 @@ int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout,
 	int num = 0, total;
 	uint64_t start = 0;
 
+	if (bufsize <= 0)
+		bufsize = BSIZE_DFT;
+	else if (bufsize < BSIZE_MIN)
+		bufsize = BSIZE_MIN;
+
 	if (cpi->fd1 >= 0)
 	{
+		if (!obuf)
+			obuf = (unsigned char *)malloc(bufsize);
 		xnet_set_nonblock(cpi->fd1);
 		fdptrs[num] = &cpi->fd1;
 		pollfds[num].fd = cpi->fd1;
@@ -281,6 +288,8 @@ int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout,
 
 	if (cpi->fd2 >= 0)
 	{
+		if (!obuf)
+			obuf = (unsigned char *)malloc(bufsize);
 		xnet_set_nonblock(cpi->fd2);
 		fdptrs[num] = &cpi->fd2;
 		pollfds[num].fd = cpi->fd2;
@@ -294,6 +303,7 @@ int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout,
 	{
 		if (in)
 		{
+			ibuf = (unsigned char *)malloc(bufsize);
 			xnet_set_nonblock(cpi->fd0);
 			fdptrs[num] = &cpi->fd0;
 			pollfds[num].fd = cpi->fd0;
@@ -335,17 +345,16 @@ int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout,
 
 		for (i = 0; i < total; ++i)
 		{
-			unsigned char obuf[OBUF_SIZE];
 			struct pollfd *pf = &pollfds[i];
 
 			if (pf->fd < 0 || pf->revents == 0)
 				continue;
 
-			if (pf->revents & POLLIN)
+			if (pf->revents & POLLIN) /* POLLIN should be before (POLLOUT | POLLERR) */
 			{
 				int n;
 				do {
-					n = xnet_read_nonblock(pf->fd, obuf, sizeof(obuf));
+					n = xnet_read_nonblock(pf->fd, obuf, bufsize);
 					if (n < 0)
 					{
 						if (n == -1)
@@ -364,18 +373,31 @@ int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout,
 
 					if (n > 0 && wops[i].write)
 					{
-						int k = wops[i].write(wops[i].ctx, obuf, n);
-						if (k != n)
-							goto error;
+						unsigned char *p = obuf;
+						int m = n;
+						do {
+							int k = wops[i].write(wops[i].ctx, p, m);
+							if (k < 0)
+								goto error;
+							p += k;
+							m -= k;
+						} while (m > 0);
 					}
-				} while (pf->fd >= 0 && n == sizeof(obuf));
+				} while (pf->fd >= 0 && n == bufsize);
 			}
-			else if (pf->revents & POLLOUT)
+			else if (pf->revents & (POLLHUP | POLLERR))
+			{
+				--num;
+				close(pf->fd);
+				*fdptrs[i] = -1;
+				pf->fd = -1;
+			}
+			else if (pf->revents & POLLOUT)	/* POLLOUT must be after (POLLUP | POLLERR) */
 			{
 				do {
 					if (ipos == icapacity)
 					{
-						int k = in(ictx, ibuf, sizeof(ibuf));
+						int k = in(ictx, ibuf, bufsize);
 						if (k < 0)
 							goto error;
 
@@ -401,19 +423,9 @@ int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout,
 					}
 				} while (pf->fd >= 0 && ipos == icapacity);
 			}
-			else if (pf->revents & POLLHUP)
-			{
-				--num;
-				close(pf->fd);
-				*fdptrs[i] = -1;
-				pf->fd = -1;
-			}
-			else if (pf->revents & POLLERR)
-			{
-				goto error;
-			}
 		}
 	}
+
 	waitpid(cpi->pid, &status, 0);
 	return WEXITSTATUS(status);
 
@@ -426,6 +438,11 @@ error:
 		close(cpi->fd1);
 	if (cpi->fd2 >= 0)
 		close(cpi->fd2);
+
+	if (ibuf)
+		free(ibuf);
+	if (obuf)
+		free(obuf);
 
 	waitpid(cpi->pid, &status, 0);
 	return err_ret;
@@ -461,7 +478,7 @@ int main()
 	rc = cmdpipe_execve(&cpi, mode, program, args, NULL);
 	assert(rc == 0);
 
-	rc = cmdpipe_communicate(&cpi, 100, stdio_xio.read, stdin, stdio_xio.write, stdout, stdio_xio.write, stderr);
+	rc = cmdpipe_communicate(&cpi, 100, 0, stdio_xio.read, stdin, stdio_xio.write, stdout, stdio_xio.write, stderr);
 	fprintf(stderr, "RC=%d\n", rc);
 	return 0;
 }

@@ -50,7 +50,7 @@ int cmdpipe_execl(struct cmdpipe_info *cpi, const char *mode, const char *path, 
  * Return a integer that is exit status of the child.
  * Or a negative number to indicate an error.
  */
-int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout /* in milliseconds */, 
+int cmdpipe_communicate(struct cmdpipe_info *cpi, int timeout /* in milliseconds */, int bufsize,
 		xio_read_function in, void *ictx, 
 		xio_write_function out, void *octx, 
 		xio_write_function err, void *ectx);
