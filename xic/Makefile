@@ -53,6 +53,9 @@ DemoClientSt: DemoClientSt.cpp DemoClientImp.o
 shadow_file: ShadowBox.cpp
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) -DTEST_SHADOW -o $@ $< $(LIBS)
 
+strip:
+	$(STRIP) $(EXES)
+
 clean:
 	$(RM) *.lo *.la DemoServant.o DemoClientImp.o $(LIBXIC_OBJS) $(LIBXIC) $(EXES) 
 

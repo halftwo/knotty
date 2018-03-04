@@ -27,6 +27,9 @@ $(EXES): $(OBJS)
 .cpp:
 	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(INC) -o $@ $^ $(LIBS)
 
+strip:
+	$(STRIP) $(EXES)
+
 clean:
 	$(RM) $(OBJS) $(EXES)
 

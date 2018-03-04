@@ -69,6 +69,9 @@ install:
 	cp -rf libdlog.a ../lib
 	cp -rf libdlog.a ../lib/dlog
 
+strip:
+	$(STRIP) $(EXES)
+
 clean:
 	$(RM) $(EXES) $(OBJS) $(LIBRARY) *.o dlog_wrap.c _dlog.so
 
