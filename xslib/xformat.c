@@ -20,14 +20,14 @@
 static const char rcsid[] = "$Id: xformat.c,v 1.43 2014/01/26 09:53:22 gremlin Exp $";
 #endif
 
-#ifdef WIN32
-#define long_double_union		ieee754_binary64
-#define LONG_DOUBLE_BIAS		IEEE754_BINARY64_BIAS
-#define LONG_DOUBLE_MANTISSA_BITS	52
-#else
+#if ((defined(__linux) || defined(__FreeBSD__)) && (defined(__i386) || defined(__x86_64)))
 #define long_double_union		ieee854_binary80
 #define LONG_DOUBLE_BIAS		IEEE854_BINARY80_BIAS
 #define LONG_DOUBLE_MANTISSA_BITS	63
+#else
+#define long_double_union		ieee754_binary64
+#define LONG_DOUBLE_BIAS		IEEE754_BINARY64_BIAS
+#define LONG_DOUBLE_MANTISSA_BITS	52
 #endif
 
 
