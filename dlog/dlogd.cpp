@@ -40,7 +40,7 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/utsname.h>
-#include <utmp.h>
+#include <utmpx.h>
 #include <stdint.h>
 #include <dirent.h>
 #include <string.h>
@@ -986,8 +986,8 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		char path[256] = "/dev/";
 		size_t plen = strlen(path);
 		size_t user_count = 0;
-		setutent();
-		for (struct utmp *ut; ((ut = getutent()) != NULL); )
+		setutxent();
+		for (struct utmpx *ut; ((ut = getutxent()) != NULL); )
 		{
 			if (ut->ut_type != USER_PROCESS)
 				continue;
@@ -1003,7 +1003,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 				iobuf_putc(&ob, ',');
 			iobuf_printf(&ob, "%s:%s~%d~%d~%s", ut->ut_user, ut->ut_line, idle_sec, login_sec, ut->ut_host);
 		}
-		endutent();
+		endutxent();
 
 		rec = recpool_acquire();
 		dlog_make(rec, NULL, _program_name, "STATS", NULL, "v1 up=%d-%02d:%02d user=%zd load=%s"
