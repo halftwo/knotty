@@ -570,7 +570,7 @@ static void *sender_thread(void *arg)
 
 	dispatcher->cancel();
 
-	fprintf(stderr, "thread sender() exit.\n");
+	xlog(0, "thread sender() exit.\n");
 	return NULL;
 }
 
@@ -1489,7 +1489,7 @@ int main(int argc, char **argv)
 
 	if (daemon && daemon_init() < 0)
 	{
-		fprintf(stderr, "daemon_init() failed\n");
+		xlog(0, "daemon_init() failed\n");
 		return 1;
 	}
 
@@ -1506,7 +1506,7 @@ int main(int argc, char **argv)
 			// and seteuid() back to the unprivileged user.
 			if (unix_set_euser_egroup(user, NULL) < 0)
 			{
-				fprintf(stderr, "unix_set_user_group() failed, user=%s\n", user);
+				xlog(0, "unix_set_user_group() failed, user=%s\n", user);
 				return 1;
 			}
 		}
@@ -1521,14 +1521,14 @@ int main(int argc, char **argv)
 		udp4 = xnet_udp_bind("127.0.0.1", DLOGD_PORT);
 		if (udp4 < 0)
 		{
-			fprintf(stderr, "xnet_udp_bind() failed, addr=udp+%s+%u, errno=%d\n", "127.0.0.1", DLOGD_PORT, errno);
+			xlog(0, "xnet_udp_bind() failed, addr=udp+%s+%u, errno=%d\n", "127.0.0.1", DLOGD_PORT, errno);
 			exit(1);
 		}
 
 		tcp4 = xnet_tcp_listen("127.0.0.1", DLOGD_PORT, 256);
 		if (tcp4 < 0)
 		{
-			fprintf(stderr, "xnet_tcp_listen() failed, addr=tcp+%s+%u, errno=%d\n", "127.0.0.1", DLOGD_PORT, errno);
+			xlog(0, "xnet_tcp_listen() failed, addr=tcp+%s+%u, errno=%d\n", "127.0.0.1", DLOGD_PORT, errno);
 			exit(1);
 		}
 	}
@@ -1538,13 +1538,13 @@ int main(int argc, char **argv)
 		snprintf(pidfile, sizeof(pidfile), "/var/run/%s.pid", _program_name);
 		if (daemon_lock_pidfile(pidfile) < 0)
 		{
-			fprintf(stderr, "lock pidfile failed, pidfile=%s\n", pidfile);
+			xlog(0, "lock pidfile failed, pidfile=%s\n", pidfile);
 			exit(1);
 		}
 	}
 	else
 	{
-		fprintf(stderr, "This program can only be runned as dlogd or dstsd\n");
+		xlog(0, "This program can only be runned as dlogd or dstsd\n");
 		exit(1);
 	}
 
@@ -1559,13 +1559,13 @@ int main(int argc, char **argv)
 
 	if (pthread_create(&thr, &thr_attr, log_thread, NULL) != 0)
 	{
-		fprintf(stderr, "pthread_create() failed\n");
+		xlog(0, "pthread_create() failed\n");
 		exit(1);
 	}
 
 	if (pthread_create(&thr, &thr_attr, sender_thread, NULL) != 0)
 	{
-		fprintf(stderr, "pthread_create() failed\n");
+		xlog(0, "pthread_create() failed\n");
 		exit(1);
 	}
 
