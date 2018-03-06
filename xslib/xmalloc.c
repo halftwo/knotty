@@ -11,7 +11,7 @@ void *xmalloc(size_t size)
 {
 	void *p = malloc(size);
 	if (!p)
-		xlog(XLOG_ERR, "malloc(%lu) failed", (unsigned long)size);
+		xlog(XLOG_ALERT, "malloc(%lu) failed", (unsigned long)size);
 	return p;
 }
 
@@ -19,7 +19,7 @@ void *xmalloc0(size_t size)
 {
 	void *p = calloc(1, size);
 	if (!p)
-		xlog(XLOG_ERR, "calloc(1, %lu) failed", (unsigned long)size);
+		xlog(XLOG_ALERT, "calloc(1, %lu) failed", (unsigned long)size);
 	return p;
 }
 
@@ -27,7 +27,7 @@ void *xcalloc(size_t nmemb, size_t size)
 {
 	void *p = calloc(nmemb, size);
 	if (!p)
-		xlog(XLOG_ERR, "calloc(%lu, %lu) failed", (unsigned long)nmemb, (unsigned long)size);
+		xlog(XLOG_ALERT, "calloc(%lu, %lu) failed", (unsigned long)nmemb, (unsigned long)size);
 	return p;
 }
 

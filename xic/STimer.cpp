@@ -314,7 +314,7 @@ void STimerI::wait_fiber()
 				catch (std::exception& ex)
 				{
 					XError* x = dynamic_cast<XError*>(&ex);
-					xlog(XLOG_CRIT, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
+					xlog(XLOG_ALERT, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
 				}
 				tm.task->xref_dec();
 			} while (!_heap.empty() && _heap.top().msec() <= now);

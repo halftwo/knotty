@@ -2323,7 +2323,7 @@ static void *sig_thread(void *arg)
 
 static void sig_fpe(int sig)
 {
-	xlog(0, "SIGFPE received: st_thread_t is probably created in PtEngine. exiting.");
+	xlog(XLOG_ALERT, "SIGFPE received: st_thread_t is probably created in PtEngine. exiting.");
 	exit(1);
 }
 

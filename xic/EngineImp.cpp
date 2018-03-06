@@ -2351,7 +2351,7 @@ int ApplicationI::main(int argc, char **argv, const SettingPtr& setting)
 	catch (std::exception& ex)
 	{
 		XError* x = dynamic_cast<XError*>(&ex);
-		xlog(XLOG_EMERG, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
+		xlog(XLOG_ALERT, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
 		_help(identity);
 	}
 

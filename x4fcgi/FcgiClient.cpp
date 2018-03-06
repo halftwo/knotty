@@ -100,7 +100,7 @@ FcgiConnection::~FcgiConnection()
 {
 	if (_fd >= 0)
 		::close(_fd);
-	xlog(XLOG_VERBOSE, "~FcgiConnection(): reqseq=%d", _reqseq);
+	xlog(XLOG_DEBUG, "~FcgiConnection(): reqseq=%d", _reqseq);
 }
 
 void FcgiConnection::_operate(const FcgiQuestPtr& quest)

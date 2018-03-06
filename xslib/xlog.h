@@ -16,20 +16,17 @@ extern "C" {
 #endif
 
 
-/* The xlog levels are the same as those in syslog.h
- */
 enum {
-	XLOG_EMERG 	= 0,  /* system is unusable               */
-	XLOG_ALERT 	= 1,  /* action must be taken immediately */
-	XLOG_CRIT 	= 2,  /* critical conditions              */
-	XLOG_ERR 	= 3,  /* error conditions                 */
-        XLOG_WARNING  	= 4,  /* warning conditions               */
-        XLOG_NOTICE   	= 5,  /* normal but significant condition */
-        XLOG_INFO     	= 6,  /* informational                    */
-        XLOG_DEBUG    	= 7,  /* debug-level messages             */
+	XLOG_ALWAYS	= 0,
 
-	XLOG_VERBOSE	= 8,  /* logs may be very messy           */
-	XLOG_NONSENSE	= 9,  /* don't use this                   */
+	XLOG_ALERT	= 0,
+	XLOG_ERR	= 1,
+	XLOG_WARNING	= 2,
+	XLOG_NOTICE	= 3,
+	XLOG_INFO	= 4,
+	XLOG_DEBUG	= 5,
+
+	XLOG_LEVEL_MAX	= 5,
 };
 
 
