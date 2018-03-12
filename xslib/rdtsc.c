@@ -39,10 +39,10 @@ uint64_t rdtsc()
 		: "=a" (t.l.low), "=d" (t.l.high));
 
 #else
-	/* XXX: we simulate a 100MHz processor */
+	/* XXX: we simulate a 125MHz processor */
 	struct timespec ts;
 	clock_gettime(CLOCK_MONOTONIC, &ts);
-	t.ll = (uint64_t)ts.tv_sec * (1000*1000*100) + ts.tv_nsec/10;
+	t.ll = (uint64_t)ts.tv_sec * (125*1000*1000) + ts.tv_nsec/8;
 #endif
 	return t.ll;
 }
