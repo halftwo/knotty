@@ -169,12 +169,12 @@ static int _parse_primitive(json_parser_t *parser, void *ctx)
 
 static inline int _parse_data(json_parser_t *parser, void *ctx)
 {
-	int type = _parse_primitive(parser, ctx);
-	if (type == VBS_LIST)
+	int kind = _parse_primitive(parser, ctx);
+	if (kind == VBS_LIST)
 		return parser->parse_array_body(parser, ctx);
-	else if (type == VBS_DICT)
+	else if (kind == VBS_DICT)
 		return parser->parse_object_body(parser, ctx);
-	return type;
+	return kind;
 }
 
 static int _parse_blob(json_parser_t *parser, void *ctx)
@@ -544,16 +544,16 @@ static int _parse_object_body_to_vbs_binary(json_parser_t *parser, void *ctx)
 
 	for (n = 0; true; ++n)
 	{
-		int type;
+		int kind;
 
 		if (_is_wanted(parser, '}'))
 			break;
 		else if (!comma)
 			return -1;
 
-		type = _parse_data(parser, ctx);
+		kind = _parse_data(parser, ctx);
 
-		if (type != VBS_STRING)
+		if (kind != VBS_STRING)
 			return -1;
 
 		if (!_is_wanted(parser, ':'))
@@ -610,7 +610,7 @@ ssize_t json_to_vbs(const void *json, size_t size, xio_write_function xio_write,
 {
 	json_parser_t parser;
 	vbs_packer_t pk = VBS_PACKER_INIT(xio_write, xio_ctx, -1);
-	int type;
+	int kind;
 
 	parser.sp = (unsigned char *)json;
 	parser.end = parser.sp + size;
@@ -631,8 +631,8 @@ ssize_t json_to_vbs(const void *json, size_t size, xio_write_function xio_write,
 	FUNC(write);
 #undef FUNC
 
-	type = _parse_data(&parser, NULL);
-	if (type < 0)
+	kind = _parse_data(&parser, NULL);
+	if (kind < 0)
 		return -1;
 
 	if (pk.error || pk.depth)
@@ -675,7 +675,7 @@ static int _parse_array_body_to_vbs_data(json_parser_t *parser, void *ctx)
 	memory_t *mm = (memory_t *)parser->cookie;
 	vbs_data_t *pv = (vbs_data_t *)ctx;
 
-	pv->type = VBS_LIST;
+	pv->kind = VBS_LIST;
 	pv->d_list = (vbs_list_t *)x_alloc(mm, sizeof(*pv->d_list));
 	if (!pv->d_list)
 		return -1;
@@ -692,7 +692,7 @@ static int _unpack_object_body_as_dict(json_parser_t *parser, vbs_dict_t *dict)
 	for (n = 0; true; ++n)
 	{
 		vbs_ditem_t *ent;
-		int type;
+		int kind;
 
 		if (_is_wanted(parser, '}'))
 			break;
@@ -705,9 +705,9 @@ static int _unpack_object_body_as_dict(json_parser_t *parser, vbs_dict_t *dict)
 		vbs_ditem_init(ent);
 		vbs_dict_push_back(dict, ent);
 
-		type = _parse_data(parser, &ent->key);
+		kind = _parse_data(parser, &ent->key);
 
-		if (type != VBS_STRING)
+		if (kind != VBS_STRING)
 			return -1;
 
 		if (!_is_wanted(parser, ':'))
@@ -727,7 +727,7 @@ static int _parse_object_body_to_vbs_data(json_parser_t *parser, void *ctx)
 	memory_t *mm = (memory_t *)parser->cookie;
 	vbs_data_t *pv = (vbs_data_t *)ctx;
 
-	pv->type = VBS_DICT;
+	pv->kind = VBS_DICT;
 	pv->d_dict = (vbs_dict_t *)x_alloc(mm, sizeof(*pv->d_dict));
 	if (!pv->d_dict)
 		return -1;
@@ -737,34 +737,34 @@ static int _parse_object_body_to_vbs_data(json_parser_t *parser, void *ctx)
 
 static int _v_integer(memory_t *mm, vbs_data_t *pv, intmax_t v)
 {
-	pv->type = VBS_INTEGER;
+	pv->kind = VBS_INTEGER;
 	pv->d_int = v;
 	return 0;
 }
 
 static int _v_bool(memory_t *mm, vbs_data_t *pv, bool v)
 {
-	pv->type = VBS_BOOL;
+	pv->kind = VBS_BOOL;
 	pv->d_bool = v;
 	return 0;
 }
 
 static int _v_floating(memory_t *mm, vbs_data_t *pv, double v)
 {
-	pv->type = VBS_FLOATING;
+	pv->kind = VBS_FLOATING;
 	pv->d_floating = v;
 	return 0;
 }
 
 static int _v_null(memory_t *mm, vbs_data_t *pv)
 {
-	pv->type = VBS_NULL;
+	pv->kind = VBS_NULL;
 	return 0;
 }
 
 static int _v_head_of_string(memory_t *mm, vbs_data_t *pv, size_t len)
 {
-	pv->type = VBS_STRING;
+	pv->kind = VBS_STRING;
 	pv->is_owner = true;
 	pv->d_xstr.data = x_alloc(mm, len+1);
 	pv->d_xstr.data[len] = 0;
@@ -774,7 +774,7 @@ static int _v_head_of_string(memory_t *mm, vbs_data_t *pv, size_t len)
 
 static int _v_head_of_blob(memory_t *mm, vbs_data_t *pv, size_t len)
 {
-	pv->type = VBS_BLOB;
+	pv->kind = VBS_BLOB;
 	pv->is_owner = true;
 	pv->d_blob.data = x_alloc(mm, len+1);
 	pv->d_blob.data[len] = 0;
@@ -784,12 +784,12 @@ static int _v_head_of_blob(memory_t *mm, vbs_data_t *pv, size_t len)
 
 static int _v_write(memory_t *mm, vbs_data_t *pv, const void *src, size_t len)
 {
-	if (pv->type == VBS_STRING)
+	if (pv->kind == VBS_STRING)
 	{
 		memcpy(pv->d_xstr.data + pv->d_xstr.len, src, len);
 		pv->d_xstr.len += len;
 	}
-	else if (pv->type == VBS_BLOB)
+	else if (pv->kind == VBS_BLOB)
 	{
 		memcpy(pv->d_blob.data + pv->d_blob.len, src, len);
 		pv->d_blob.len += len;
@@ -827,7 +827,7 @@ ssize_t json_unpack_vbs_data(const void *json, size_t size, vbs_data_t *data, co
 {
 	json_parser_t parser;
 	memory_t mm = { xm, xm_cookie };
-	int type;
+	int kind;
 
 	if (!xm)
 		mm.xm = &stdc_xmem;
@@ -835,8 +835,8 @@ ssize_t json_unpack_vbs_data(const void *json, size_t size, vbs_data_t *data, co
 	vbs_data_init(data);
 	_init_parser(&parser, json, size, &mm);
 
-	type = _parse_data(&parser, data);
-	if (type < 0)
+	kind = _parse_data(&parser, data);
+	if (kind < 0)
 		goto error;
 
 	return parser.sp - (unsigned char *)json;
@@ -850,7 +850,7 @@ ssize_t json_unpack_vbs_list(const void *json, size_t size, vbs_list_t *list, co
 	json_parser_t parser;
 	memory_t mm = { xm, xm_cookie };
 	vbs_data_t data;
-	int type;
+	int kind;
 
 	if (!xm)
 		mm.xm = &stdc_xmem;
@@ -858,12 +858,12 @@ ssize_t json_unpack_vbs_list(const void *json, size_t size, vbs_list_t *list, co
 	vbs_list_init(list, 0);
 	_init_parser(&parser, json, size, &mm);
 
-	type = _parse_primitive(&parser, &data);
-	if (type != VBS_LIST)
+	kind = _parse_primitive(&parser, &data);
+	if (kind != VBS_LIST)
 		goto error;
 
-	type = _unpack_array_body_as_list(&parser, list);
-	if (type < 0)
+	kind = _unpack_array_body_as_list(&parser, list);
+	if (kind < 0)
 		goto error;
 
 	return parser.sp - (unsigned char *)json;
@@ -877,7 +877,7 @@ ssize_t json_unpack_vbs_dict(const void *json, size_t size, vbs_dict_t *dict, co
 	json_parser_t parser;
 	memory_t mm = { xm, xm_cookie };
 	vbs_data_t data;
-	int type;
+	int kind;
 
 	if (!xm)
 		mm.xm = &stdc_xmem;
@@ -885,12 +885,12 @@ ssize_t json_unpack_vbs_dict(const void *json, size_t size, vbs_dict_t *dict, co
 	vbs_dict_init(dict, 0);
 	_init_parser(&parser, json, size, &mm);
 
-	type = _parse_primitive(&parser, &data);
-	if (type != VBS_DICT)
+	kind = _parse_primitive(&parser, &data);
+	if (kind != VBS_DICT)
 		goto error;
 
-	type = _unpack_object_body_as_dict(&parser, dict);
-	if (type < 0)
+	kind = _unpack_object_body_as_dict(&parser, dict);
+	if (kind < 0)
 		goto error;
 
 	return parser.sp - (unsigned char *)json;
@@ -1135,10 +1135,10 @@ static int _vbs_to_json(vbs_unpacker_t *job, writer_t *wr, int flags, bool must_
 	if (vbs_unpack_primitive(job, &v, NULL) < 0)
 		return -1;
 
-	if (must_string && v.type != VBS_STRING)
+	if (must_string && v.kind != VBS_STRING)
 		return -1;
 
-	switch (v.type)
+	switch (v.kind)
 	{
 	case VBS_INTEGER:
 		n = snprintf(buf, sizeof(buf), "%jd", v.d_int);
@@ -1254,7 +1254,7 @@ static int _print_vbs_data(writer_t *wr, const vbs_data_t *v, int flags)
 	ssize_t r, n;
 	char buf[32];
 
-	switch (v->type)
+	switch (v->kind)
 	{
 	case VBS_INTEGER:
 		n = snprintf(buf, sizeof(buf), "%jd", v->d_int);

@@ -637,7 +637,7 @@ static AnswerPtr append_raiser(const AnswerPtr& answer, const std::string& raise
 	for (const vbs_ditem_t *ent = ps->first; ent; ent = ent->next)
 	{
 		const xstr_t& key = ent->key.d_xstr;
-		if (xstr_equal_cstr(&key, "raiser") && ent->value.type == VBS_STRING)
+		if (xstr_equal_cstr(&key, "raiser") && ent->value.kind == VBS_STRING)
 		{
 			const xstr_t& v = ent->value.d_xstr;
 			aw.paramStrHead("raiser", v.len + 2 + raiser.length());
@@ -942,13 +942,13 @@ ConnectionIPtr ProxyI::pickConnection(const QuestPtr& quest)
 		intmax_t hint = 0;
 		if (ht)
 		{
-			if (ht->type == VBS_INTEGER)
+			if (ht->kind == VBS_INTEGER)
 				hint = ht->d_int;
-			else if (ht->type == VBS_STRING || ht->type == VBS_BLOB)
+			else if (ht->kind == VBS_STRING || ht->kind == VBS_BLOB)
 				hint = crc32_checksum(ht->d_blob.data, ht->d_blob.len);
-			else if (ht->type == VBS_FLOATING)
+			else if (ht->kind == VBS_FLOATING)
 				hint = ht->d_floating;
-			else if (ht->type == VBS_DECIMAL)
+			else if (ht->kind == VBS_DECIMAL)
 				decimal64_to_integer(ht->d_decimal64, &hint);
 			else
 				ht = NULL;

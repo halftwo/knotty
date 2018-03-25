@@ -86,7 +86,7 @@ static int _copy_dict(vbs_dict_t *dst, const vbs_dict_t *src, const xmem_t *xm, 
 static inline int _copy_data(vbs_data_t *dst, const vbs_data_t *src, const xmem_t *xm, void *xm_cookie)
 {
 	dst->descriptor = src->descriptor;
-	if (src->type == VBS_STRING)
+	if (src->kind == VBS_STRING)
 	{
 		size_t len = src->d_xstr.len;
 		char *buf = (char *)xm->alloc(xm_cookie, len);
@@ -95,7 +95,7 @@ static inline int _copy_data(vbs_data_t *dst, const vbs_data_t *src, const xmem_
 		memcpy(buf, src->d_xstr.data, len);
 		vbs_data_set_lstr(dst, buf, len, true);
 	}
-	else if (src->type == VBS_BLOB)
+	else if (src->kind == VBS_BLOB)
 	{
 		size_t len = src->d_blob.len;
 		void *buf = xm->alloc(xm_cookie, len);
@@ -104,12 +104,12 @@ static inline int _copy_data(vbs_data_t *dst, const vbs_data_t *src, const xmem_
 		memcpy(buf, src->d_blob.data, len);
 		vbs_data_set_blob(dst, buf, len, true);
 	}
-	else if (src->type == VBS_LIST)
+	else if (src->kind == VBS_LIST)
 	{
 		vbs_data_set_list(dst, (vbs_list_t *)xm->alloc(xm_cookie, sizeof(vbs_list_t)));
 		return _copy_list(dst->d_list, src->d_list, xm, xm_cookie);
 	}
-	else if (src->type == VBS_DICT)
+	else if (src->kind == VBS_DICT)
 	{
 		vbs_data_set_dict(dst, (vbs_dict_t *)xm->alloc(xm_cookie, sizeof(vbs_dict_t)));
 		return _copy_dict(dst->d_dict, src->d_dict, xm, xm_cookie);
@@ -125,7 +125,7 @@ static int _copy_list(vbs_list_t *dst, const vbs_list_t *src, const xmem_t *xm, 
 {
 	vbs_litem_t *se;
 
-	vbs_list_init(dst, src->kind);
+	vbs_list_init(dst, src->variety);
 	for (se = src->first; se; se = se->next)
 	{
 		vbs_litem_t *de = (vbs_litem_t *)xm->alloc(xm_cookie, sizeof(*de));
@@ -142,7 +142,7 @@ static int _copy_dict(vbs_dict_t *dst, const vbs_dict_t *src, const xmem_t *xm, 
 {
 	vbs_ditem_t *se;
 
-	vbs_dict_init(dst, src->kind);
+	vbs_dict_init(dst, src->variety);
 	for (se = src->first; se; se = se->next)
 	{
 		vbs_ditem_t *de = (vbs_ditem_t *)xm->alloc(xm_cookie, sizeof(*de));
@@ -178,9 +178,9 @@ int vbs_print_list(const vbs_list_t *list, iobuf_t *ob)
 {
 	vbs_litem_t *ent;
 
-	if (list->kind)
+	if (list->variety)
 	{
-		if (iobuf_printf(ob, "%d[", list->kind) < 0)
+		if (iobuf_printf(ob, "%d[", list->variety) < 0)
 			return -1;
 	}
 	else
@@ -210,9 +210,9 @@ int vbs_print_dict(const vbs_dict_t *dict, iobuf_t *ob)
 {
 	vbs_ditem_t *ent;
 
-	if (dict->kind)
+	if (dict->variety)
 	{
-		if (iobuf_printf(ob, "%d{", dict->kind) < 0)
+		if (iobuf_printf(ob, "%d{", dict->variety) < 0)
 			return -1;
 	}
 	else
@@ -442,7 +442,7 @@ int vbs_print_decimal64(decimal64_t value, iobuf_t *ob)
 static int _print_hidden(const vbs_data_t *pv, iobuf_t *ob)
 {
 	int r = 0;
-	switch (pv->type)
+	switch (pv->kind)
 	{
 	case VBS_INTEGER:
 		r = iobuf_puts(ob, "~%i~");
@@ -492,7 +492,7 @@ int vbs_print_data(const vbs_data_t *pv, iobuf_t *ob)
 				return -1;
 		}
 
-		switch (pv->type)
+		switch (pv->kind)
 		{
 		case VBS_INTEGER:
 			r = iobuf_printf(ob, "%jd", pv->d_int);
@@ -528,16 +528,16 @@ int vbs_print_data(const vbs_data_t *pv, iobuf_t *ob)
 	return r < 0 ? -1 : 0;
 }
 
-static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv, int kind);
+static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv, int variety);
 
-static int _dump_to_tail(vbs_unpacker_t *job, bool dict, iobuf_t *ob, int kind)
+static int _dump_to_tail(vbs_unpacker_t *job, bool dict, iobuf_t *ob, int variety)
 {
 	size_t n;
 	int rc = -1;
 
-	if (kind)
+	if (variety)
 	{
-		if (iobuf_printf(ob, "%d", kind) < 0)
+		if (iobuf_printf(ob, "%d", variety) < 0)
 			goto error;
 	}
 
@@ -547,12 +547,12 @@ static int _dump_to_tail(vbs_unpacker_t *job, bool dict, iobuf_t *ob, int kind)
 	for (n = 0; true; ++n)
 	{
 		vbs_data_t val;
-		int kind;
-		int r = vbs_unpack_primitive(job, &val, &kind);
+		int variety;
+		int r = vbs_unpack_primitive(job, &val, &variety);
 		if (r < 0)
 			goto error;
 
-		if (val.type == VBS_TAIL)
+		if (val.kind == VBS_TAIL)
 		{
 			if (dict && (n % 2))
 				goto error;
@@ -577,7 +577,7 @@ static int _dump_to_tail(vbs_unpacker_t *job, bool dict, iobuf_t *ob, int kind)
 			}
 		}
 
-		r = _do_unpack_print(job, ob, &val, kind);
+		r = _do_unpack_print(job, ob, &val, variety);
 		if (r < 0)
 			goto error;
 	}
@@ -586,17 +586,17 @@ error:
 	return rc;
 }
 
-static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv, int kind)
+static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *pv, int variety)
 {
 	if ((pv->descriptor & VBS_SPECIAL_DESCRIPTOR) != 0)
 	{
-		if (pv->type == VBS_DICT)
+		if (pv->kind == VBS_DICT)
 		{
 			if (iobuf_puts(ob, "~%{}~") < 0)
 				return -1;
 			return vbs_skip_body_of_dict(job);
 		}
-		else if (pv->type == VBS_LIST)
+		else if (pv->kind == VBS_LIST)
 		{
 			if (iobuf_puts(ob, "~%[]~") < 0)
 				return -1;
@@ -605,14 +605,14 @@ static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *
 	}
 	else
 	{
-		if (pv->type == VBS_DICT || pv->type == VBS_LIST)
+		if (pv->kind == VBS_DICT || pv->kind == VBS_LIST)
 		{
 			if (pv->descriptor)
 			{
 				if (iobuf_printf(ob, "%d@", pv->descriptor) < 0)
 					return -1;
 			}
-			return _dump_to_tail(job, (pv->type == VBS_DICT), ob, kind);
+			return _dump_to_tail(job, (pv->kind == VBS_DICT), ob, variety);
 		}
 	}
 
@@ -622,12 +622,12 @@ static int _do_unpack_print(vbs_unpacker_t *job, iobuf_t *ob, const vbs_data_t *
 inline int vbs_unpack_print_one(vbs_unpacker_t *job, iobuf_t *ob)
 {
 	vbs_data_t val;
-	int kind;
-	int r = vbs_unpack_primitive(job, &val, &kind);
+	int variety;
+	int r = vbs_unpack_primitive(job, &val, &variety);
 	if (r < 0)
 		return r;
 
-	return _do_unpack_print(job, ob, &val, kind);
+	return _do_unpack_print(job, ob, &val, variety);
 }
 
 int vbs_unpack_print_all(vbs_unpacker_t *job, iobuf_t *ob)

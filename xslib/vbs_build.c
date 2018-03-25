@@ -189,7 +189,7 @@ static int _do_format(vbs_packer_t *job, context_t *ctx, enum box_state box)
 				goto error;
 			++ps;
 			val.x = va_arg(ctx->ap, const vbs_data_t *);
-			if (ps == PS_KEY && val.x->type != VBS_INTEGER && val.x->type != VBS_STRING)
+			if (ps == PS_KEY && val.x->kind != VBS_INTEGER && val.x->kind != VBS_STRING)
 				goto error;
 			vbs_pack_data(job, val.x);
 			break;

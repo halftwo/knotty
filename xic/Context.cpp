@@ -34,7 +34,7 @@ vbs_data_t *Context::_find(const char *key) const
 intmax_t Context::getInt(const char* name, intmax_t dft) const
 {
 	vbs_data_t *v = _find(name);
-	if (v && v->type == VBS_INTEGER)
+	if (v && v->kind == VBS_INTEGER)
 		return v->d_int;
 	return dft;
 }
@@ -42,7 +42,7 @@ intmax_t Context::getInt(const char* name, intmax_t dft) const
 std::string Context::getString(const char *name, const std::string& dft) const
 {
 	vbs_data_t *v = _find(name);
-	if (v && v->type == VBS_STRING)
+	if (v && v->kind == VBS_STRING)
 		return make_string(v->d_xstr);
 	return dft;
 }
@@ -50,7 +50,7 @@ std::string Context::getString(const char *name, const std::string& dft) const
 xstr_t Context::getXstr(const char *name, const xstr_t& dft) const
 {
 	vbs_data_t *v = _find(name);
-	if (v && v->type == VBS_STRING)
+	if (v && v->kind == VBS_STRING)
 		return v->d_xstr;
 	return dft;
 }
@@ -58,7 +58,7 @@ xstr_t Context::getXstr(const char *name, const xstr_t& dft) const
 bool Context::getBool(const char *name, bool dft) const
 {
 	vbs_data_t *v = _find(name);
-	if (v && v->type == VBS_BOOL)
+	if (v && v->kind == VBS_BOOL)
 		return v->d_bool;
 	return dft;
 }
@@ -66,7 +66,7 @@ bool Context::getBool(const char *name, bool dft) const
 double Context::getFloating(const char *name, double dft) const
 {
 	vbs_data_t *v = _find(name);
-	if (v && v->type == VBS_FLOATING)
+	if (v && v->kind == VBS_FLOATING)
 		return v->d_floating;
 	return dft;
 }
@@ -74,7 +74,7 @@ double Context::getFloating(const char *name, double dft) const
 decimal64_t Context::getDecimal64(const char *name, decimal64_t dft) const
 {
 	vbs_data_t *v = _find(name);
-	if (v && v->type == VBS_DECIMAL)
+	if (v && v->kind == VBS_DECIMAL)
 		return v->d_decimal64;
 	return dft;
 }
@@ -105,26 +105,26 @@ ContextBuilder::ContextBuilder(const VDict& d)
 
 	for (vbs_ditem_t *re = d.dict()->first; re; re = re->next)
 	{
-		if (re->key.type != VBS_STRING)
+		if (re->key.kind != VBS_STRING)
 			continue;
 
-		if (re->value.type != VBS_STRING
-			&& re->value.type != VBS_INTEGER
-			&& re->value.type != VBS_BOOL
-			&& re->value.type != VBS_FLOATING
-			&& re->value.type != VBS_DECIMAL
-			&& re->value.type != VBS_BLOB)
+		if (re->value.kind != VBS_STRING
+			&& re->value.kind != VBS_INTEGER
+			&& re->value.kind != VBS_BOOL
+			&& re->value.kind != VBS_FLOATING
+			&& re->value.kind != VBS_DECIMAL
+			&& re->value.kind != VBS_BLOB)
 		{
 			continue;
 		}
 
 		vbs_ditem_t *ent = (vbs_ditem_t *)ostk_calloc(_ostk, sizeof(*ent));
 
-		ent->key.type = VBS_STRING;
+		ent->key.kind = VBS_STRING;
 		ent->key.d_xstr = ostk_xstr_dup(_ostk, &re->key.d_xstr);
-		if (re->value.type == VBS_STRING || re->value.type == VBS_BLOB)
+		if (re->value.kind == VBS_STRING || re->value.kind == VBS_BLOB)
 		{
-			ent->value.type = re->value.type;
+			ent->value.kind = re->value.kind;
 			ent->value.d_xstr = ostk_xstr_dup(_ostk, &re->value.d_xstr);
 		}
 		else
@@ -157,7 +157,7 @@ vbs_ditem_t* ContextBuilder::_put_item(const char *name)
 	}
 
 	ent = (vbs_ditem_t *)ostk_calloc(_ostk, sizeof(*ent));
-	ent->key.type = VBS_STRING;
+	ent->key.kind = VBS_STRING;
 	ent->key.d_xstr = ostk_xstr_dup_mem(_ostk, name, len);
 	vbs_dict_push_back(_dict, ent);
 	return ent;
@@ -166,56 +166,56 @@ vbs_ditem_t* ContextBuilder::_put_item(const char *name)
 void ContextBuilder::_seti(const char *name, intmax_t v)
 {
 	vbs_ditem_t *ent = _put_item(name);
-	ent->value.type = VBS_INTEGER;
+	ent->value.kind = VBS_INTEGER;
 	ent->value.d_int = v;
 }
 
 void ContextBuilder::set(const char *name, const xstr_t& v)
 {
 	vbs_ditem_t *ent = _put_item(name);
-	ent->value.type = VBS_STRING;
+	ent->value.kind = VBS_STRING;
 	ent->value.d_xstr = ostk_xstr_dup(_ostk, &v);
 }
 
 void ContextBuilder::set(const char *name, const std::string& v)
 {
 	vbs_ditem_t *ent = _put_item(name);
-	ent->value.type = VBS_STRING;
+	ent->value.kind = VBS_STRING;
 	ent->value.d_xstr = ostk_xstr_dup_mem(_ostk, v.data(), v.length());
 }
 
 void ContextBuilder::set(const char *name, const char *v)
 {
 	vbs_ditem_t *ent = _put_item(name);
-	ent->value.type = VBS_STRING;
+	ent->value.kind = VBS_STRING;
 	ent->value.d_xstr = ostk_xstr_dup_cstr(_ostk, v);
 }
 
 void ContextBuilder::set(const char *name, const char *data, size_t size)
 {
 	vbs_ditem_t *ent = _put_item(name);
-	ent->value.type = VBS_STRING;
+	ent->value.kind = VBS_STRING;
 	ent->value.d_xstr = ostk_xstr_dup_mem(_ostk, data, size);
 }
 
 void ContextBuilder::set(const char *name, bool v)
 {
 	vbs_ditem_t *ent = _put_item(name);
-	ent->value.type = VBS_BOOL;
+	ent->value.kind = VBS_BOOL;
 	ent->value.d_bool = v;
 }
 
 void ContextBuilder::set(const char *name, double v)
 {
 	vbs_ditem_t *ent = _put_item(name);
-	ent->value.type = VBS_FLOATING;
+	ent->value.kind = VBS_FLOATING;
 	ent->value.d_floating = v;
 }
 
 void ContextBuilder::set(const char *name, decimal64_t v)
 {
 	vbs_ditem_t *ent = _put_item(name);
-	ent->value.type = VBS_DECIMAL;
+	ent->value.kind = VBS_DECIMAL;
 	ent->value.d_decimal64 = v;
 }
 

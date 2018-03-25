@@ -20,11 +20,11 @@ typedef struct
 
 
 
-/* Return the type if successfully unpacked or
+/* Return the kind if successfully unpacked or
  * return a negative number if failed.
  * NB: This function will not adjust job->uk.depth. Do it yourself. Be careful.
  */
-vbs_type_t vbs_stream_unpack_type(vbs_stream_unpacker_t *job, intmax_t *p_number);
+vbs_kind_t vbs_stream_unpack_kind(vbs_stream_unpacker_t *job, intmax_t *p_number);
 
 
 bool vbs_stream_unpack_if_tail(vbs_stream_unpacker_t *job);

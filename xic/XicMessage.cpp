@@ -24,12 +24,12 @@ const xstr_t x00mark = XSTR_CONST("\x00mark");
 
 static int _do_unpack_args(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie, bool ctx)
 {
-	int kind;
-	if (vbs_unpack_head_of_dict(job, &kind) < 0)
+	int variety;
+	if (vbs_unpack_head_of_dict(job, &variety) < 0)
 		return -1;
 
-	vbs_dict_init(dict, kind);
-	unsigned char *begin = job->cur - vbs_head_size_of_dict(kind);
+	vbs_dict_init(dict, variety);
+	unsigned char *begin = job->cur - vbs_head_size_of_dict(variety);
 	while (true)
 	{
 		if (vbs_unpack_if_tail(job))
@@ -50,7 +50,7 @@ static int _do_unpack_args(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *
 		if (vbs_unpack_data(job, &ent->key, xm, xm_cookie) < 0)
 			return -1;
 
-		if (ent->key.type != VBS_STRING)
+		if (ent->key.kind != VBS_STRING)
 		{
 			throw XERROR_FMT(xic::ParameterNameException, "Name of %s must be STRING", ctx ? "context" : "parameter");
 		}
@@ -58,11 +58,11 @@ static int _do_unpack_args(vbs_unpacker_t *job, vbs_dict_t *dict, const xmem_t *
 		if (vbs_unpack_data(job, &ent->value, xm, xm_cookie) < 0)
 			return -1;
 
-		if (ctx && ent->value.type != VBS_INTEGER
-			&& ent->value.type != VBS_STRING
-			&& ent->value.type != VBS_BOOL
-			&& ent->value.type != VBS_FLOATING
-			&& ent->value.type != VBS_DECIMAL)
+		if (ctx && ent->value.kind != VBS_INTEGER
+			&& ent->value.kind != VBS_STRING
+			&& ent->value.kind != VBS_BOOL
+			&& ent->value.kind != VBS_FLOATING
+			&& ent->value.kind != VBS_DECIMAL)
 			throw XERROR_MSG(xic::ParameterTypeException, "Type of Context value should be INTEGER, STRING, BOOL, FLOATING or DECIMAL");
 
 		vbs_dict_push_back(dict, ent);

@@ -26,12 +26,12 @@ extern const xstr_t vbs_packed_empty_dict;
 
 typedef enum
 {
-	/* These are NOT real vbs types. */
+	/* These are NOT real vbs kinds. */
 	VBS_ERR_TOOBIG		= -3,	/* The size or length is too big. */
 	VBS_ERR_INCOMPLETE	= -2,	/* No sufficient bytes to unpack. */
 	VBS_ERR_INVALID		= -1,	/* Invalid sequence of bytes encountered when unpacking. */
 
-	/* vbs types */
+	/* vbs kinds */
 	VBS_TAIL	= 0x01,		/* Used to terminate list or dict. */
 
 	VBS_LIST	= 0x02,
@@ -65,7 +65,7 @@ typedef enum
 
 	VBS_INTEGER 	= 0x40,		/* 010x xxxx + */
 					/* 011x xxxx - */
-} vbs_type_t;
+} vbs_kind_t;
 
 
 
@@ -81,7 +81,7 @@ struct vbs_list_t
 	vbs_litem_t *first;
 	vbs_litem_t **last;
 	size_t count;
-	int kind;
+	int variety;
 	xstr_t _raw;		/* Including the VBS_LIST and VBS_TAIL bytes */
 };
 
@@ -91,14 +91,14 @@ struct vbs_dict_t
 	vbs_ditem_t *first;
 	vbs_ditem_t **last;
 	size_t count;
-	int kind;
+	int variety;
 	xstr_t _raw; 		/* Including the VBS_DICT and VBS_TAIL bytes */
 };
 
 
 struct vbs_data_t
 {
-	vbs_type_t 		type;
+	vbs_kind_t 		kind;
 
 	unsigned int		is_owner:1;	/* Only applicable to STRING or BLOB */
 	/* The d_xstr.data or d_blob.data memory is owned by myself.
@@ -136,28 +136,28 @@ struct vbs_ditem_t
 };
 
 
-const char *vbs_type_name(vbs_type_t type);
+const char *vbs_kind_name(vbs_kind_t kind);
 
 
 static inline bool vbs_data_is_null(const vbs_data_t *v)
 {
-	return (v->type == VBS_NULL);
+	return (v->kind == VBS_NULL);
 }
 
 static inline intmax_t vbs_data_get_integer(const vbs_data_t *v, intmax_t dft)
 {
-	return (v->type == VBS_INTEGER) ? v->d_int : dft;
+	return (v->kind == VBS_INTEGER) ? v->d_int : dft;
 }
 
 static inline bool vbs_data_get_bool(const vbs_data_t *v, bool dft)
 {
-	return (v->type == VBS_BOOL) ? v->d_bool : dft;
+	return (v->kind == VBS_BOOL) ? v->d_bool : dft;
 }
 
 static inline double vbs_data_get_floating(const vbs_data_t *v, double dft)
 {
-	return (v->type == VBS_FLOATING) ? v->d_floating
-		: (v->type == VBS_INTEGER) ? (double)v->d_int
+	return (v->kind == VBS_FLOATING) ? v->d_floating
+		: (v->kind == VBS_INTEGER) ? (double)v->d_int
 		: dft;
 }
 
@@ -165,24 +165,24 @@ decimal64_t vbs_data_get_decimal64(const vbs_data_t *v, decimal64_t dft);
 
 static inline xstr_t vbs_data_get_xstr(const vbs_data_t *v)
 {
-	return (v->type == VBS_STRING) ? v->d_xstr : xstr_null;
+	return (v->kind == VBS_STRING) ? v->d_xstr : xstr_null;
 }
 
 static inline xstr_t vbs_data_get_blob(const vbs_data_t *v)
 {
-	return (v->type == VBS_BLOB) ? v->d_blob
-		: (v->type == VBS_STRING) ? v->d_xstr
+	return (v->kind == VBS_BLOB) ? v->d_blob
+		: (v->kind == VBS_STRING) ? v->d_xstr
 		: xstr_null;
 }
 
 static inline vbs_list_t *vbs_data_get_list(const vbs_data_t *v)
 {
-	return (v->type == VBS_LIST) ? v->d_list : NULL;
+	return (v->kind == VBS_LIST) ? v->d_list : NULL;
 }
 
 static inline vbs_dict_t *vbs_data_get_dict(const vbs_data_t *v)
 {
-	return (v->type == VBS_DICT) ? v->d_dict : NULL;
+	return (v->kind == VBS_DICT) ? v->d_dict : NULL;
 }
 
 
@@ -194,18 +194,18 @@ static inline void vbs_data_init(vbs_data_t *dat)
 
 static inline void vbs_data_set_null(vbs_data_t *dat)
 {
-	dat->type = VBS_NULL;
+	dat->kind = VBS_NULL;
 }
 
 static inline void vbs_data_set_integer(vbs_data_t *dat, intmax_t v)
 {
-	dat->type = VBS_INTEGER;
+	dat->kind = VBS_INTEGER;
 	dat->d_int = v;
 }
 
 static inline void vbs_data_set_lstr(vbs_data_t *dat, const char *str, size_t len, bool is_owner)
 {
-	dat->type = VBS_STRING;
+	dat->kind = VBS_STRING;
 	dat->is_owner = is_owner;
 	dat->d_xstr.data = (unsigned char *)str;
 	dat->d_xstr.len = len;
@@ -213,14 +213,14 @@ static inline void vbs_data_set_lstr(vbs_data_t *dat, const char *str, size_t le
 
 static inline void vbs_data_set_xstr(vbs_data_t *dat, const xstr_t *xs, bool is_owner)
 {
-	dat->type = VBS_STRING;
+	dat->kind = VBS_STRING;
 	dat->is_owner = is_owner;
 	dat->d_xstr = *xs;
 }
 
 static inline void vbs_data_set_blob(vbs_data_t *dat, const void *blob, size_t len, bool is_owner)
 {
-	dat->type = VBS_BLOB;
+	dat->kind = VBS_BLOB;
 	dat->is_owner = is_owner;
 	dat->d_xstr.data = (unsigned char *)blob;
 	dat->d_xstr.len = len;
@@ -229,31 +229,31 @@ static inline void vbs_data_set_blob(vbs_data_t *dat, const void *blob, size_t l
 
 static inline void vbs_data_set_bool(vbs_data_t *dat, bool v)
 {
-	dat->type = VBS_BOOL;
+	dat->kind = VBS_BOOL;
 	dat->d_bool = v;
 }
 
 static inline void vbs_data_set_floating(vbs_data_t *dat, double v)
 {
-	dat->type = VBS_FLOATING;
+	dat->kind = VBS_FLOATING;
 	dat->d_floating = v;
 }
 
 static inline void vbs_data_set_decimal64(vbs_data_t *dat, decimal64_t v)
 {
-	dat->type = VBS_DECIMAL;
+	dat->kind = VBS_DECIMAL;
 	dat->d_decimal64 = v;
 }
 
 static inline void vbs_data_set_list(vbs_data_t *dat, vbs_list_t *list)
 {
-	dat->type = VBS_LIST;
+	dat->kind = VBS_LIST;
 	dat->d_list = list;
 }
 
 static inline void vbs_data_set_dict(vbs_data_t *dat, vbs_dict_t *dict)
 {
-	dat->type = VBS_DICT;
+	dat->kind = VBS_DICT;
 	dat->d_dict = dict;
 }
 
@@ -264,12 +264,12 @@ static inline void vbs_litem_init(vbs_litem_t *item)
 	memset(item, 0, sizeof(*item));
 }
 
-static inline void vbs_list_init(vbs_list_t *list, int kind)
+static inline void vbs_list_init(vbs_list_t *list, int variety)
 {
 	list->first = NULL;
 	list->last = &list->first;
 	list->count = 0;
-	list->kind = kind > 0 ? kind : 0;
+	list->variety = variety > 0 ? variety : 0;
 	list->_raw = xstr_null;
 }
 
@@ -308,12 +308,12 @@ static inline void vbs_ditem_init(vbs_ditem_t *item)
 	memset(item, 0, sizeof(*item));
 }
 
-static inline void vbs_dict_init(vbs_dict_t *dict, int kind)
+static inline void vbs_dict_init(vbs_dict_t *dict, int variety)
 {
 	dict->first = NULL;
 	dict->last = &dict->first;
 	dict->count = 0;
-	dict->kind = kind > 0 ? kind : 0;
+	dict->variety = variety > 0 ? variety : 0;
 	dict->_raw = xstr_null;
 }
 
@@ -369,8 +369,8 @@ size_t vbs_buffer_of_decimal64(unsigned char *buf, decimal64_t value);
 size_t vbs_head_buffer_of_string(unsigned char *buf, size_t strlen);
 size_t vbs_head_buffer_of_blob(unsigned char *buf, size_t bloblen);
 
-size_t vbs_head_buffer_of_list(unsigned char *buf, int kind);
-size_t vbs_head_buffer_of_dict(unsigned char *buf, int kind);
+size_t vbs_head_buffer_of_list(unsigned char *buf, int variety);
+size_t vbs_head_buffer_of_dict(unsigned char *buf, int variety);
 
 #define vbs_byte_of_bool(value)	((unsigned char)((value) ? VBS_BOOL + 1 : VBS_BOOL))
 #define vbs_byte_of_null()	((unsigned char)VBS_NULL)
@@ -392,8 +392,8 @@ size_t vbs_size_of_blob(size_t bloblen);
 #define vbs_size_of_bool(value)		((size_t)1)
 #define vbs_size_of_null()		((size_t)1)
 
-size_t vbs_head_size_of_list(int kind);
-size_t vbs_head_size_of_dict(int kind);
+size_t vbs_head_size_of_list(int variety);
+size_t vbs_head_size_of_dict(int variety);
 
 size_t vbs_size_of_list(const vbs_list_t *list);
 size_t vbs_size_of_dict(const vbs_dict_t *dict);
@@ -439,8 +439,8 @@ int vbs_pack_decimal64(vbs_packer_t *job, decimal64_t value);
 int vbs_pack_bool(vbs_packer_t *job, bool value);
 int vbs_pack_null(vbs_packer_t *job);
 
-int vbs_pack_head_of_list(vbs_packer_t *job, int kind);
-int vbs_pack_head_of_dict(vbs_packer_t *job, int kind);
+int vbs_pack_head_of_list(vbs_packer_t *job, int variety);
+int vbs_pack_head_of_dict(vbs_packer_t *job, int variety);
 int vbs_pack_tail(vbs_packer_t *job);
 
 #define vbs_pack_head_of_list0(job)	vbs_pack_head_of_list(job, 0)
@@ -493,8 +493,8 @@ int vbs_unpack_decimal64(vbs_unpacker_t *job, decimal64_t *p_value);
 int vbs_unpack_bool(vbs_unpacker_t *job, bool *p_value);
 int vbs_unpack_null(vbs_unpacker_t *job);
 
-int vbs_unpack_head_of_list(vbs_unpacker_t *job, int *kind/*NULL*/);
-int vbs_unpack_head_of_dict(vbs_unpacker_t *job, int *kind/*NULL*/);
+int vbs_unpack_head_of_list(vbs_unpacker_t *job, int *variety/*NULL*/);
+int vbs_unpack_head_of_dict(vbs_unpacker_t *job, int *variety/*NULL*/);
 int vbs_unpack_tail(vbs_unpacker_t *job);
 
 int vbs_unpack_int8(vbs_unpacker_t *job, int8_t *p_value);
@@ -523,20 +523,20 @@ void vbs_release_dict(vbs_dict_t *dict, const xmem_t *xm, void *xm_cookie);
 
 
  
-/* Return the type if successfully unpacked or
+/* Return the kind if successfully unpacked or
  * return a negative number if failed.
  * If failed to unpack, the job->cur is not updated.
  * NB: This function will not adjust job->depth. Do it yourself. Be careful.
  */
-vbs_type_t vbs_unpack_type(vbs_unpacker_t *job, intmax_t *p_number);
+vbs_kind_t vbs_unpack_kind(vbs_unpacker_t *job, intmax_t *p_number);
 
 
-/* Return the data type.
+/* Return the data kind.
    Or a negative number on error.
    The contents of list or dict are not unpacked, 
    only the tag of list or dict.
  */
-int vbs_unpack_primitive(vbs_unpacker_t *job, vbs_data_t *p_data, int *kind/*NULL*/);
+int vbs_unpack_primitive(vbs_unpacker_t *job, vbs_data_t *p_data, int *variety/*NULL*/);
 
 /* Call following functions after vbs_unpack_primitive() */
 int vbs_unpack_body_of_list(vbs_unpacker_t *job, vbs_list_t *list, const xmem_t *xm, void *xm_cookie);
@@ -546,20 +546,20 @@ int vbs_skip_body_of_dict(vbs_unpacker_t *job);
 
 
 
-/* Return the data type.
+/* Return the data kind.
    Or a negative number on error.
  */
 int vbs_unpack_raw(vbs_unpacker_t *job, unsigned char **pbuf/*NULL*/, ssize_t *plen/*NULL*/);
 
 
-/* Return the data type of next element.
-   The returnted type may be not a valid vbs_type_t.
+/* Return the data kind of next element.
+   The returnted kind may be not a valid vbs_kind_t.
    The caller should check this itself.
  */
-vbs_type_t vbs_peek_type(vbs_unpacker_t *job);
+vbs_kind_t vbs_peek_kind(vbs_unpacker_t *job);
 
 
-/* If the next type is a correct VBS_TAIL, unpack it and return true.
+/* If the next kind is a correct VBS_TAIL, unpack it and return true.
    Otherwise, return false.
  */
 #define vbs_unpack_if_tail(JOB)						\

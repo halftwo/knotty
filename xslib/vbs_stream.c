@@ -35,15 +35,15 @@ static ssize_t _fill_buffer(vbs_stream_unpacker_t *job)
 	return n;
 }
 
-inline vbs_type_t vbs_stream_unpack_type(vbs_stream_unpacker_t *job, intmax_t *p_number)
+inline vbs_kind_t vbs_stream_unpack_kind(vbs_stream_unpacker_t *job, intmax_t *p_number)
 {
-	int rc = vbs_unpack_type(&job->uk, p_number);
+	int rc = vbs_unpack_kind(&job->uk, p_number);
 	if (rc == VBS_ERR_INCOMPLETE)
 	{
 		ssize_t n = _fill_buffer(job);
 		if (n <= 0)
 			return rc;
-		rc = vbs_unpack_type(&job->uk, p_number);
+		rc = vbs_unpack_kind(&job->uk, p_number);
 	}
 	return rc;
 }
@@ -118,7 +118,7 @@ ssize_t vbs_stream_unpack_skip(vbs_stream_unpacker_t *job, size_t size)
 
 int vbs_stream_unpack_integer(vbs_stream_unpacker_t *job, intmax_t *p_value)
 {
-	if (VBS_INTEGER != vbs_stream_unpack_type(job, p_value))
+	if (VBS_INTEGER != vbs_stream_unpack_kind(job, p_value))
 		return -1;
 	return 0;
 }
@@ -128,7 +128,7 @@ int vbs_stream_unpack_floating(vbs_stream_unpacker_t *job, double *p_value)
 	intmax_t significant;
 	intmax_t expo;
 
-	if (VBS_FLOATING != vbs_stream_unpack_type(job, &significant))
+	if (VBS_FLOATING != vbs_stream_unpack_kind(job, &significant))
 		return -1;
 
 	if (vbs_stream_unpack_integer(job, &expo) < 0)
@@ -144,7 +144,7 @@ int vbs_stream_unpack_decimal64(vbs_stream_unpacker_t *job, decimal64_t *p_value
 	intmax_t significant;
 	intmax_t expo;
 
-	if (VBS_DECIMAL != vbs_stream_unpack_type(job, &significant))
+	if (VBS_DECIMAL != vbs_stream_unpack_kind(job, &significant))
 		return -1;
 
 	if (vbs_stream_unpack_integer(job, &expo) < 0)
@@ -158,7 +158,7 @@ int vbs_stream_unpack_decimal64(vbs_stream_unpacker_t *job, decimal64_t *p_value
 int vbs_stream_unpack_bool(vbs_stream_unpacker_t *job, bool *p_value)
 {
 	intmax_t num;
-	if (VBS_BOOL != vbs_stream_unpack_type(job, &num))
+	if (VBS_BOOL != vbs_stream_unpack_kind(job, &num))
 		return -1;
 	*p_value = num;
 	return 0;
@@ -167,15 +167,15 @@ int vbs_stream_unpack_bool(vbs_stream_unpacker_t *job, bool *p_value)
 int vbs_stream_unpack_null(vbs_stream_unpacker_t *job)
 {
 	intmax_t num;
-	if (VBS_NULL != vbs_stream_unpack_type(job, &num))
+	if (VBS_NULL != vbs_stream_unpack_kind(job, &num))
 		return -1;
 	return 0;
 }
 
-static inline int _unpack_simple_head(vbs_stream_unpacker_t *job, vbs_type_t type, ssize_t *p_len)
+static inline int _unpack_simple_head(vbs_stream_unpacker_t *job, vbs_kind_t kind, ssize_t *p_len)
 {
 	intmax_t num;
-	if (type != vbs_stream_unpack_type(job, &num) || num < 0 || num > SSIZE_MAX)
+	if (kind != vbs_stream_unpack_kind(job, &num) || num < 0 || num > SSIZE_MAX)
 		return -1;
 
 	*p_len = num;
@@ -192,18 +192,18 @@ int vbs_stream_unpack_head_of_blob(vbs_stream_unpacker_t *job, ssize_t *p_len)
 	return _unpack_simple_head(job, VBS_BLOB, p_len);
 }
 
-static inline int _unpack_composite_head(vbs_stream_unpacker_t *job, vbs_type_t type, int *kind)
+static inline int _unpack_composite_head(vbs_stream_unpacker_t *job, vbs_kind_t kind, int *variety)
 {
 	intmax_t num;
-	if (type != vbs_stream_unpack_type(job, &num) || num < 0 || num > INT_MAX)
+	if (kind != vbs_stream_unpack_kind(job, &num) || num < 0 || num > INT_MAX)
 		return -1;
 
 	job->uk.depth++;
 	if (job->uk.max_depth && job->uk.depth > job->uk.max_depth)
 		return -1;
 
-	if (kind)
-		*kind = num;
+	if (variety)
+		*variety = num;
 	return 0;
 }
 
@@ -224,7 +224,7 @@ int vbs_stream_unpack_tail(vbs_stream_unpacker_t *job)
 	if (job->uk.depth <= 0)
 		return -1;
 
-	if (VBS_TAIL != vbs_stream_unpack_type(job, &num))
+	if (VBS_TAIL != vbs_stream_unpack_kind(job, &num))
 		return -1;
 
 	job->uk.depth--;

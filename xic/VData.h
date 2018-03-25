@@ -10,12 +10,12 @@
 namespace xic
 {
 
-#define	VDATA_NOT_TYPE(V, TYPE) 	((V)->type != VBS_##TYPE)
+#define	VDATA_NOT_TYPE(V, TYPE) 	((V)->kind != VBS_##TYPE)
 
 class VList;
 class VDict;
 
-void _vdata_throw_TypeException(const vbs_data_t* v, const char *type);
+void _vdata_throw_TypeException(const vbs_data_t* v, const char *kind);
 void _vdata_throw_DataException();
 
 
@@ -40,9 +40,9 @@ public:
 		Node& operator++()		{ if (_ent) _ent = _ent->next; return *this; }
 		Node operator++(int)		{ Node tmp = *this; if (_ent) _ent = _ent->next; return tmp; }
 
-		vbs_type_t valueType() const	{ return _ent->value.type; }
+		vbs_kind_t valueType() const	{ return _ent->value.kind; }
 
-		bool isNullValue() const 	{ return _ent->value.type == VBS_NULL; }
+		bool isNullValue() const 	{ return _ent->value.kind == VBS_NULL; }
 		void expectNullValue() const;
 
 		intmax_t intValue() const;
@@ -86,14 +86,14 @@ public:
 		Node& operator++()		{ if (_ent) _ent = _ent->next; return *this; }
 		Node operator++(int)		{ Node tmp = *this; if (_ent) _ent = _ent->next; return tmp; }
 
-		vbs_type_t keyType() const	{ return _ent->key.type; }
-		vbs_type_t valueType() const	{ return _ent->value.type; }
+		vbs_kind_t keyType() const	{ return _ent->key.kind; }
+		vbs_kind_t valueType() const	{ return _ent->value.kind; }
 
 		intmax_t intKey() const;
 		const xstr_t& xstrKey() const;
 		const vbs_data_t *dataKey() const;
 
-		bool isNullValue() const 	{ return _ent->value.type == VBS_NULL; }
+		bool isNullValue() const 	{ return _ent->value.kind == VBS_NULL; }
 		void expectNullValue() const;
 
 		intmax_t intValue() const;
@@ -179,7 +179,7 @@ public:
 
 inline bool isNull(const vbs_data_t* v)
 {
-	return v->type == VBS_NULL;
+	return v->kind == VBS_NULL;
 }
 
 inline bool isNull(const vbs_data_t& v)
@@ -227,7 +227,7 @@ inline const xstr_t& blobValue(const vbs_data_t* v)
 {
 	if (VDATA_NOT_TYPE(v, BLOB))
 	{
-		if (v->type == VBS_STRING)
+		if (v->kind == VBS_STRING)
 			return v->d_xstr;
 
 		_vdata_throw_TypeException(v, "BLOB");
@@ -258,7 +258,7 @@ inline double floatingValue(const vbs_data_t* v)
 {
 	if (VDATA_NOT_TYPE(v, FLOATING))
 	{
-		if (v->type == VBS_INTEGER)
+		if (v->kind == VBS_INTEGER)
 			return (double)v->d_int;
 
 		_vdata_throw_TypeException(v, "FLOATING");
@@ -275,7 +275,7 @@ inline decimal64_t decimal64Value(const vbs_data_t* v)
 {
 	if (VDATA_NOT_TYPE(v, DECIMAL))
 	{
-		if (v->type == VBS_INTEGER)
+		if (v->kind == VBS_INTEGER)
 		{
 			decimal64_t d;
 			if (decimal64_from_integer(&d, v->d_int) == 0)
@@ -350,7 +350,7 @@ void VDict::getIntSeq(const char *key, std::vector<INTEGER>& v) const
 		vbs_litem_t *ent;
 		for (ent = ls->first; ent; ent = ent->next)
 		{
-			if (ent->value.type == VBS_INTEGER)
+			if (ent->value.kind == VBS_INTEGER)
 			{
 				v.push_back(ent->value.d_int);
 			}
@@ -367,7 +367,7 @@ void VDict::getIntSeq(const char *key, std::set<INTEGER>& v) const
 		vbs_litem_t *ent;
 		for (ent = ls->first; ent; ent = ent->next)
 		{
-			if (ent->value.type == VBS_INTEGER)
+			if (ent->value.kind == VBS_INTEGER)
 			{
 				v.insert(ent->value.d_int);
 			}
@@ -385,7 +385,7 @@ void VDict::wantIntSeq(const char *key, std::vector<INTEGER>& v) const
 		vbs_litem_t *ent;
 		for (ent = ls->first; ent; ent = ent->next)
 		{
-			if (ent->value.type == VBS_INTEGER)
+			if (ent->value.kind == VBS_INTEGER)
 			{
 				v.push_back(ent->value.d_int);
 			}
@@ -393,7 +393,7 @@ void VDict::wantIntSeq(const char *key, std::vector<INTEGER>& v) const
 			{
 				throw XERROR_FMT(xic::ParameterTypeException,
 					"Type of list element of VDict value (for key '%s') should be %s instead of %s",
-					key, "INTEGER", vbs_type_name(ent->value.type));
+					key, "INTEGER", vbs_kind_name(ent->value.kind));
 			}
 		}
 	}
@@ -408,7 +408,7 @@ void VDict::wantIntSeq(const char *key, std::set<INTEGER>& v) const
 		vbs_litem_t *ent;
 		for (ent = ls->first; ent; ent = ent->next)
 		{
-			if (ent->value.type == VBS_INTEGER)
+			if (ent->value.kind == VBS_INTEGER)
 			{
 				v.insert(ent->value.d_int);
 			}
@@ -416,7 +416,7 @@ void VDict::wantIntSeq(const char *key, std::set<INTEGER>& v) const
 			{
 				throw XERROR_FMT(xic::ParameterTypeException,
 					"Type of list element of VDict value (for key '%s') should be %s instead of %s",
-					key, "INTEGER", vbs_type_name(ent->value.type));
+					key, "INTEGER", vbs_kind_name(ent->value.kind));
 			}
 		}
 	}

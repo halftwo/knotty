@@ -4,11 +4,11 @@
 namespace xic
 {
 
-void _vdata_throw_TypeException(const vbs_data_t* v, const char *type)
+void _vdata_throw_TypeException(const vbs_data_t* v, const char *kind)
 {
 	throw XERROR_FMT(xic::ParameterTypeException,
-		"Data type should be %s instead of %s",
-		type, vbs_type_name(v->type));
+		"Data kind should be %s instead of %s",
+		kind, vbs_kind_name(v->kind));
 }
 
 void _vdata_throw_DataException()
@@ -30,8 +30,8 @@ static void throwListNodeException(vbs_litem_t *ent, const char *needType)
 	if (ent)
 	{
 		throw XERROR_FMT(xic::ParameterTypeException, 
-			"Type of element in the list should be %s instead of %s",
-			needType, vbs_type_name(ent->value.type));
+			"Kind of element in the list should be %s instead of %s",
+			needType, vbs_kind_name(ent->value.kind));
 	}
 	else
 	{
@@ -40,7 +40,7 @@ static void throwListNodeException(vbs_litem_t *ent, const char *needType)
 }
 
 #define	CHECK(ENT, TYPE) 		\
-	if (!(ENT) || (ENT)->value.type != VBS_##TYPE) throwListNodeException((ENT), #TYPE)
+	if (!(ENT) || (ENT)->value.kind != VBS_##TYPE) throwListNodeException((ENT), #TYPE)
 
 
 void VList::Node::expectNullValue() const
@@ -62,9 +62,9 @@ const xstr_t& VList::Node::xstrValue() const
 
 const xstr_t& VList::Node::blobValue() const
 {
-	if (!_ent || _ent->value.type != VBS_BLOB)
+	if (!_ent || _ent->value.kind != VBS_BLOB)
 	{
-		if (_ent && _ent->value.type == VBS_STRING)
+		if (_ent && _ent->value.kind == VBS_STRING)
 			return _ent->value.d_xstr;
 
 		throwListNodeException(_ent, "BLOB");
@@ -80,9 +80,9 @@ bool VList::Node::boolValue() const
 
 double VList::Node::floatingValue() const
 {
-	if (!_ent || _ent->value.type != VBS_FLOATING)
+	if (!_ent || _ent->value.kind != VBS_FLOATING)
 	{
-		if (_ent && _ent->value.type == VBS_INTEGER)
+		if (_ent && _ent->value.kind == VBS_INTEGER)
 			return (double)_ent->value.d_int;
 
 		throwListNodeException(_ent, "FLOATING");
@@ -92,9 +92,9 @@ double VList::Node::floatingValue() const
 
 decimal64_t VList::Node::decimal64Value() const
 {
-	if (!_ent || _ent->value.type != VBS_DECIMAL)
+	if (!_ent || _ent->value.kind != VBS_DECIMAL)
 	{
-		if (_ent && _ent->value.type == VBS_INTEGER)
+		if (_ent && _ent->value.kind == VBS_INTEGER)
 		{
 			decimal64_t d;
 			if (decimal64_from_integer(&d, _ent->value.d_int) == 0)
@@ -122,7 +122,7 @@ const vbs_list_t *VList::Node::listValue() const
 {
 	if (_ent)
 	{
-		if (_ent->value.type == VBS_LIST)
+		if (_ent->value.kind == VBS_LIST)
 			return _ent->value.d_list;
 	}
 
@@ -134,7 +134,7 @@ const vbs_dict_t *VList::Node::dictValue() const
 {
 	if (_ent)
 	{
-		if (_ent->value.type == VBS_DICT)
+		if (_ent->value.kind == VBS_DICT)
 			return _ent->value.d_dict;
 	}
 
@@ -155,7 +155,7 @@ static vbs_data_t *_find_key(const vbs_dict_t *dict, const char *key)
 	vbs_ditem_t *ent;
 	for (ent = dict->first; ent; ent = ent->next)
 	{
-		if (ent->key.type != VBS_STRING)
+		if (ent->key.kind != VBS_STRING)
 			continue;
 
 		if (xstr_equal_cstr(&ent->key.d_xstr, key))
@@ -169,7 +169,7 @@ static vbs_data_t *_find_ikey(const vbs_dict_t *dict, intmax_t key)
 	vbs_ditem_t *ent;
 	for (ent = dict->first; ent; ent = ent->next)
 	{
-		if (ent->key.type != VBS_INTEGER)
+		if (ent->key.kind != VBS_INTEGER)
 			continue;
 
 		if (ent->key.d_int == key)
@@ -191,8 +191,8 @@ static void throwDictKeyException(vbs_ditem_t *ent, const char *needType)
 	if (ent)
 	{
 		throw XERROR_FMT(xic::ParameterTypeException,
-			"Type of item key in the dict should be %s instead of %s",
-			needType, vbs_type_name(ent->key.type));
+			"Kind of item key in the dict should be %s instead of %s",
+			needType, vbs_kind_name(ent->key.kind));
 	}
 	else
 	{
@@ -205,8 +205,8 @@ static void throwDictValueException(vbs_ditem_t *ent, const char *needType)
 	if (ent)
 	{
 		throw XERROR_FMT(xic::ParameterTypeException,
-			"Type of item value in the dict should be %s instead of %s",
-			needType, vbs_type_name(ent->value.type));
+			"Kind of item value in the dict should be %s instead of %s",
+			needType, vbs_kind_name(ent->value.kind));
 	}
 	else
 	{
@@ -215,10 +215,10 @@ static void throwDictValueException(vbs_ditem_t *ent, const char *needType)
 }
 
 #define	CHECK_KEY(ENT, TYPE) 			\
-	if (!(ENT) || (ENT)->key.type != VBS_##TYPE) throwDictKeyException((ENT), #TYPE)
+	if (!(ENT) || (ENT)->key.kind != VBS_##TYPE) throwDictKeyException((ENT), #TYPE)
 
 #define	CHECK_VALUE(ENT, TYPE) 			\
-	if (!(ENT) || (ENT)->value.type != VBS_##TYPE) throwDictValueException((ENT), #TYPE)
+	if (!(ENT) || (ENT)->value.kind != VBS_##TYPE) throwDictValueException((ENT), #TYPE)
 
 intmax_t VDict::Node::intKey() const
 {
@@ -258,9 +258,9 @@ const xstr_t& VDict::Node::xstrValue() const
 
 const xstr_t& VDict::Node::blobValue() const
 {
-	if (!_ent || _ent->value.type != VBS_BLOB)
+	if (!_ent || _ent->value.kind != VBS_BLOB)
 	{
-		if (_ent && _ent->value.type == VBS_STRING)
+		if (_ent && _ent->value.kind == VBS_STRING)
 			return _ent->value.d_xstr;
 
 		throwDictValueException(_ent, "BLOB");
@@ -276,9 +276,9 @@ bool VDict::Node::boolValue() const
 
 double VDict::Node::floatingValue() const
 {
-	if (!_ent || _ent->value.type != VBS_FLOATING)
+	if (!_ent || _ent->value.kind != VBS_FLOATING)
 	{
-		if (_ent && _ent->value.type == VBS_INTEGER)
+		if (_ent && _ent->value.kind == VBS_INTEGER)
 			return (double)_ent->value.d_int;
 
 		throwDictValueException(_ent, "FLOATING");
@@ -288,9 +288,9 @@ double VDict::Node::floatingValue() const
 
 decimal64_t VDict::Node::decimal64Value() const
 {
-	if (!_ent || _ent->value.type != VBS_DECIMAL)
+	if (!_ent || _ent->value.kind != VBS_DECIMAL)
 	{
-		if (_ent && _ent->value.type == VBS_INTEGER)
+		if (_ent && _ent->value.kind == VBS_INTEGER)
 		{
 			decimal64_t d;
 			if (decimal64_from_integer(&d, _ent->value.d_int) == 0)
@@ -318,7 +318,7 @@ const vbs_list_t *VDict::Node::listValue() const
 {
 	if (_ent)
 	{
-		if (_ent->value.type == VBS_LIST)
+		if (_ent->value.kind == VBS_LIST)
 			return _ent->value.d_list;
 	}
 
@@ -330,7 +330,7 @@ const vbs_dict_t *VDict::Node::dictValue() const
 {
 	if (_ent)
 	{
-		if (_ent->value.type == VBS_DICT)
+		if (_ent->value.kind == VBS_DICT)
 			return _ent->value.d_dict;
 	}
 
@@ -350,7 +350,7 @@ VDict::Node VDict::getNode(const char *key) const
 	vbs_ditem_t *ent;
 	for (ent = _dict->first; ent; ent = ent->next)
 	{
-		if (ent->key.type != VBS_STRING)
+		if (ent->key.kind != VBS_STRING)
 			continue;
 
 		if (xstr_equal_cstr(&ent->key.d_xstr, key))
@@ -368,7 +368,7 @@ bool VDict::getNode(const char *key, VDict::Node& node) const
 intmax_t VDict::getInt(const char *key, intmax_t dft) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (v && v->type == VBS_INTEGER)
+	if (v && v->kind == VBS_INTEGER)
 		return v->d_int;
 	return dft;
 }
@@ -376,7 +376,7 @@ intmax_t VDict::getInt(const char *key, intmax_t dft) const
 const xstr_t& VDict::getXstr(const char *key, const xstr_t& dft) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (v && v->type == VBS_STRING)
+	if (v && v->kind == VBS_STRING)
 		return v->d_xstr;
 	return dft;
 }
@@ -384,7 +384,7 @@ const xstr_t& VDict::getXstr(const char *key, const xstr_t& dft) const
 const xstr_t& VDict::getBlob(const char *key, const xstr_t& dft) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (v && (v->type == VBS_BLOB || v->type == VBS_STRING))
+	if (v && (v->kind == VBS_BLOB || v->kind == VBS_STRING))
 		return v->d_blob;
 	return dft;
 }
@@ -392,7 +392,7 @@ const xstr_t& VDict::getBlob(const char *key, const xstr_t& dft) const
 bool VDict::getBool(const char *key, bool dft) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (v && v->type == VBS_BOOL)
+	if (v && v->kind == VBS_BOOL)
 		return v->d_bool;
 	return dft;
 }
@@ -400,9 +400,9 @@ bool VDict::getBool(const char *key, bool dft) const
 double VDict::getFloating(const char *key, double dft) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (v && v->type == VBS_FLOATING)
+	if (v && v->kind == VBS_FLOATING)
 		return v->d_floating;
-	else if (v && v->type == VBS_INTEGER)
+	else if (v && v->kind == VBS_INTEGER)
 		return (double)v->d_int;
 	return dft;
 }
@@ -410,9 +410,9 @@ double VDict::getFloating(const char *key, double dft) const
 decimal64_t VDict::getDecimal64(const char *key, decimal64_t dft) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (v && v->type == VBS_DECIMAL)
+	if (v && v->kind == VBS_DECIMAL)
 		return v->d_decimal64;
-	else if (v && v->type == VBS_INTEGER)
+	else if (v && v->kind == VBS_INTEGER)
 	{
 		decimal64_t d;
 		if (decimal64_from_integer(&d, v->d_int) == 0)
@@ -434,7 +434,7 @@ const vbs_data_t *VDict::get_data(intmax_t key) const
 const vbs_list_t *VDict::get_list(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (v && v->type == VBS_LIST)
+	if (v && v->kind == VBS_LIST)
 		return v->d_list;
 	return NULL;
 }
@@ -442,7 +442,7 @@ const vbs_list_t *VDict::get_list(const char *key) const
 const vbs_dict_t *VDict::get_dict(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (v && v->type == VBS_DICT)
+	if (v && v->kind == VBS_DICT)
 		return v->d_dict;
 	return NULL;
 }
@@ -456,7 +456,7 @@ void VDict::getXstrSeq(const char *key, std::vector<xstr_t>& result) const
 		vbs_litem_t *ent;
 		for (ent = ls->first; ent; ent = ent->next)
 		{
-			if (ent->value.type == VBS_STRING)
+			if (ent->value.kind == VBS_STRING)
 			{
 				result.push_back(ent->value.d_xstr);
 			}
@@ -473,7 +473,7 @@ void VDict::getBlobSeq(const char *key, std::vector<xstr_t>& result) const
 		vbs_litem_t *ent;
 		for (ent = ls->first; ent; ent = ent->next)
 		{
-			if (ent->value.type == VBS_BLOB || ent->value.type == VBS_STRING)
+			if (ent->value.kind == VBS_BLOB || ent->value.kind == VBS_STRING)
 			{
 				result.push_back(ent->value.d_xstr);
 			}
@@ -486,13 +486,13 @@ static void throwTypeException(const char *key, vbs_data_t *d, const char *needT
 	if (d)
 	{
 		throw XERROR_FMT(xic::ParameterTypeException,
-			"Type of item value for key '%s' in the dict should be %s instead of %s",
-			key, needType, vbs_type_name(d->type));
+			"Kind of item value for key '%s' in the dict should be %s instead of %s",
+			key, needType, vbs_kind_name(d->kind));
 	}
 	else if (needType[0])
 	{
 		throw XERROR_FMT(xic::ParameterMissingException,
-			"No item key '%s' found in the dict, the type of item value should be %s",
+			"No item key '%s' found in the dict, the kind of item value should be %s",
 			key, needType);
 	}
 	else
@@ -508,7 +508,7 @@ VDict::Node VDict::wantNode(const char *key) const
 	vbs_ditem_t *ent;
 	for (ent = _dict->first; ent; ent = ent->next)
 	{
-		if (ent->key.type != VBS_STRING)
+		if (ent->key.kind != VBS_STRING)
 			continue;
 
 		if (xstr_equal_cstr(&ent->key.d_xstr, key))
@@ -521,7 +521,7 @@ VDict::Node VDict::wantNode(const char *key) const
 intmax_t VDict::wantInt(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_INTEGER)
+	if (!v || v->kind != VBS_INTEGER)
 		throwTypeException(key, v, "INTEGER");
 	return v->d_int;
 }
@@ -529,7 +529,7 @@ intmax_t VDict::wantInt(const char *key) const
 const xstr_t& VDict::wantXstr(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_STRING)
+	if (!v || v->kind != VBS_STRING)
 		throwTypeException(key, v, "STRING");
 	return v->d_xstr;
 }
@@ -537,7 +537,7 @@ const xstr_t& VDict::wantXstr(const char *key) const
 const xstr_t& VDict::wantBlob(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || (v->type != VBS_BLOB && v->type != VBS_STRING))
+	if (!v || (v->kind != VBS_BLOB && v->kind != VBS_STRING))
 		throwTypeException(key, v, "BLOB");
 	return v->d_blob;
 }
@@ -545,7 +545,7 @@ const xstr_t& VDict::wantBlob(const char *key) const
 bool VDict::wantBool(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_BOOL)
+	if (!v || v->kind != VBS_BOOL)
 		throwTypeException(key, v, "BOOL");
 	return v->d_bool;
 }
@@ -553,9 +553,9 @@ bool VDict::wantBool(const char *key) const
 double VDict::wantFloating(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_FLOATING)
+	if (!v || v->kind != VBS_FLOATING)
 	{
-		if (v && v->type == VBS_INTEGER)
+		if (v && v->kind == VBS_INTEGER)
 			return (double)v->d_int;
 
 		throwTypeException(key, v, "FLOATING");
@@ -566,9 +566,9 @@ double VDict::wantFloating(const char *key) const
 decimal64_t VDict::wantDecimal64(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_DECIMAL)
+	if (!v || v->kind != VBS_DECIMAL)
 	{
-		if (v && v->type == VBS_INTEGER)
+		if (v && v->kind == VBS_INTEGER)
 		{
 			decimal64_t d;
 			if (decimal64_from_integer(&d, v->d_int) == 0)
@@ -603,7 +603,7 @@ const vbs_data_t *VDict::want_data(intmax_t key) const
 const vbs_list_t *VDict::want_list(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_LIST)
+	if (!v || v->kind != VBS_LIST)
 		throwTypeException(key, v, "LIST");
 	return v->d_list;
 }
@@ -611,7 +611,7 @@ const vbs_list_t *VDict::want_list(const char *key) const
 const vbs_dict_t *VDict::want_dict(const char *key) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_DICT)
+	if (!v || v->kind != VBS_DICT)
 		throwTypeException(key, v, "DICT");
 	return v->d_dict;
 }
@@ -619,21 +619,21 @@ const vbs_dict_t *VDict::want_dict(const char *key) const
 static void throwListItemException(const char *key, vbs_data_t *d, const char *needType)
 {
 	throw XERROR_FMT(xic::ParameterTypeException,
-		"Type of element in the list of item value (for key '%s') in the dict should be %s instead of %s",
-		key, needType, vbs_type_name(d->type));
+		"Kind of element in the list of item value (for key '%s') in the dict should be %s instead of %s",
+		key, needType, vbs_kind_name(d->kind));
 }
 
 void VDict::wantXstrSeq(const char *key, std::vector<xstr_t>& result) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_LIST)
+	if (!v || v->kind != VBS_LIST)
 		throwTypeException(key, v, "LIST");
 
 	vbs_list_t *ls = v->d_list;
 	result.reserve(ls->count);
 	for (vbs_litem_t *ent = ls->first; ent; ent = ent->next)
 	{
-		if (ent->value.type != VBS_STRING)
+		if (ent->value.kind != VBS_STRING)
 			throwListItemException(key, &ent->value, "STRING");
 
 		result.push_back(ent->value.d_xstr);
@@ -643,14 +643,14 @@ void VDict::wantXstrSeq(const char *key, std::vector<xstr_t>& result) const
 void VDict::wantBlobSeq(const char *key, std::vector<xstr_t>& result) const
 {
 	vbs_data_t *v = _find_key(_dict, key);
-	if (!v || v->type != VBS_LIST)
+	if (!v || v->kind != VBS_LIST)
 		throwTypeException(key, v, "LIST");
 
 	vbs_list_t *ls = v->d_list;
 	result.reserve(ls->count);
 	for (vbs_litem_t *ent = ls->first; ent; ent = ent->next)
 	{
-		if (ent->value.type != VBS_BLOB && ent->value.type != VBS_STRING)
+		if (ent->value.kind != VBS_BLOB && ent->value.kind != VBS_STRING)
 			throwListItemException(key, &ent->value, "BLOB");
 
 		result.push_back(ent->value.d_blob);

@@ -319,7 +319,7 @@ static bool v_decode_array(vbs_unpacker_t *job, bool is_dict, zval *z TSRMLS_DC)
 			if (vbs_unpack_primitive(job, &dat, NULL) < 0)
 				goto error;
 
-			if (dat.type == VBS_INTEGER)
+			if (dat.kind == VBS_INTEGER)
 			{
 				if (!v_decode_r(job, &ev TSRMLS_CC))
 				{
@@ -337,7 +337,7 @@ static bool v_decode_array(vbs_unpacker_t *job, bool is_dict, zval *z TSRMLS_DC)
 					add_assoc_zval(z, key, ev);
 				}
 			}
-			else if (dat.type == VBS_STRING)
+			else if (dat.kind == VBS_STRING)
 			{
 				xstr_t *key = &dat.d_xstr;
 				char saved_ch = key->data[key->len];
@@ -383,7 +383,7 @@ bool v_decode_r(vbs_unpacker_t *job, zval **zz TSRMLS_DC)
 
 	ALLOC_INIT_ZVAL(*zz);
 
-	if (dat.type == VBS_INTEGER)
+	if (dat.kind == VBS_INTEGER)
 	{
 		if (dat.d_int >= LONG_MIN && dat.d_int <= LONG_MAX)
 		{
@@ -396,11 +396,11 @@ bool v_decode_r(vbs_unpacker_t *job, zval **zz TSRMLS_DC)
 			ZVAL_STRINGL(*zz, tmp, len, 1);
 		}
 	}
-	else if (dat.type == VBS_STRING)
+	else if (dat.kind == VBS_STRING)
 	{
 		ZVAL_STRINGL(*zz, (char *)dat.d_xstr.data, dat.d_xstr.len, 1);
 	}
-	else if (dat.type == VBS_BLOB)
+	else if (dat.kind == VBS_BLOB)
 	{
 		zval *zv;
 		MAKE_STD_ZVAL(zv);
@@ -408,15 +408,15 @@ bool v_decode_r(vbs_unpacker_t *job, zval **zz TSRMLS_DC)
 		vbs::create_Blob(*zz, zv TSRMLS_CC);
 		ZVAL_DELREF(zv);
 	}
-	else if (dat.type == VBS_BOOL)
+	else if (dat.kind == VBS_BOOL)
 	{
 		ZVAL_BOOL(*zz, dat.d_bool);
 	}
-	else if (dat.type == VBS_FLOATING)
+	else if (dat.kind == VBS_FLOATING)
 	{
 		ZVAL_DOUBLE(*zz, dat.d_floating);
 	}
-	else if (dat.type == VBS_DECIMAL)
+	else if (dat.kind == VBS_DECIMAL)
 	{
 		zval *zv;
 		char buf[DECIMAL64_STRING_MAX];
@@ -427,17 +427,17 @@ bool v_decode_r(vbs_unpacker_t *job, zval **zz TSRMLS_DC)
 		vbs::create_DecimalNoCheck(*zz, zv TSRMLS_CC);
 		ZVAL_DELREF(zv);
 	}
-	else if (dat.type == VBS_LIST)
+	else if (dat.kind == VBS_LIST)
 	{
 		if (!v_decode_array(job, false, *zz TSRMLS_CC))
 			goto error;
 	}
-	else if (dat.type == VBS_DICT)
+	else if (dat.kind == VBS_DICT)
 	{
 		if (!v_decode_array(job, true, *zz TSRMLS_CC))
 			goto error;
 	}
-	else if (dat.type == VBS_NULL)
+	else if (dat.kind == VBS_NULL)
 	{
 		ZVAL_NULL(*zz);
 	}
