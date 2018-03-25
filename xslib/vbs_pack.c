@@ -117,7 +117,7 @@ static inline size_t _tag_size(uintmax_t num)
 	return n;
 }
 
-/* The MSB is position 64 (or 32), the LSB is position 1. */
+/* The MSB is position 63 (or 31), the LSB is position 0. */
 static inline int _find_last_bit_set(intmax_t v)
 {
 	int r = sizeof(intmax_t) * 8;
@@ -125,7 +125,7 @@ static inline int _find_last_bit_set(intmax_t v)
 	if (v == 0)
 		return 0;
 
-	while (v > 0)
+	while (v != 0)
 	{
 		v <<= 1;
 		--r;
@@ -208,8 +208,8 @@ int vbs_make_double_value(double* value, intmax_t significand, int expo)
 			significand = -significand;
 		}
 
-		point = _find_last_bit_set(significand) - 1;
-		expo = expo + IEEE754_BINARY64_BIAS + point;
+		point = _find_last_bit_set(significand);
+		expo += IEEE754_BINARY64_BIAS + point;
 
 		if (expo >= 0x7ff)
 		{
