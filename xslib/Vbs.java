@@ -276,7 +276,7 @@ public class Vbs
 		if (v == 0)
 			return 0;
 
-		int r = 1;
+		int r = 0;
 		while ((v & 0x1) == 0)
 		{
 			v >>>= 1;
@@ -292,7 +292,7 @@ public class Vbs
 			return 0;
 
 		int r = 64;
-		while (v > 0)
+		while (v != 0)
 		{
 			v <<= 1;
 			--r;
@@ -333,7 +333,7 @@ public class Vbs
 		
 		if (significant != 0)
 		{
-			int shift = _find_first_bit_set(significant) - 1;
+			int shift = _find_first_bit_set(significant);
 			significant >>>= shift;
 			expo = expo - 52 + shift - 1023;
 		}
@@ -357,7 +357,7 @@ public class Vbs
 				negative = true;
 			}
 
-			point = _find_last_bit_set(significant) - 1;
+			point = _find_last_bit_set(significant);
 			expo = expo + point + 1023;
 
 			if (expo >= 0x7ff)
