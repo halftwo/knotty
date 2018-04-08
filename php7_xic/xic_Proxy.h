@@ -26,7 +26,7 @@ class Proxy: public XRefCount
 {
 	EnginePtr _engine;
 	std::string _proxy;
-	xstr_t _service;
+	std::string _service;
 	std::string _ctx;
 	std::vector<ConnectionPtr> _cons;
 	int _idx;
@@ -36,7 +36,7 @@ public:
 	virtual ~Proxy();
 
 	const std::string& str() const		{ return _proxy; }
-	const xstr_t& service() const 		{ return _service; }
+	const std::string& service() const 	{ return _service; }
 
 	void set_context(const std::string& ctx) { _ctx = ctx; }
 	const std::string& get_context() const	{ return _ctx; }

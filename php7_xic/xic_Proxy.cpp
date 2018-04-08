@@ -59,8 +59,8 @@ PHP_METHOD(xic_Proxy, __toString)
 PHP_METHOD(xic_Proxy, service)
 {
 	ProxyPtr prx = MyObject<Proxy>::get(getThis() TSRMLS_CC);
-	const xstr_t& service = prx->service();
-	RETURN_STRINGL((char *)service.data, service.len);
+	const std::string& service = prx->service();
+	RETURN_STRINGL((char *)service.data(), service.length());
 }
 
 
@@ -293,10 +293,12 @@ Proxy::Proxy(const EnginePtr& engine, const std::string& prxstr)
 {
 	xstr_t xs = XSTR_CXX(prxstr);
 
-	xstr_delimit_char(&xs, '@', &_service);
-	xstr_trim(&_service);
+	xstr_t tmp, srv;
+	xstr_delimit_char(&xs, '@', &tmp);
+	xstr_token_space(&tmp, &srv);
 
-	_proxy = make_string(_service);
+	_service = make_string(srv);
+	_proxy = _service;
 
 	xstr_t endpoint;
 	while (xstr_delimit_char(&xs, '@', &endpoint))
@@ -306,7 +308,7 @@ Proxy::Proxy(const EnginePtr& engine, const std::string& prxstr)
 		{
 			std::string s((char *)endpoint.data, endpoint.len);
 			ConnectionPtr con = _engine->makeConnection(s);
-			con->setService(make_string(_service));
+			con->setService(_service);
 			_cons.push_back(con);
 			_proxy += " @" + con->endpoint();
 		}
@@ -328,9 +330,10 @@ xstr_t Proxy::invoke(const xstr_t& method, const rope_t& args, const std::string
 	int size = _cons.size();
 	if (size > 0)
 	{
+		xstr_t srv = XSTR_CXX(_service);
 		const std::string& ctxstr = !ctx.empty() ? ctx : _ctx;
 		try {
-			return _cons[_idx]->invoke(_service, method, args, ctxstr);
+			return _cons[_idx]->invoke(srv, method, args, ctxstr);
 		}
 		catch (std::exception& ex)
 		{
@@ -339,7 +342,7 @@ xstr_t Proxy::invoke(const xstr_t& method, const rope_t& args, const std::string
 				throw;
 
 			_idx = idx;
-			return _cons[_idx]->invoke(_service, method, args, ctxstr);
+			return _cons[_idx]->invoke(srv, method, args, ctxstr);
 		}
 	}
 
@@ -351,9 +354,10 @@ void Proxy::invoke_oneway(const xstr_t& method, const rope_t& args, const std::s
 	int size = _cons.size();
 	if (size > 0)
 	{
+		xstr_t srv = XSTR_CXX(_service);
 		const std::string& ctxstr = !ctx.empty() ? ctx : _ctx;
 		try {
-			return _cons[_idx]->invoke_oneway(_service, method, args, ctxstr);
+			return _cons[_idx]->invoke_oneway(srv, method, args, ctxstr);
 		}
 		catch (std::exception& ex)
 		{
@@ -362,7 +366,7 @@ void Proxy::invoke_oneway(const xstr_t& method, const rope_t& args, const std::s
 				throw;
 
 			_idx = idx;
-			return _cons[_idx]->invoke_oneway(_service, method, args, ctxstr);
+			return _cons[_idx]->invoke_oneway(srv, method, args, ctxstr);
 		}
 	}
 
