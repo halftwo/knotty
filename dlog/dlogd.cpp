@@ -737,13 +737,13 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 
 		rec = recpool_acquire();
 		dlog_make(rec, NULL, _program_name, "THROB", NULL, "v2 version=%s start=%s now=%s active=%s client=%d"
-					" info=euser:%s,MHz:%u,cpu:%.1f%%"
+					" info=euser:%s,MHz:%.0f,cpu:%.1f%%"
 					" record=bad:%ld,take:%llu,cooked:%llu,overflow:%ld,overflow_time:%s"
 					" block=pool:%zd,send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
 				DLOG_VERSION,
 				start_time_str, current_ts, active_ts, xatomic_get(&num_client),
-				_euser, (int)(freq / 1000000), self_cpu,
+				_euser, (freq / 1000000.0), self_cpu,
 				xatomiclong_get(&num_record_bad), 
 				num_record_take, num_record_cooked,
 				xatomiclong_get(&num_record_overflow), record_overflow_ts,

@@ -1766,9 +1766,9 @@ struct PtEngine::PtThrob: public XTimerTask, private XMutex
 					strcpy(shadow, "-");
 
 				xdlog(NULL, NULL, "THROB", PT_ENGINE_VERSION,
-					"start=%s uuid=%s info=euser:%s,MHz:%u,cpu:%.1f%%,xlog:%d,shadow:%s,cipher:%s listen=%s %s",
+					"start=%s uuid=%s info=euser:%s,MHz:%.0f,cpu:%.1f%%,xlog:%d,shadow:%s,cipher:%s listen=%s %s",
 					_start_time, _uuid.c_str(),
-					_euser, (int)(freq / 1000000), cpu, xlog_level, shadow,
+					_euser, (freq / 1000000.0), cpu, xlog_level, shadow,
 					MyCipher::get_cipher_name_from_id(xic_cipher),
 					_listen.c_str(), _logword.c_str());
 			}

@@ -981,13 +981,13 @@ void *logger(void *arg)
 			uint64_t freq = get_cpu_frequency(0);
 
 			xdlog(NULL, _program_name, "THROB", NULL, "v2 version=%s start=%s active=%s client=%d"
-					" info=euser:%s,MHz:%u,cpu:%.1f%%"
+					" info=euser:%s,MHz:%.0f,cpu:%.1f%%"
 					" record=get:%llu,error:%llu"
 					" block=pool:%lu,get:%ld,error:%ld,zip:%ld,unzip_error:%ld"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
 				DLOG_VERSION,
 				start_time_str, active_ts, xatomic_get(&num_client),
-				_euser, (int)(freq / 1000000), self_cpu,
+				_euser, (freq / 1000000.0), self_cpu,
 				num_record, num_record_error,
 				_block_pool.num_limit,
 				xatomiclong_get(&num_block), xatomiclong_get(&num_block_error),
