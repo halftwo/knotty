@@ -7,7 +7,7 @@ static char build_info[] = "$build: demo_pt-" DEMO_PT_VERSION " " __DATE__ " " _
 
 static int run(int argc, char **argv, const xic::EnginePtr& engine)
 {
-	xlog_level = XLOG_DEBUG;
+	xlog_level = XLOG_NOTICE;
 	engine->throb(build_info);
 	xic::AdapterPtr adapter = engine->createAdapter();
 	new DemoServant(engine->setting(), adapter);
