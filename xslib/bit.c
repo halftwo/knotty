@@ -241,16 +241,93 @@ bool bit_lsb64_equal(uint64_t a, uint64_t b, size_t prefix)
 	return a == b;
 }
 
+int bit_msb32_find(uint32_t n)
+{
+	int b = 0;
+	if (!n)
+		return -1;
+ 
+#define STEP(x) if (n >= ((uint32_t)1) << x) { b += x; n >>= x; }
+	STEP(16);
+	STEP(8);
+	STEP(4);
+	STEP(2);
+	STEP(1);
+#undef STEP
+	return b;
+}
+
+int bit_msb64_find(uint64_t n)
+{
+	int b = 0;
+	if (!n)
+		return -1;
+ 
+#define STEP(x) if (n >= ((uint64_t)1) << x) { b += x; n >>= x; }
+	STEP(32);
+	STEP(16);
+	STEP(8);
+	STEP(4);
+	STEP(2);
+	STEP(1);
+#undef STEP
+	return b;
+}
+
+int bit_lsb32_find(uint32_t n)
+{
+	int b = 0;
+	if (!n)
+		return -1;
+
+#define STEP(x) if (!(n & ((((uint32_t)1) << x) - 1))) { b += x; n >>= x; }
+	STEP(16);
+	STEP(8);
+	STEP(4);
+	STEP(2);
+	STEP(1);
+#undef STEP
+	return b;
+}
+
+int bit_lsb64_find(uint64_t n)
+{
+	int b = 0;
+	if (!n)
+		return -1;
+
+#define STEP(x) if (!(n & ((((uint64_t)1) << x) - 1))) { b += x; n >>= x; }
+	STEP(32);
+	STEP(16);
+	STEP(8);
+	STEP(4);
+	STEP(2);
+	STEP(1);
+#undef STEP
+	return b;
+}
+
 #ifdef TEST_BIT
 
 #include <stdio.h>
 
 int main(int argc, char **argv)
 {
+	uint64_t n;
+	int i;
 	uint32_t a = 0xF2345678;
 	uint32_t b = 0x82345678;
 	int x = bit_msb32_equal(a, b, 0);
 	printf("%d\n", x);
+
+	for (i = 0, n = 1; true; i++, n *= 42)
+	{
+		printf("42**%-2d = %#18lx: M %2d L %2d\n",
+			i, n, bit_msb64_find(n), bit_lsb64_find(n));
+ 
+		if (n >= INT64_MAX / 42)
+			break;
+	}
 	return 0;
 }
 

@@ -45,6 +45,16 @@ bool bit_lsb64_equal(uint64_t a, uint64_t b, size_t prefix);
 int bit_parity(uint32_t w);
 int bit_count(uintmax_t x);
 
+
+/* Find the last bit set or the first bit set.
+ * The MSB is position 31 (or 63), the LSB is position 0. 
+ */
+int bit_msb32_find(uint32_t n);
+int bit_lsb32_find(uint32_t n);
+
+int bit_msb64_find(uint64_t n);
+int bit_lsb64_find(uint64_t n);
+
 uintmax_t round_up_power_two(uintmax_t x);
 uintmax_t round_down_power_two(uintmax_t x);
 
