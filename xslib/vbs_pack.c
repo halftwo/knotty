@@ -118,17 +118,13 @@ static inline size_t _tag_size(uintmax_t num)
 }
 
 /* The MSB is position 63 (or 31), the LSB is position 0. */
-static inline int _find_last_bit_set(intmax_t v)
+static inline int _find_last_bit_set(uintmax_t v)
 {
-	int r = sizeof(intmax_t) * 8;
-
-	if (v == 0)
-		return 0;
-
+	int r = -1;
 	while (v != 0)
 	{
-		v <<= 1;
-		--r;
+		v >>= 1;
+		++r;
 	}
 
 	return r;
