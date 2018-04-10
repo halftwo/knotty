@@ -573,8 +573,10 @@ bool (vbs_unpack_if_tail)(vbs_unpacker_t *job);
 
 
 
-int vbs_make_double_value(double *value, intmax_t significant, int expo);
+void vbs_break_double_value(double value, intmax_t *p_significand, int *p_expo);
+void vbs_break_decimal64_value(decimal64_t value, intmax_t *p_significand, int *p_expo);
 
+int vbs_make_double_value(double *value, intmax_t significant, int expo);
 int vbs_make_decimal64_value(decimal64_t *value, intmax_t significant, int expo);
 
 

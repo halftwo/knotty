@@ -1,5 +1,6 @@
 #include "vbs_pack.h"
 #include "floating.h"
+#include "bit.h"
 #include <limits.h>
 #include <assert.h>
 #include <string.h>
@@ -117,24 +118,11 @@ static inline size_t _tag_size(uintmax_t num)
 	return n;
 }
 
-/* The MSB is position 63 (or 31), the LSB is position 0. */
-static inline int _find_last_bit_set(uintmax_t v)
-{
-	int r = -1;
-	while (v != 0)
-	{
-		v >>= 1;
-		++r;
-	}
-
-	return r;
-}
-
 /* See: 
  * 	http://en.wikipedia.org/wiki/IEEE_floating_point
  * 	http://en.wikipedia.org/wiki/Double-precision_floating-point_format
  */
-static void _break_double_value(double value, intmax_t *p_significand, int *p_expo)
+void vbs_break_double_value(double value, intmax_t *p_significand, int *p_expo)
 {
 	union ieee754_binary64 v;
 	int64_t significand;
@@ -171,12 +159,8 @@ static void _break_double_value(double value, intmax_t *p_significand, int *p_ex
 
 	if (significand)
 	{
-		int shift = 0;
-		while ((significand & 0x01) == 0)
-		{
-			significand >>= 1;
-			++shift;
-		}
+		int shift = bit_lsb64_find(significand);
+		significand >>= shift;
 		expo = expo - 52 + shift;
 		*p_significand = negative ? -significand : significand;
 		*p_expo = expo;
@@ -204,7 +188,7 @@ int vbs_make_double_value(double* value, intmax_t significand, int expo)
 			significand = -significand;
 		}
 
-		point = _find_last_bit_set(significand);
+		point = bit_msb64_find(significand);
 		expo += IEEE754_BINARY64_BIAS + point;
 
 		if (expo >= 0x7ff)
@@ -258,7 +242,7 @@ int vbs_make_double_value(double* value, intmax_t significand, int expo)
 	return 0;
 }
 
-static void _break_decimal64_value(decimal64_t value, intmax_t *p_significand, int *p_expo)
+void vbs_break_decimal64_value(decimal64_t value, intmax_t *p_significand, int *p_expo)
 {
 	uint8_t bcd[DECDOUBLE_Pmax];
 	int32_t expo, sign;
@@ -693,7 +677,7 @@ inline size_t vbs_size_of_floating(double value)
 	intmax_t significand;
 	int expo;
 
-	_break_double_value(value, &significand, &expo);
+	vbs_break_double_value(value, &significand, &expo);
 	if (significand < 0)
 		significand = -significand;
 	return _tag_size(significand) + vbs_size_of_integer(expo);
@@ -704,7 +688,7 @@ inline size_t vbs_size_of_decimal64(decimal64_t value)
 	intmax_t significand;
 	int expo;
 
-	_break_decimal64_value(value, &significand, &expo);
+	vbs_break_decimal64_value(value, &significand, &expo);
 	if (significand < 0)
 		significand = -significand;
 	return _tag_size(significand) + vbs_size_of_integer(expo);
@@ -778,7 +762,7 @@ size_t vbs_buffer_of_floating(unsigned char *buf, double value)
 	int expo;
 	size_t n;
 
-	_break_double_value(value, &significand, &expo);
+	vbs_break_double_value(value, &significand, &expo);
 	if (significand < 0)
 		n = _pack_tag(buf, VBS_FLOATING + 1, -significand);
 	else
@@ -794,7 +778,7 @@ size_t vbs_buffer_of_decimal64(unsigned char *buf, decimal64_t value)
 	int expo;
 	size_t n;
 
-	_break_decimal64_value(value, &significand, &expo);
+	vbs_break_decimal64_value(value, &significand, &expo);
 	if (significand < 0)
 		n = _pack_tag(buf, VBS_DECIMAL + 1, -significand);
 	else
