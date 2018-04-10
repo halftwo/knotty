@@ -274,7 +274,7 @@ public class Vbs
 	private static int _find_first_bit_set(long v)
 	{
 		if (v == 0)
-			return 0;
+			return -1;
 
 		int r = 0;
 		while ((v & 0x1) == 0)
@@ -288,14 +288,11 @@ public class Vbs
 
 	private static int _find_last_bit_set(long v)
 	{
-		if (v == 0)
-			return 0;
-
-		int r = 64;
+		int r = -1;
 		while (v != 0)
 		{
-			v <<= 1;
-			--r;
+			v >>>= 1;
+			++r;
 		}
 
 		return r;
