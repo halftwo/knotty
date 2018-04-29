@@ -12,9 +12,9 @@ extern "C" {
 #endif
 
 
-#define DLOG_V_EDITION 		180302
-#define DLOG_V_REVISION 	180409
-#define DLOG_V_RELEASE 		12
+#define DLOG_V_EDITION 		180429
+#define DLOG_V_REVISION 	180429
+#define DLOG_V_RELEASE 		13
 
 #define DLOG_VERSION		XS_TOSTR(DLOG_V_EDITION) "." XS_TOSTR(DLOG_V_REVISION) "." XS_TOSTR(DLOG_V_RELEASE)
 
@@ -22,7 +22,7 @@ extern "C" {
 #define DLOG_CENTER_PORT		6108
 #define DLOGD_PORT			6109
 
-#define DLOG_RECORD_VERSION		2
+#define DLOG_RECORD_VERSION		3
 #define DLOG_PACKET_VERSION		3
 
 #define DLOG_TYPE_RAW 			0
@@ -72,44 +72,7 @@ struct dlog_timeval
 } while (0)
 
 
-#define dlog_record 			dlog_record_v2
-
-
-struct dlog_record_v0
-{
-	uint16_t size;		/* include the size itself and trailing '\0' */
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	uint8_t version:4, type:4;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-	uint8_t type:4, version:4;
-#else
-# error "unsupported endian"
-#endif 
-	uint8_t _reserved;
-	struct dlog_timeval time;
-	int32_t pid;
-	char str[];
-};
-
-
-struct dlog_record_v1
-{
-	uint16_t size;          /* include the size itself and trailing '\0' */
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	uint8_t version:4, type:3, truncated:1;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-	uint8_t truncated:1, type:3, version:4;
-#else
-# error "unsupported endian"
-#endif 
-	uint8_t identity_len;
-	uint8_t tag_len;
-	uint8_t locus_len;
-	int16_t pid;
-	struct dlog_timeval time;
-	char str[];
-};
-
+#define dlog_record 			dlog_record_v3
 
 struct dlog_record_v2
 {
@@ -118,6 +81,27 @@ struct dlog_record_v2
 	uint8_t version:4, type:3, truncated:1;
 #elif __BYTE_ORDER == __BIG_ENDIAN
 	uint8_t truncated:1, type:3, version:4;
+#else
+# error "unsupported endian"
+#endif 
+	uint8_t locus_end;
+	uint16_t port;
+	int16_t pid;
+	struct dlog_timeval time;
+	char str[];
+};
+
+struct dlog_record_v3
+{
+	uint16_t size;          /* include the size itself and trailing '\0' */
+
+	/* If bigendian is 1, the byte order is big endian.
+	   Otherwise, the byte order is native order.
+	 */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	uint8_t version:3, bigendian:1, type:3, truncated:1;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	uint8_t truncated:1, type:3, bigendian:1, version:3;
 #else
 # error "unsupported endian"
 #endif 

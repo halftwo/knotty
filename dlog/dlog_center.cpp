@@ -805,21 +805,10 @@ void *logger(void *arg)
 				rec_head[DLOG_RECORD_HEAD_SIZE] = 0;
 				recstr = cur + DLOG_RECORD_HEAD_SIZE;
 
-				if (rec->version == 1)
-				{
-					struct dlog_record_v1 *v1 = (struct dlog_record_v1 *)rec;
-					int locus_end = v1->identity_len + 1 + v1->tag_len + 1 + v1->locus_len;
-					if (locus_end > 255)
-					{
-						locus_end = 255;
-						num_record_error++;
-					}
+				if (rec->version == 2)
 					rec->version = DLOG_RECORD_VERSION;
-					rec->locus_end = locus_end;
-					rec->port = 0;
-				}
 
-				if (rec->version != DLOG_RECORD_VERSION)
+				if (rec->version != DLOG_RECORD_VERSION || rec->bigendian != 0)
 				{
 					num_record_error++;
 					break;

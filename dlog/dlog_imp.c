@@ -17,9 +17,9 @@ static struct dlog_record _record_prototype =
 {
 	 0, 	/* size */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-	DLOG_RECORD_VERSION, DLOG_TYPE_RAW, 0, 
+	DLOG_RECORD_VERSION, 0, DLOG_TYPE_RAW, 0, 
 #elif __BYTE_ORDER == __BIG_ENDIAN
-	0, DLOG_TYPE_RAW, DLOG_RECORD_VERSION,
+	0, DLOG_TYPE_RAW, 0, DLOG_RECORD_VERSION,
 #else
 # error "unsupported endian"
 #endif 

@@ -1097,55 +1097,39 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 
 #undef FP
 
-void check_record(struct dlog_record *rec)
+void check_and_adjust_record_header(struct dlog_record *rec)
 {
-	if (((char *)rec)[rec->size - 1] != '\0')
+	if (rec->version == 2)
 	{
-		throw XERROR_FMT(XError, "Record is not terminated with nil byte '\\0'");
-	}
-
-	if (rec->version == 0)
-	{
-		struct dlog_record_v0 *v0 = (struct dlog_record_v0 *)rec;
-		int32_t pid = v0->pid;
-		struct dlog_timeval the_time = v0->time;
-
-		char *p1 = strchr(rec->str, ' ');
-		char *p2 = p1 ? strchr(p1 + 1, ' ') : NULL;
-		char *p3 = p2 ? strchr(p2 + 1, ' ') : NULL;
-		int locus_end = p3 ? p3 - rec->str : rec->size - 2;
-		if (locus_end > 255)
-			throw XERROR_FMT(XError, "The total length (%d) of (IDENTITY TAG LOCUS) are too long", locus_end);
-
 		rec->version = DLOG_RECORD_VERSION;
-		rec->type = DLOG_TYPE_RAW;
-		rec->locus_end = locus_end;
-		rec->pid = pid;
-		rec->time = the_time;
-		
-	}
-	else if (rec->version == 1)
-	{
-		struct dlog_record_v1 *v1 = (struct dlog_record_v1 *)rec;
-		int locus_end = v1->identity_len + 1 + v1->tag_len + 1 + v1->locus_len;
-		if (locus_end > 255)
-			throw XERROR_FMT(XError, "The total length (%d) of (IDENTITY TAG LOCUS) are too long", locus_end);
-
-		rec->version = DLOG_RECORD_VERSION;
-		rec->locus_end = locus_end;
 	}
 
 	if (rec->version != DLOG_RECORD_VERSION)
 		throw XERROR_FMT(XError, "Unknown record version (%d)", rec->version);
 
+	if (rec->bigendian)
+	{
+		rec->bigendian = 0;
+		xnet_msb16(&rec->size);
+		xnet_msb16((uint16_t*)&rec->pid);
+	}
+
 	if (rec->type != DLOG_TYPE_RAW)
 		throw XERROR_FMT(XError, "Record type (%d) is not DLOG_TYPE_RAW", rec->type);
 
-	if (rec->locus_end == 0)
-		throw XERROR_FMT(XError, "locus_end should not be 0");
+	if (rec->locus_end < 5)
+		throw XERROR_FMT(XError, "locus_end can't be less than 5");
 
 	if (rec->size < DLOG_RECORD_HEAD_SIZE + rec->locus_end + 2)
 		throw XERROR_FMT(XError, "Invalid record size (%d), locus_end=%d", rec->size, rec->locus_end);
+}
+
+void check_record_whole(struct dlog_record *rec)
+{
+	if (((char *)rec)[rec->size - 1] != '\0')
+	{
+		throw XERROR_FMT(XError, "Record is not terminated with nil byte '\\0'");
+	}
 }
 
 class DlogUdpWorker: public XEvent::FdHandler
@@ -1200,8 +1184,10 @@ void DlogUdpWorker::do_read()
 
 			port = (addr.family == AF_INET6) ? addr.a6.sin6_port : addr.a4.sin_port;
 
-			if (len < (ssize_t)DLOG_RECORD_HEAD_SIZE + 4)
+			if (len < (ssize_t)DLOG_RECORD_HEAD_SIZE)
 				throw XERROR_FMT(XError, "Size of recvfrom()ed data too small (%zd)", len);
+
+			check_and_adjust_record_header(_rec);
 
 			if (len < DLOG_RECORD_MAX_SIZE)
 			{
@@ -1220,7 +1206,7 @@ void DlogUdpWorker::do_read()
 				((char *)_rec)[_rec->size - 1] = '\0';
 			}
 
-			check_record(_rec);
+			check_record_whole(_rec);
 			_rec->port = port;
 			log_it(_rec, false);
 			_rec = NULL;
@@ -1354,8 +1340,7 @@ int DlogWorker::do_read()
 					LOC_PAUSE(0);
 			}
 
-			if (_rec->size < DLOG_RECORD_HEAD_SIZE + 4)
-				throw XERROR_FMT(XError, "Invalid record size (%d)", _rec->size);
+			check_and_adjust_record_header(_rec);
 
 			LOC_ANCHOR
 			{
@@ -1385,7 +1370,7 @@ int DlogWorker::do_read()
 			}
 
 			_rec->port = _port;
-			check_record(_rec);
+			check_record_whole(_rec);
 			log_it(_rec, false);
 			_rec = NULL;
 		}
