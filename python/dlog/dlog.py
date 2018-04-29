@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-__version__ = "170614.170614.18"
+__version__ = "180429.180429.13"
 
 import socket
 import os
@@ -20,7 +20,7 @@ DLOG_PORT = 6109
 DLOG_STDERR = 0x01
 DLOG_PERROR = 0x02
 
-RECORD_VERSION = 2
+RECORD_VERSION = 3
 TYPE_RAW = 0
 
 IDENT_MAX = 63
@@ -95,9 +95,9 @@ def xdlog(identity, tag, locus, *arg):
         strArg = strArg[0:maxStrLen]
         truncated = 0x01
     
-    composeInfo = truncated << 7 | TYPE_RAW << 4 |RECORD_VERSION
+    composeInfo = truncated << 7 | TYPE_RAW << 4 | 0x08 | RECORD_VERSION
     recordSize = RECORD_HEAD_SIZE + 2 + len(itlocus) + len(strArg)
-    data = struct.pack("@H2BHh2i", recordSize, composeInfo, len(itlocus),
+    data = struct.pack(">H2BHh2i", recordSize, composeInfo, len(itlocus),
              0, _pid, 0, 0) + itlocus + b' ' + strArg + b'\0'
     
     # send log 

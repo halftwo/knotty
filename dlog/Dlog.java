@@ -23,7 +23,7 @@ public class Dlog
 	private static final String DLOGD_IP = "127.0.0.1";
 	private static final int DLOGD_PORT = 6109;
 
-	private static final int RECORD_VERSION = 2;
+	private static final int RECORD_VERSION = 3;
 	private static final int TYPE_RAW = 0;
 
 	private static final int IDENT_MAX = 63;
@@ -136,25 +136,16 @@ public class Dlog
 				System.err.printf("%s %s\n", timestr, str);
 			}
 
-			if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-				rec[0] = (byte)(len & 0xff);
-				rec[1] = (byte)((len>>8)&0xff);
-				rec[4] = (byte)(0 & 0xff);
-				rec[5] = (byte)((0>>>8)&0xff);
-				rec[6] = (byte)(_pid & 0xff);
-				rec[7] = (byte)((_pid>>>8)&0xff);
-			}
-			else if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-				rec[0] = (byte)((len>>8)&0xff);
-				rec[1] = (byte)(len & 0xff);
-				rec[4] = (byte)((0>>>8)&0xff);
-				rec[5] = (byte)(0 & 0xff);
-				rec[6] = (byte)((_pid>>>8)&0xff);
-				rec[7] = (byte)(_pid & 0xff);
-			} 
-
-			rec[2] = (byte)(truncated | (TYPE_RAW << 4) | RECORD_VERSION);
+			rec[0] = (byte)((len>>8)&0xff);
+			rec[1] = (byte)(len & 0xff);
+			/* truncated:1, type:3, bigendian:1, version:3 */
+			rec[2] = (byte)(truncated | (TYPE_RAW << 4) | 0x08 | RECORD_VERSION);
 			rec[3] = (byte)(i_len + t_len + l_len + 2);
+			rec[4] = (byte)0;
+			rec[5] = (byte)0;
+			rec[6] = (byte)((_pid>>>8)&0xff);
+			rec[7] = (byte)(_pid & 0xff);
+
 
 			if (_out == null) {
 				_out = _connect_daemon();
