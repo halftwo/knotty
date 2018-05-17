@@ -20,7 +20,7 @@ DLOG_PORT = 6109
 DLOG_STDERR = 0x01
 DLOG_PERROR = 0x02
 
-RECORD_VERSION = 3
+RECORD_VERSION = 4
 TYPE_RAW = 0
 
 IDENT_MAX = 63
@@ -97,8 +97,8 @@ def xdlog(identity, tag, locus, *arg):
     
     composeInfo = truncated << 7 | TYPE_RAW << 4 | 0x08 | RECORD_VERSION
     recordSize = RECORD_HEAD_SIZE + 2 + len(itlocus) + len(strArg)
-    data = struct.pack(">H2BHh2i", recordSize, composeInfo, len(itlocus),
-             0, _pid, 0, 0) + itlocus + b' ' + strArg + b'\0'
+    data = struct.pack(">H2B2Hl", recordSize, composeInfo, len(itlocus),
+             0, _pid, 0) + itlocus + b' ' + strArg + b'\0'
     
     # send log 
     failed = False

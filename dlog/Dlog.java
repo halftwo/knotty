@@ -23,7 +23,7 @@ public class Dlog
 	private static final String DLOGD_IP = "127.0.0.1";
 	private static final int DLOGD_PORT = 6109;
 
-	private static final int RECORD_VERSION = 3;
+	private static final int RECORD_VERSION = 4;
 	private static final int TYPE_RAW = 0;
 
 	private static final int IDENT_MAX = 63;

@@ -40,7 +40,7 @@ struct udata
 static inline void _make_time(struct udata *ud)
 {
 	ud->time = ud->time_str;
-	get_time_str(ud->rec.time.tv_sec, ud->time_str);
+	get_time_str(ud->rec.usec/1000000, ud->time_str);
 }
 
 static inline void _make_identity(struct udata *ud)

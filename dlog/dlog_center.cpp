@@ -65,7 +65,7 @@ static const char *TYPECODE = ">#@!????????????";
 struct packet_block
 {
 	TAILQ_ENTRY(packet_block) link;
-	struct dlog_timeval time;
+	int64_t usec;
 	char pkt_ip[40];
 	char out_addr[48];
 	struct dlog_packet pkt;
@@ -551,8 +551,28 @@ int Worker::do_read()
 		if (pkt_endian != _endian)
 		{
 			xnet_swap(&_block->pkt.size, sizeof(_block->pkt.size));
-			xnet_swap(&_block->pkt.time.tv_sec, sizeof(_block->pkt.time.tv_sec));
-			xnet_swap(&_block->pkt.time.tv_usec, sizeof(_block->pkt.time.tv_usec));
+			if (_block->pkt.version == DLOG_PACKET_VERSION)
+			{
+				xnet_swap(&_block->pkt.usec, sizeof(_block->pkt.usec));
+			}
+			else if (_block->pkt.version >= 2 && _block->pkt.version < DLOG_PACKET_VERSION)
+			{
+				if (_block->pkt.version == 2)
+				{
+					struct dlog_packet_v2 *v2 = (struct dlog_packet_v2 *)&_block->pkt;
+					uint8_t flag = v2->flag;
+					_block->pkt.version = 3;
+					_block->pkt.flag = flag;
+					_block->pkt._reserved1 = 0;
+					_block->pkt._reserved2 = 0;
+				}
+
+				struct dlog_packet_v3 *v3 = (struct dlog_packet_v3 *)&_block->pkt;
+				xnet_swap(&v3->time.tv_sec, sizeof(v3->time.tv_sec));
+				xnet_swap(&v3->time.tv_usec, sizeof(v3->time.tv_usec));
+				_block->pkt.version = DLOG_PACKET_VERSION;
+				_block->pkt.usec = v3->time.tv_sec * 1000000 + v3->time.tv_usec;
+			}
 		}
 
 		if (_block->pkt.size < DLOG_PACKET_HEAD_SIZE || _block->pkt.size > DLOG_PACKET_MAX_SIZE)
@@ -563,7 +583,7 @@ int Worker::do_read()
 		}
 
 		msec = dispatcher->msecRealtime();
-		pkt_msec = _block->pkt.time.tv_sec * 1000 + _block->pkt.time.tv_usec / 1000;
+		pkt_msec = _block->pkt.usec / 1000;
 		diff = msec - pkt_msec;
 		delta = diff - _diff;
 		if ((delta > -4000 && delta < 4000) || (_last_msec != 0 && llabs(diff) > llabs(_diff)))
@@ -573,9 +593,8 @@ int Worker::do_read()
 		_last_msec = msec;
 
 		msec = pkt_msec + _diff;
-		_block->time.tv_sec = msec / 1000;
-		_block->time.tv_usec = (msec % 1000) * 1000;
-		active_time = _block->time.tv_sec;
+		_block->usec = msec * 1000;
+		active_time = msec / 1000;
 		memcpy(_block->out_addr, _addr, sizeof(_addr));
 
 		LOC_ANCHOR
@@ -605,16 +624,6 @@ int Worker::do_read()
 					memcpy(_block->pkt_ip, _ip, sizeof(_ip));
 				else
 					memcpy(_block->pkt_ip, _block->pkt.ip64, 16);
-			}
-
-			if (_block->pkt.version == 2)
-			{
-				struct dlog_packet_v2 *v2 = (struct dlog_packet_v2 *)&_block->pkt;
-				uint8_t flag = v2->flag;
-				_block->pkt.version = 3;
-				_block->pkt.flag = flag;
-				_block->pkt._reserved1 = 0;
-				_block->pkt._reserved2 = 0;
 			}
 
 			xatomiclong_inc(&num_block);
@@ -787,10 +796,10 @@ void *logger(void *arg)
 			int pkt_endian = (pkt->flag & DLOG_PACKET_FLAG_BIG_ENDIAN) ? 1 : 0;
 			char *pkt_end = (char *)pkt + pkt->size;
 			char *cur = (char *)pkt + DLOG_PACKET_HEAD_SIZE;
+			int64_t usec_shift = block->usec - pkt->usec;
 			while (cur < pkt_end)
 			{
 				bool discard = false;
-				struct dlog_timeval mytime;
 				char rec_head[DLOG_RECORD_HEAD_SIZE + 1];
 				struct dlog_record *rec = (struct dlog_record *)rec_head;
 				char *recstr;
@@ -818,8 +827,7 @@ void *logger(void *arg)
 				{
 					xnet_swap(&rec->size, sizeof(rec->size));
 					xnet_swap(&rec->pid, sizeof(rec->pid));
-					xnet_swap(&rec->time.tv_sec, sizeof(rec->time.tv_sec));
-					xnet_swap(&rec->time.tv_usec, sizeof(rec->time.tv_usec));
+					xnet_swap(&rec->usec, sizeof(rec->usec));
 				}
 
 				if (rec->size < (DLOG_RECORD_HEAD_SIZE + rec->locus_end + 2)
@@ -846,11 +854,11 @@ void *logger(void *arg)
 					// continue;
 				}
 			
-				dlog_timesub(&rec->time, &pkt->time, &mytime);
-				dlog_timeadd(&block->time, &mytime, &rec->time);
-				if (rec->time.tv_sec != last_time)
+				rec->usec += usec_shift;
+				time_t rec_time = rec->usec / 1000000;
+				if (rec_time != last_time)
 				{
-					last_time = rec->time.tv_sec;
+					last_time = rec_time;
 					get_time_str(last_time, last_record_time_str);
 				}
 

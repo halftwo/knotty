@@ -229,8 +229,7 @@ static void log_it(struct dlog_record *rec, bool block)
 {
 	int64_t ms = dispatcher->msecRealtime();
 	time_t sec = ms / 1000;
-	rec->time.tv_sec = sec;
-	rec->time.tv_usec = (ms % 1000) * 1000;
+	rec->usec = ms * 1000;
 
 	if (!block)
 		last_record_time = sec;
@@ -512,8 +511,7 @@ static void *sender_thread(void *arg)
 			}
 
 			int64_t current_ms = dispatcher->msecRealtime();
-			pkt->time.tv_sec = current_ms / 1000;
-			pkt->time.tv_usec = current_ms % 1000 * 1000;
+			pkt->usec = current_ms * 1000;
 			pkt->version = DLOG_PACKET_VERSION;
 			memcpy(pkt->ip64, the_ip64, sizeof(pkt->ip64));
 			if (_endian)
@@ -1099,7 +1097,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 
 void check_and_adjust_record_header(struct dlog_record *rec)
 {
-	if (rec->version == 2)
+	if (rec->version < DLOG_RECORD_VERSION)
 	{
 		rec->version = DLOG_RECORD_VERSION;
 	}
