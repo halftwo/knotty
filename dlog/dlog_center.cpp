@@ -814,8 +814,21 @@ void *logger(void *arg)
 				rec_head[DLOG_RECORD_HEAD_SIZE] = 0;
 				recstr = cur + DLOG_RECORD_HEAD_SIZE;
 
-				if (rec->version == 2)
+				if (rec->version >= 2 && rec->version <= 3)
+				{
+					struct dlog_record_v3 *v3 = (struct dlog_record_v3 *)rec_head;
+					if (pkt_endian != _endian)
+					{
+						xnet_swap(&v3->time.tv_sec, sizeof(v3->time.tv_sec));
+						xnet_swap(&v3->time.tv_usec, sizeof(v3->time.tv_usec));
+					}
 					rec->version = DLOG_RECORD_VERSION;
+					rec->usec = v3->time.tv_sec * 1000000 + v3->time.tv_usec;
+					if (pkt_endian != _endian)
+					{
+						xnet_swap(&rec->usec, sizeof(rec->usec));
+					}
+				}
 
 				if (rec->version != DLOG_RECORD_VERSION || rec->bigendian != 0)
 				{
