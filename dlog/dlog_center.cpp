@@ -135,8 +135,8 @@ static time_t banlist_mtime;
 
 static int64_t usec_diff(const struct timeval* t1, const struct timeval* t2)
 {
-	int64_t x1 = t1->tv_sec * 1000000 + t1->tv_usec;
-	int64_t x2 = t2->tv_sec * 1000000 + t2->tv_usec;
+	int64_t x1 = int64_t(t1->tv_sec) * 1000000 + t1->tv_usec;
+	int64_t x2 = int64_t(t2->tv_sec) * 1000000 + t2->tv_usec;
 	return x1 - x2;
 }
 
@@ -551,28 +551,31 @@ int Worker::do_read()
 		if (pkt_endian != _endian)
 		{
 			xnet_swap(&_block->pkt.size, sizeof(_block->pkt.size));
-			if (_block->pkt.version == DLOG_PACKET_VERSION)
-			{
-				xnet_swap(&_block->pkt.usec, sizeof(_block->pkt.usec));
-			}
-			else if (_block->pkt.version >= 2 && _block->pkt.version < DLOG_PACKET_VERSION)
-			{
-				if (_block->pkt.version == 2)
-				{
-					struct dlog_packet_v2 *v2 = (struct dlog_packet_v2 *)&_block->pkt;
-					uint8_t flag = v2->flag;
-					_block->pkt.version = 3;
-					_block->pkt.flag = flag;
-					_block->pkt._reserved1 = 0;
-					_block->pkt._reserved2 = 0;
-				}
+		}
 
-				struct dlog_packet_v3 *v3 = (struct dlog_packet_v3 *)&_block->pkt;
+		if (_block->pkt.version >= 2 &&_block->pkt.version <= 3)
+		{
+			if (_block->pkt.version == 2)
+			{
+				struct dlog_packet_v2 *v2 = (struct dlog_packet_v2 *)&_block->pkt;
+				uint8_t flag = v2->flag;
+				_block->pkt.version = 3;
+				_block->pkt.flag = flag;
+				_block->pkt._reserved1 = 0;
+				_block->pkt._reserved2 = 0;
+			}
+			struct dlog_packet_v3 *v3 = (struct dlog_packet_v3 *)&_block->pkt;
+			if (pkt_endian != _endian)
+			{
 				xnet_swap(&v3->time.tv_sec, sizeof(v3->time.tv_sec));
 				xnet_swap(&v3->time.tv_usec, sizeof(v3->time.tv_usec));
-				_block->pkt.version = DLOG_PACKET_VERSION;
-				_block->pkt.usec = v3->time.tv_sec * 1000000 + v3->time.tv_usec;
 			}
+			_block->pkt.version = DLOG_PACKET_VERSION;
+			_block->pkt.usec = int64_t(v3->time.tv_sec) * 1000000 + v3->time.tv_usec;
+		}
+		else if (pkt_endian != _endian)
+		{
+			xnet_swap(&_block->pkt.usec, sizeof(_block->pkt.usec));
 		}
 
 		if (_block->pkt.size < DLOG_PACKET_HEAD_SIZE || _block->pkt.size > DLOG_PACKET_MAX_SIZE)
@@ -814,23 +817,7 @@ void *logger(void *arg)
 				rec_head[DLOG_RECORD_HEAD_SIZE] = 0;
 				recstr = cur + DLOG_RECORD_HEAD_SIZE;
 
-				if (rec->version >= 2 && rec->version <= 3)
-				{
-					struct dlog_record_v3 *v3 = (struct dlog_record_v3 *)rec_head;
-					if (pkt_endian != _endian)
-					{
-						xnet_swap(&v3->time.tv_sec, sizeof(v3->time.tv_sec));
-						xnet_swap(&v3->time.tv_usec, sizeof(v3->time.tv_usec));
-					}
-					rec->version = DLOG_RECORD_VERSION;
-					rec->usec = v3->time.tv_sec * 1000000 + v3->time.tv_usec;
-					if (pkt_endian != _endian)
-					{
-						xnet_swap(&rec->usec, sizeof(rec->usec));
-					}
-				}
-
-				if (rec->version != DLOG_RECORD_VERSION || rec->bigendian != 0)
+				if (rec->version < 2 || rec->version > DLOG_RECORD_VERSION || rec->bigendian != 0)
 				{
 					num_record_error++;
 					break;
@@ -840,6 +827,21 @@ void *logger(void *arg)
 				{
 					xnet_swap(&rec->size, sizeof(rec->size));
 					xnet_swap(&rec->pid, sizeof(rec->pid));
+				}
+
+				if (rec->version >= 2 && rec->version <= 3)
+				{
+					struct dlog_record_v3 *v3 = (struct dlog_record_v3 *)rec_head;
+					if (pkt_endian != _endian)
+					{
+						xnet_swap(&v3->time.tv_sec, sizeof(v3->time.tv_sec));
+						xnet_swap(&v3->time.tv_usec, sizeof(v3->time.tv_usec));
+					}
+					rec->version = DLOG_RECORD_VERSION;
+					rec->usec = int64_t(v3->time.tv_sec) * 1000000 + v3->time.tv_usec;
+				}
+				else if (pkt_endian != _endian)
+				{
 					xnet_swap(&rec->usec, sizeof(rec->usec));
 				}
 
@@ -990,16 +992,16 @@ void *logger(void *arg)
 
 			uint64_t freq = get_cpu_frequency(0);
 
-			xdlog(NULL, _program_name, "THROB", NULL, "v2 version=%s start=%s active=%s client=%d"
+			xdlog(NULL, _program_name, "THROB", NULL, "v3 version=%s start=%s active=%s client=%d"
 					" info=euser:%s,MHz:%.0f,cpu:%.1f%%"
-					" record=get:%llu,error:%llu"
-					" block=pool:%lu,get:%ld,error:%ld,zip:%ld,unzip_error:%ld"
+					" record=v:%d,get:%llu,error:%llu"
+					" block=v:%d,pool:%lu,get:%ld,error:%ld,zip:%ld,unzip_error:%ld"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
 				DLOG_VERSION,
 				start_time_str, active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
-				num_record, num_record_error,
-				_block_pool.num_limit,
+				DLOG_RECORD_VERSION, num_record, num_record_error,
+				DLOG_PACKET_VERSION, _block_pool.num_limit,
 				xatomiclong_get(&num_block), xatomiclong_get(&num_block_error),
 				xatomiclong_get(&num_zip_block), xatomiclong_get(&num_unzip_fail),
 				plugin_file, plugin_md5, plugin_ts, (plugin ? '#' : plugin_mtime ? '*' : '-'),

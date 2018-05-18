@@ -674,8 +674,8 @@ MyTimer::~MyTimer()
 
 static int64_t usec_diff(const struct timeval* t1, const struct timeval* t2)
 {
-	int64_t x1 = t1->tv_sec * 1000000 + t1->tv_usec;
-	int64_t x2 = t2->tv_sec * 1000000 + t2->tv_usec;
+	int64_t x1 = int64_t(t1->tv_sec) * 1000000 + t1->tv_usec;
+	int64_t x2 = int64_t(t2->tv_sec) * 1000000 + t2->tv_usec;
 	return x1 - x2;
 }
 
@@ -734,18 +734,19 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		uint64_t freq = get_cpu_frequency(0);
 
 		rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "THROB", NULL, "v2 version=%s start=%s now=%s active=%s client=%d"
+		dlog_make(rec, NULL, _program_name, "THROB", NULL, "v3 version=%s start=%s now=%s active=%s client=%d"
 					" info=euser:%s,MHz:%.0f,cpu:%.1f%%"
-					" record=bad:%ld,take:%llu,cooked:%llu,overflow:%ld,overflow_time:%s"
-					" block=pool:%zd,send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
+					" record=v:%d,bad:%ld,take:%llu,cooked:%llu,overflow:%ld,overflow_time:%s"
+					" block=v:%d,pool:%zd,send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
 				DLOG_VERSION,
 				start_time_str, current_ts, active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
-				xatomiclong_get(&num_record_bad), 
+				DLOG_RECORD_VERSION, xatomiclong_get(&num_record_bad), 
 				num_record_take, num_record_cooked,
 				xatomiclong_get(&num_record_overflow), record_overflow_ts,
-				dlog_block_pool_size, num_block_send, num_compressed_block, 
+				DLOG_PACKET_VERSION, dlog_block_pool_size, 
+				num_block_send, num_compressed_block, 
 				num_block_overflow, block_overflow_ts,
 				plugin_file, plugin_md5, plugin_ts, (plugin ? '#' : plugin_mtime ? '*' : '-'),
 				plugin_run, plugin_discard, plugin_error);
