@@ -91,7 +91,7 @@ mantissa 表示浮点数的有效数字(整数), exponent 表示2的多少次幂
 
 浮点数中的几个特殊值用特殊的方式来表示::
 
-        value   sign    frac    expo
+        value  sign    mantissa expo
 	 0.0	0	0	 0
         +0.0    0       0       +1
         -0.0    0       0       -1
