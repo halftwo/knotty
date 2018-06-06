@@ -6,9 +6,10 @@
 * @author jiagui 
 */
 
+namespace example;
 require_once("x4fcgi.php");
 
-class ExampleServant extends xic_Servant
+class ExampleServant extends \xic_Servant
 {
 	// Methods should be protected.
 	// Return an associated array on success
@@ -31,7 +32,12 @@ class ExampleServant extends xic_Servant
 
 	protected function _xic_oops($quest)
 	{
-		throw new XError("", 999, "TEST_ERROR");
+//		throw new \XError("", 999, "TEST_ERROR");
+		$x = array();
+		$x['x'] = &$x;
+		$x['y'] = 123;
+		$x['z'] = "abc";
+		return $x;
 	}
 }
 
