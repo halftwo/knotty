@@ -4,7 +4,7 @@
 * A framework to provide xic service with php in fcgi.
 * @package x4fcgi 
 * @author jiagui
-* @version 170802.171108.20
+* @version 170802.180606.20
 * Following is an example program.
 *
 --------------- BEGIN OF EXAMPLE PROGRAM ------------
@@ -215,6 +215,8 @@ function x4fcgi_serve($callback)
 		{
 			$out_args = vbs_dict();
 		}
+
+		$out_vbs = vbs_pack(array(intval($txid), intval($status), $out_args));
 	}
 	catch (Exception $ex)
 	{
@@ -244,6 +246,25 @@ function x4fcgi_serve($callback)
 				"calltrace" => $ex->getTrace(),
 			),
 		);
+
+		try {
+			$out_vbs = vbs_pack(array(intval($txid), intval($status), $out_args));
+		}
+		catch (Exception $ex)
+		{
+			$simple_out_args = array(
+				"raiser" => $raiser,
+				"exname" => $exname,
+				"code" => $ex->getCode(),
+				"tag" => $tag,
+				"message" => $ex->getMessage(),
+				"detail" => array(
+					"file" => $ex->getFile(),
+					"line" => $ex->getLine(),
+				),
+			);
+			$out_vbs = vbs_pack(array(intval($txid), intval($status), $simple_out_args));
+		}
 	}
 
 	// NB. Do NOT use ob_end_clean(). It will discard the log messages to
@@ -262,17 +283,18 @@ function x4fcgi_serve($callback)
 		$output_fp = fopen("php://output", "wb");
 		if ($ver == 2)
 			fwrite($output_fp, "\x00\x00\x00\x00XiC4fCgI\x00\x00\x00\x00", 16);
-		vbs_encode_write($output_fp, intval($txid));
-		vbs_encode_write($output_fp, intval($status));
-		vbs_encode_write($output_fp, $out_args);
+		fwrite($output_fp, $out_vbs);
 		if ($ver == 2)
 			fwrite($output_fp, "\x00\x00\x00\x00xIc4FcGi\x00\x00\x00\x00", 16);
 		fclose($output_fp);
 	}
 	else
 	{
-		printf("answer_status=%d\nanswer_args=", $status);
-		var_export($out_args);
+		$x = vbs_unpack($out_vbs, 0, 0);
+		$s = $x[1];
+		$o = $x[2];
+		printf("answer_status=%d\nanswer_args=", $s);
+		var_export($o);
 		echo "\n";
 	}
 
