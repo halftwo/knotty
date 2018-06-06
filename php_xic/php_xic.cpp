@@ -427,11 +427,17 @@ PHP_FUNCTION(vbs_pack)
 		zend_error(E_ERROR, "Wrong parameters for blob vbs_pack(array $values)");
 	}
 
-	vbs_packer_init(&pk, smart_write, &buf, -1);
-	vbs::v_pack(&pk, val TSRMLS_CC);
+	try {
+		vbs_packer_init(&pk, smart_write, &buf, -1);
+		vbs::v_pack(&pk, val TSRMLS_CC);
 
-	ZVAL_STRINGL(return_value, buf.c, buf.len, 1);																  
-	smart_str_free(&buf);
+		ZVAL_STRINGL(return_value, buf.c, buf.len, 1);																  
+		smart_str_free(&buf);
+	}
+	catch (std::exception& ex)
+	{
+		raise_Exception(0 TSRMLS_CC, "%s", ex.what());
+	}
 }
 
 PHP_FUNCTION(vbs_unpack)

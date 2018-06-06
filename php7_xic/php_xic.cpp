@@ -420,16 +420,22 @@ PHP_FUNCTION(vbs_pack)
 	smart_str ss = {0};
 	vbs_packer_t pk;
 	zval *val;
-	
+
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &val) == FAILURE)
 	{
 		zend_error(E_ERROR, "Wrong parameters for blob vbs_pack(array $values)");
 	}
 
-	vbs_packer_init(&pk, smart_write, &ss, -1);
-	vbs::v_pack(&pk, val TSRMLS_CC);
+	try {
+		vbs_packer_init(&pk, smart_write, &ss, -1);
+		vbs::v_pack(&pk, val TSRMLS_CC);
 
-	RETVAL_STR(ss.s);
+		RETVAL_STR(ss.s);
+	}
+	catch (std::exception& ex)
+	{
+		raise_Exception(0 TSRMLS_CC, "%s", ex.what());
+	}
 }
 
 PHP_FUNCTION(vbs_unpack)
