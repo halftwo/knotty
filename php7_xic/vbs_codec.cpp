@@ -237,6 +237,10 @@ void v_encode_r(vbs_packer_t *job, zval *val TSRMLS_DC)
 		v_encode_array(job, val TSRMLS_CC);
 		break;
 
+	case IS_REFERENCE:
+		v_encode_r(job, Z_REFVAL_P(val));
+		break;
+
 	case IS_INDIRECT:
 		v_encode_r(job, Z_INDIRECT_P(val));
 		break;
