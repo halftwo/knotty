@@ -28,7 +28,7 @@ void usage(const char *program)
 "  -V                   display version information\n"
 "\n"
 "paramId can be read from file, which must specified with option -f\n"
-"or be internal parameter, which starts with '@'.\n"
+"or be internal parameter, which may be @512, @1024, @2048, @4096.\n"
 "\n"
 "hashId can only be SHA256 or SHA1. If not specified, it will be SHA256.\n"
 "\n"
