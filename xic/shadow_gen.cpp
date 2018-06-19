@@ -141,7 +141,7 @@ try
 	char idbuf[80];
 	if (random_id)
 	{
-		char *p = stpncpy(idbuf, identity, sizeof(idbuf));
+		char *p = stpncpy(idbuf, identity, sizeof(idbuf) - 1);
 		--p;
 		int used = p - idbuf;
 		if ((size_t)used < sizeof(idbuf) - 1)
