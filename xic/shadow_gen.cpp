@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"170614.18"
+#define SHADOW_GEN_VERSION	"180619.22"
 
 void display_version(const char *program)
 {
@@ -142,16 +142,17 @@ try
 	if (random_id)
 	{
 		char *p = stpncpy(idbuf, identity, sizeof(idbuf) - 1);
-		--p;
+		--p;	// skip the trailing %
 		int used = p - idbuf;
-		if ((size_t)used < sizeof(idbuf) - 1)
+		int left = sizeof(idbuf) - 1 - used;
+		if (left < 16)
 		{
-			int left = sizeof(idbuf) - used;
-			if (left > 17)
-				left = (used < 8) ? 25 - used : 17;
-			urandom_generate_id(p, left);
+			fprintf(stderr, "ERROR: identity prefix too long, must be less than %zd\n", sizeof(idbuf) - 1 - 16);
+			exit(1);
 		}
-		idbuf[sizeof(idbuf) - 1] = 0;
+
+		left = (used < 8) ? 24 - used : 16;
+		urandom_generate_id(p, left + 1);
 		identity = idbuf;
 	}
 
@@ -166,8 +167,13 @@ try
 	else if (strcmp(password, "-") == 0)
 	{
 		char line[80];
-		fgets(line, sizeof(line), stdin);
-		xstr_t xs = XSTR_C(line);
+		char *s = fgets(line, sizeof(line), stdin);
+		if (!s)
+		{
+			fprintf(stderr, "ERROR: no password inputed from stdin\n");
+			exit(1);
+		}
+		xstr_t xs = XSTR_C(s);
 		xstr_trim(&xs);
 		int rc = xstr_find_not_in_bset(&xs, 0, &pass_bset);
 		if (rc >= 0)
