@@ -131,7 +131,7 @@ try
 		else
 		{
 			if (xs.data[rc] == '%')
-				fprintf(stderr, "ERROR: char '%c' can only be the last char of identity", xs.data[rc]);
+				fprintf(stderr, "ERROR: char '%c' can only be the last char of identity\n", xs.data[rc]);
 			else
 				fprintf(stderr, "ERROR: invalid char '%c' in identity, which can only contain letters, digits and ones of \"@._-\"\n", xs.data[rc]);
 			exit(1);
