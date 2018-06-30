@@ -175,7 +175,7 @@ void update_ctx_caller(zval *ctx)
 		HashTable *ht = HASH_OF(ctx);
 		if (ht)
 		{
-			//Z_ADDREF_P(caller);
+			Z_ADDREF_P(caller);
 			zend_hash_str_update(ht, "CALLER", sizeof("CALLER") - 1, caller);
 		}
 	}
