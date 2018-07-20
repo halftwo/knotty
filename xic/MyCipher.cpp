@@ -111,28 +111,29 @@ MyCipher::~MyCipher()
 
 static inline void counter_increase(uint8_t *counter, size_t size)
 {
+	bool on = counter[0] & 0x80;
         for (size_t i = size - 1; i >= 0; --i)
         {
                 ++counter[i];
                 if (counter[i])
                         break;
         }
+
+	if (on) {
+		counter[0] |= 0x80;
+	} else {
+		counter[0] &= 0x7f;
+	}
 }
 
-bool MyCipher::oSeqIncrease()
+void MyCipher::oSeqIncrease()
 {
-	uint8_t before = (this->oSeq[0] & 0x80);
 	counter_increase(this->oSeq, sizeof(this->oSeq));
-	uint8_t after = (this->oSeq[0] & 0x80);
-	return (before == after);
 }
 
-bool MyCipher::iSeqIncrease()
+void MyCipher::iSeqIncrease()
 {
-	uint8_t before = (this->iSeq[0] & 0x80);
 	counter_increase(this->iSeq, sizeof(this->iSeq));
-	uint8_t after = (this->iSeq[0] & 0x80);
-	return (before == after);
 }
 
 void MyCipher::encryptStart(const void *header, size_t header_len)

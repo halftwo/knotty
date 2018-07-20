@@ -658,8 +658,7 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 				memcpy(_cipher->iIV, p, sizeof(_cipher->iIV));
 				iobuf_skip(&_ib, sizeof(_cipher->iIV));
 
-				if (!_cipher->iSeqIncrease())
-					throw XERROR_FMT(ProtocolException, "%s Sequence number exhausted", _info.c_str());
+				_cipher->iSeqIncrease();
 				if (!_cipher->decryptCheckSequence())
 					throw XERROR_FMT(ProtocolException, "%s Unmatched sequence number", _info.c_str());
 			}

@@ -44,8 +44,8 @@ public:
 		return sizeof(iIV) + sizeof(iMAC);
 	}
 
-	bool oSeqIncrease();
-	bool iSeqIncrease();
+	void oSeqIncrease();
+	void iSeqIncrease();
 
 	/*
  	 * oSeqIncrease() should be called before encryptStart().

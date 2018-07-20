@@ -153,11 +153,9 @@ struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count, const MyC
 
 	if (cipher)
 	{
-		if (!cipher->oSeqIncrease())
-			throw XERROR_MSG(XError, "Sequence number exhausted");
-
 		uint8_t *secure = OSTK_ALLOC(ostk, uint8_t, msg->bodySize());
 		size_t secure_len = 0;
+		cipher->oSeqIncrease();
 		cipher->encryptStart(hdr, sizeof(*hdr));
 		for (int i = 0; i < iov_count; ++i)
 		{
