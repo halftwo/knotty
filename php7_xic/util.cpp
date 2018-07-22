@@ -59,7 +59,7 @@ void raise_Exception(long code TSRMLS_DC, const char *format, ...)
 	zend_object *ex = zend_throw_exception(zend_exception_get_default(TSRMLS_C), buf, code);
 }
 
-static uint16_t _get_pid_base32(char buf[4])
+static uint16_t _get_pid_base32(char buf[3])
 {
 	uint16_t pid = getpid();
 

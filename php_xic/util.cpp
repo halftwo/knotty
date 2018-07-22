@@ -123,7 +123,7 @@ static void random_bytes(char *buf, size_t len)
 	}
 }
 
-static uint16_t _get_pid_base32(char buf[4])
+static uint16_t _get_pid_base32(char buf[3])
 {
 	uint16_t pid = getpid();
 
