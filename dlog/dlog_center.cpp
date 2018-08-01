@@ -1062,7 +1062,7 @@ static int dw_callback(const dirwalk_item_t *item, void *ctx)
 {
         if (item->level < 1)
         {
-                if (item->isdir && strlen(item->name) == 6)
+                if (item->isdir && strlen(item->name) == 7)
                         return 1;
         }
         else if (item->level == 1)
@@ -1074,7 +1074,7 @@ static int dw_callback(const dirwalk_item_t *item, void *ctx)
                 {
                         const char *dir_end = filename - 1;
                         const char *dir_start = (char*)memrchr(pathname, '/', dir_end - pathname);
-                        if (dir_start && dir_end - dir_start == 7 && memcmp(dir_start + 1, &filename[prefix_len], 6) == 0)
+                        if (dir_start && dir_end - dir_start == 8 && memcmp(dir_start + 1, &filename[prefix_len], 7) == 0)
                         {
                                 do_compress(item->path);
                         }
