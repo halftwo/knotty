@@ -150,7 +150,7 @@ box_t *box_create(cabin_t *cab, const char *label)
 	box->begin += size;
 
 	box->timestamp = box->begin;
-	get_time_str(time(NULL), box->timestamp);
+	get_time_str(time(NULL), true, box->timestamp);
 	box->begin += strlen(box->timestamp) + 1;
 	
 	box->filename = box->begin;

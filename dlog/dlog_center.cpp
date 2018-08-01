@@ -147,7 +147,7 @@ static FILE *_open_log_file(const char *dir, time_t *fp_time)
 	FILE *fp = NULL;
 
 	time_t now = dispatcher->msecRealtime() / 1000;
-	get_time_str(now, time_str);
+	get_time_str(now, true, time_str);
 	snprintf(subdir, sizeof(subdir), "%s/%.7s", dir, time_str);
 	snprintf(_log_pathname, sizeof(_log_pathname), "%s/%s%s", subdir, LOGFILE_PREFIX, time_str);
 
@@ -874,7 +874,7 @@ void *logger(void *arg)
 				if (rec_time != last_time)
 				{
 					last_time = rec_time;
-					get_time_str(last_time, last_record_time_str);
+					get_time_str(last_time, true, last_record_time_str);
 				}
 
 				if (banlist)
@@ -958,12 +958,12 @@ void *logger(void *arg)
 			char active_ts[32], plugin_ts[32];
 
 			if (active_time)
-				get_time_str(active_time, active_ts);
+				get_time_str(active_time, true, active_ts);
 			else
 				strcpy(active_ts, "-");
 
 			if (plugin_mtime)
-				get_time_str(plugin_mtime, plugin_ts);
+				get_time_str(plugin_mtime, true, plugin_ts);
 			else
 				strcpy(plugin_ts, "-");
 
@@ -1022,7 +1022,7 @@ void *logger(void *arg)
 					{
 						char time_str[32];
 						++p;
-						get_time_str(time(NULL), time_str);
+						get_time_str(time(NULL), true, time_str);
 						time_str[6] = 0;
 						if (memcmp(p, time_str, 6))
 							_switch_log_file();
@@ -1110,7 +1110,7 @@ static int _dlog_callback(void *state, const char *str, size_t length)
 	{
 		char time_str[32];
 		time_t t = dispatcher->msecRealtime() / 1000;
-		get_time_str(t, time_str);
+		get_time_str(t, true, time_str);
 		fprintf(_logfile_fp, "%c%s %s %d+0 %.*s\n", TYPECODE[DLOG_TYPE_SYS], time_str, the_ip, pid, (int)length, str);
 	}
 	return 0;
@@ -1303,7 +1303,7 @@ int main(int argc, char **argv)
 	if (daemon)
 		daemon_redirect_stderr(errlog_file);
 
-	get_time_str(time(NULL), start_time_str);
+	get_time_str(time(NULL), true, start_time_str);
 
 	dispatcher->setThreadPool(4, 32, STACK_SIZE);
 	dispatcher->start();

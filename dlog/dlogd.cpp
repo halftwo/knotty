@@ -144,7 +144,7 @@ static void make_time_str(time_t t, char buf[])
 {
 	if (t)
 	{
-		get_time_str(t, buf);
+		get_time_str(t, true, buf);
 	}
 	else
 	{
@@ -701,7 +701,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		char current_ts[32];
 		char active_ts[32], plugin_ts[32], block_overflow_ts[32], record_overflow_ts[32];
 
-		get_time_str(sec, current_ts);
+		get_time_str(sec, true, current_ts);
 		make_time_str(last_record_time, active_ts);
 		make_time_str(plugin_mtime, plugin_ts);
 		make_time_str(block_overflow_time, block_overflow_ts);
@@ -1586,7 +1586,7 @@ int main(int argc, char **argv)
 	if (daemon)
 		daemon_redirect_stderr(errlog_file);
 
-	get_time_str(time(NULL), start_time_str);
+	get_time_str(time(NULL), true, start_time_str);
 
 	{
 		struct dlog_record *rec = recpool_acquire();

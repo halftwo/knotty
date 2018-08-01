@@ -2,11 +2,16 @@
 #include <time.h>
 #include <stdio.h>
 
-char *get_time_str(time_t t, char buf[])
+char *get_time_str(time_t t, bool local, char buf[])
 {
 	struct tm tm;
 
-	localtime_r(&t, &tm);
+	if (local) {
+		localtime_r(&t, &tm);
+	} else {
+		gmtime_r(&t, &tm);
+	}
+
 	sprintf(buf, "%02d%02d%02d%c%02d%02d%02d",
 		tm.tm_year < 100 ? tm.tm_year : tm.tm_year - 100, tm.tm_mon + 1, tm.tm_mday,
 		"umtwrfsu"[tm.tm_wday], tm.tm_hour, tm.tm_min, tm.tm_sec);

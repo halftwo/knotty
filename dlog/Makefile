@@ -25,10 +25,10 @@ rebuild:
 	$(MAKE) clean
 	$(MAKE) all
 
-libdlog.a: dlog.o dlog_imp.o
+libdlog.a: dlog.o dlog_imp.o misc.o
 	$(AR) rcs $@ $?
 
-libdlog.so: dlog.o dlog_imp.o
+libdlog.so: dlog.o dlog_imp.o misc.o
 	g++ -shared -o $@ $?
 
 python: _dlog.so

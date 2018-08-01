@@ -36,6 +36,10 @@ void dlog_set_option(int option);
 
 void dlog_set_xformat(xfmt_callback_function xfmt_cb);
 
+char *dlog_local_time_str(time_t t, char buf[]);
+
+char *dlog_utc_time_str(time_t t, char buf[]);
+
 /*
    If the callback function return non-zero, do NOT write the log to dlogd.
    The callback must NOT call dlog, or it will result a deadlock.

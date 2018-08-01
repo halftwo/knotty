@@ -3,6 +3,7 @@
 #endif
 #include "dlog.h"
 #include "dlog_imp.h"
+#include "misc.h"
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -301,5 +302,15 @@ void xdlog(xfmt_callback_function xfmt, const char *identity,
 	va_start(ap, format);
 	vxdlog(xfmt, identity, tag, locus, format, ap);
 	va_end(ap);
+}
+
+char *dlog_local_time_str(time_t t, char buf[])
+{
+	return get_time_str(t, true, buf);
+}
+
+char *dlog_utc_time_str(time_t t, char buf[])
+{
+	return get_time_str(t, false, buf);
 }
 
