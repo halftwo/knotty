@@ -94,17 +94,13 @@ XIC_METHOD(CallbackServant, cb_time)
 	aw.param("con", current.con->info());
         aw.param("time", t);
 
-        struct tm tm;
-        char buf[32];
-
 	xic::VDictWriter dw = aw.paramVDict("strftime");
 
-        gmtime_r(&t, &tm);
-        strftime(buf, sizeof(buf), "%Y%m%d-%H%M%S", &tm);
+        char buf[32];
+	dlog_utc_time_str(t, buf);
         dw.kv("utc", buf);
 
-        localtime_r(&t, &tm);
-        strftime(buf, sizeof(buf), "%Y%m%d-%H%M%S", &tm);
+	dlog_local_time_str(t, buf);
         dw.kv("local", buf);
 
         return aw;

@@ -68,19 +68,15 @@ XIC_METHOD(DemoServant, time)
 	aw.param("con", current.con->info());
         aw.param("time", t);
 
-        struct tm tm;
-        char buf[32];
-
 	// kind is 127, nonsense, just for fun
 	// descriptor is 9, nonsense, just for fun
 	xic::VDictWriter dw = aw.paramVDictKind("strftime", 127, 9);
 
-        gmtime_r(&t, &tm);
-        strftime(buf, sizeof(buf), "%Y%m%d-%H%M%S", &tm);
+        char buf[32];
+	dlog_utc_time_str(t, buf);
         dw.kv("utc", buf, 8); // descriptor is 8, nonsense, just for fun
 
-        localtime_r(&t, &tm);
-        strftime(buf, sizeof(buf), "%Y%m%d-%H%M%S", &tm);
+	dlog_local_time_str(t, buf);
         dw.kv("local", buf, VBS_SPECIAL_DESCRIPTOR | 7);
 
         return aw;

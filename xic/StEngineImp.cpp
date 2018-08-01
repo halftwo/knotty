@@ -1454,9 +1454,7 @@ struct StEngine::StThrob: public STimerTask
 	StThrob(time_t start, const std::string& uuid)
 		: _euid(-1), _uuid(uuid), _enable(true), _minute(0)
 	{
-		struct tm tm;
-		localtime_r(&start, &tm);
-		strftime(_start_time, sizeof(_start_time), "%Y%m%d-%H%M%S", &tm);
+		dlog_local_time_str(start, _start_time);
 		gettimeofday(&_utv, NULL);
 		getrusage(RUSAGE_SELF, &_usage);
 
