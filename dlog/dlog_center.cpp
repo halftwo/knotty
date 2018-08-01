@@ -148,7 +148,7 @@ static FILE *_open_log_file(const char *dir, time_t *fp_time)
 
 	time_t now = dispatcher->msecRealtime() / 1000;
 	get_time_str(now, time_str);
-	snprintf(subdir, sizeof(subdir), "%s/%.6s", dir, time_str);
+	snprintf(subdir, sizeof(subdir), "%s/%.7s", dir, time_str);
 	snprintf(_log_pathname, sizeof(_log_pathname), "%s/%s%s", subdir, LOGFILE_PREFIX, time_str);
 
 	if (mkdir(subdir, 0775) == -1 && errno != EEXIST)
