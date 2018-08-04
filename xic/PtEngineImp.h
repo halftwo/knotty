@@ -79,7 +79,7 @@ class PtConnection: public ConnectionI, public XEvent::FdHandler, public XTimerT
 	iobuf_t _ib;
 	unsigned char _ibuf[1024];
 
-	bool _flagCipher;
+	int _flagCipher;
 
 	loc_t _oloc;
 	struct iovec *_ov;

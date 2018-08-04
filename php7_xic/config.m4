@@ -82,7 +82,7 @@ if test "$PHP_XIC" != "no"; then
 		xslib/decimal64.c xslib/mp.c xslib/bit.c \
 		xslib/unixfs.c xslib/vbs.c xslib/sha1.c xslib/sha256.c \
 		xslib/rijndael.c xslib/aes_eax.c xslib/cmac_aes.c \
-		dlog/dlog.c dlog/dlog_imp.c \
+		dlog/dlog.c dlog/dlog_imp.c dlog/misc.c \
 		xic/SecretBox.cpp xic/VData.cpp xic/VWriter.cpp \
 		xic/XicMessage.cpp xic/XicCheck.cpp xic/XicException.cpp \
 		xic/Context.cpp xic/MyCipher.cpp \

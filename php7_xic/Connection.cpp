@@ -303,6 +303,9 @@ void Connection::_check(int *timeout)
 			{
 				xstr_t K = srp6a->compute_K();
 				_cipher = new MyCipher(suite, K.data, K.len, false);
+				int mode = args.getInt("MODE", 0);
+				if (mode == 0)
+					_cipher->setMode0(true);
 			}
 		}
 
@@ -423,8 +426,16 @@ void Connection::_sendMessage(int64_t id, const xstr_t& service, const xstr_t& m
 	hdr.bodySize = xb.len + args.length;
 	if (_cipher)
 	{
-		hdr.flags |= XIC_FLAG_CIPHER;
-		hdr.bodySize += _cipher->extraSize();
+		if (_cipher->mode0())
+		{
+			hdr.flags |= XIC_FLAG_CIPHER_MODE0;
+			hdr.bodySize += _cipher->extraSizeMode0();
+		}
+		else
+		{
+			hdr.flags |= XIC_FLAG_CIPHER_MODE1;
+			hdr.bodySize += _cipher->extraSize();
+		}
 	}
 	xnet_msb32(&hdr.bodySize);
 
@@ -439,7 +450,7 @@ void Connection::_sendMessage(int64_t id, const xstr_t& service, const xstr_t& m
 	iov[k].iov_len = sizeof(hdr);
 	++k;
 
-	if (_cipher)
+	if (_cipher && _cipher->mode0())
 	{
 		iov[k].iov_base = _cipher->oIV;
 		iov[k].iov_len = sizeof(_cipher->oIV);
@@ -459,8 +470,16 @@ void Connection::_sendMessage(int64_t id, const xstr_t& service, const xstr_t& m
 	if (_cipher)
 	{
 		int num = k - body_k;
-		_cipher->oSeqIncrease();
-		_cipher->encryptStart(&hdr, sizeof(hdr));
+		if (_cipher->mode0())
+		{
+			_cipher->oSeqIncreaseMode0();
+			_cipher->encryptStartMode0(&hdr, sizeof(hdr));
+		}
+		else
+		{
+			_cipher->encryptStart(&hdr, sizeof(hdr));
+		}
+
 		for (int i = 0; i < num; ++i)
 		{
 			_cipher->encryptUpdate(body_iov[i].iov_base, body_iov[i].iov_base, body_iov[i].iov_len);
@@ -502,10 +521,15 @@ try
 	if (hdr.flags & ~XIC_FLAG_MASK)
 		throw XERROR_FMT(ProtocolException, "%s Unknown packet header flag %#x", _endpoint.c_str(), hdr.flags);
 
-	bool flagCipher = (hdr.flags & XIC_FLAG_CIPHER);
+	int flagCipher = (hdr.flags & (XIC_FLAG_CIPHER_MODE0 | XIC_FLAG_CIPHER_MODE1));
 	if (flagCipher && !_cipher)
 	{
 		throw XERROR_FMT(ProtocolException, "%s CIPHER flag set but No CIPHER negociated before", _endpoint.c_str());
+	}
+
+	if (flagCipher == (XIC_FLAG_CIPHER_MODE0 | XIC_FLAG_CIPHER_MODE1))
+	{
+		throw XERROR_FMT(ProtocolException, "%s CIPHER flag mode0 and mode1 both set", _endpoint.c_str());
 	}
 
 	uint32_t bodySize = xnet_m32(hdr.bodySize);
@@ -528,12 +552,12 @@ try
 	else if (hdr.msgType != 'A')
 		throw XERROR_FMT(ProtocolError, "Unexpected message type(%#x), endpoint=%s", hdr.msgType, _endpoint.c_str());
 
-	if (flagCipher)
+	if (flagCipher & XIC_FLAG_CIPHER_MODE0)
 	{
-		if (bodySize <= _cipher->extraSize())
+		if (bodySize <= _cipher->extraSizeMode0())
 			throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
 					_endpoint.c_str(), (unsigned long)bodySize);
-		bodySize -= _cipher->extraSize();
+		bodySize -= _cipher->extraSizeMode0();
 
 		resid = sizeof(_cipher->iIV);
 		rc = xnet_read_resid(_fd, _cipher->iIV, &resid, &timeout);
@@ -542,9 +566,16 @@ try
 			_throw_IOError("reading cipher IV", rc);
 		}
 
-		_cipher->iSeqIncrease();
-		if (!_cipher->decryptCheckSequence())
+		_cipher->iSeqIncreaseMode0();
+		if (!_cipher->decryptCheckSequenceMode0())
 			throw XERROR_FMT(ProtocolException, "%s Unmatched sequence number in IV", _endpoint.c_str());
+	}
+	else if (flagCipher & XIC_FLAG_CIPHER_MODE1)
+	{
+		if (bodySize <= _cipher->extraSize())
+			throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
+					_endpoint.c_str(), (unsigned long)bodySize);
+		bodySize -= _cipher->extraSize();
 	}
 
 	xstr_t body = XSTR_INIT((unsigned char*)malloc(bodySize), bodySize);
@@ -570,7 +601,11 @@ try
 			_throw_IOError("reading cipher MAC", rc);
 		}
 
-		_cipher->decryptStart(&hdr, sizeof(hdr));
+		if (flagCipher & XIC_FLAG_CIPHER_MODE0)
+			_cipher->decryptStartMode0(&hdr, sizeof(hdr));
+		else
+			_cipher->decryptStart(&hdr, sizeof(hdr));
+
 		_cipher->decryptUpdate(body.data, body.data, body.len);
 		bool ok = _cipher->decryptFinish();
 		if (!ok)

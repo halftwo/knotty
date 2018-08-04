@@ -3,13 +3,13 @@
 
 #include "util.h"
 
-#define PHP_XIC_EDITION     170615
-#define PHP_XIC_REVISION    180722
-#define PHP_XIC_RELEASE     10
+#define PHP_XIC_EDITION     180804
+#define PHP_XIC_REVISION    180804
+#define PHP_XIC_RELEASE     20
 
 #define PHP_XIC_VERSION     XS_TOSTR(PHP_XIC_EDITION) "." XS_TOSTR(PHP_XIC_REVISION) "." XS_TOSTR(PHP_XIC_RELEASE)
 
-#define XIC_SO_VERSION		"2.0.0"
+#define XIC_SO_VERSION		"2.1.0"
 
 
 extern zend_module_entry xic_module_entry;

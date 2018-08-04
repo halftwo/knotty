@@ -76,6 +76,7 @@ extern IpMatcherPtr xic_allow_ips;
 extern SecretBoxPtr xic_passport_secret;
 extern ShadowBoxPtr xic_passport_shadow;
 extern MyCipher::CipherSuite xic_cipher;
+extern int xic_cipher_mode;
 
 extern EnginePtr xic_engine;
 

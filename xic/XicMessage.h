@@ -14,8 +14,9 @@
 #include <stdint.h>
 #include <assert.h>
 
-#define XIC_FLAG_CIPHER		0x01
-#define XIC_FLAG_MASK		0x01
+#define XIC_FLAG_CIPHER_MODE0	(0x01 << 0)
+#define XIC_FLAG_CIPHER_MODE1	(0x01 << 1)
+#define XIC_FLAG_MASK		0x03
 
 namespace xic
 {
