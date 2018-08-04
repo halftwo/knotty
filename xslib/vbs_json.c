@@ -967,7 +967,7 @@ static int _print_string(writer_t *wr, const xstr_t *xs, int flags)
 		int ch = (unsigned char)s.data[pos];
 		if (ISMETA(ch) && (escape_unicode || ch < 0x80))
 		{
-			char esc[12];
+			char esc[16];
 			unsigned char x;
 			int esc_len = 0;
 
