@@ -441,7 +441,11 @@ void Connection::_sendMessage(int64_t id, const xstr_t& service, const xstr_t& m
 
 	int count = 2 + args.block_count;
 	if (_cipher)
-		count += 2;
+	{
+		count++;
+		if (_cipher->mode0())
+			count++;
+	}
 
 	struct iovec *iov = (struct iovec *)alloca(count * sizeof(iov[0]));
 	int k = 0;
