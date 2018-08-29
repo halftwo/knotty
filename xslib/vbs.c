@@ -268,7 +268,7 @@ const bset_t vbs_meta_bset =
 };
 
 /*
- * alpha_bset plus #$%&()*./:<=>?@\_
+ * alpha_bset plus #$&()*:/<=>?@\_
  */
 static const bset_t token0_bset = 
 {
@@ -276,7 +276,7 @@ static const bset_t token0_bset =
 	0x00000000, /* 0000 0000 0000 0000  0000 0000 0000 0000 */
 
 		    /* ?>=< ;:98 7654 3210  /.-, +*)( '&%$ #"!  */
-	0xf4008778, /* 1111 0100 0000 0000  1000 0111 0111 1000 */
+	0xf4008758, /* 1111 0100 0000 0000  1000 0111 0101 1000 */
 
 		    /* _^]\ [ZYX WVUT SRQP  ONML KJIH GFED CBA@ */
 	0x97ffffff, /* 1001 0111 1111 1111  1111 1111 1111 1111 */
