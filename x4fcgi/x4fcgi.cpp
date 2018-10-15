@@ -17,8 +17,8 @@
 #include <vector>
 
 #define X4FCGI_V_EDITION          170802
-#define X4FCGI_V_REVISION         171010
-#define X4FCGI_V_RELEASE          16
+#define X4FCGI_V_REVISION         181015
+#define X4FCGI_V_RELEASE          22
 
 #define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
 
@@ -162,7 +162,7 @@ void FCallback::response(const FcgiAnswerPtr& fa)
 		xic::AnswerPtr answer;
 		if (_displayError && err->length > 0)
 		{
-			xstr_t stderr_xs = XSTR_CONST("__stderr__");
+			xstr_t stderr_xs = XSTR_CONST("__x4fcgi_stderr__");
 			int len = vbs_size_of_string(stderr_xs.len) + vbs_size_of_string(err->length);
 			answer = xic::Answer::create(answer_size + len);
 			xstr_t body = answer->body();
