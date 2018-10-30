@@ -498,36 +498,44 @@ error:
 	ZVAL_NULL(return_value);
 }
 
+static void copymem(char **ptr, char *end, const char *src, int n)
+{
+	if (*ptr < end)
+	{
+		int left = end - *ptr;
+		if (n > left)
+			n = left;
+		memcpy(*ptr, src, n);
+		*ptr += n;
+	}
+}
+
 PHP_FUNCTION(dlog)
 {
-	char *identity = NULL, *tag = NULL, *content = NULL;
+	char *identity = NULL, *tag = NULL;
+	zval *content = NULL;
 	int ilen = 0, tlen = 0, clen = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sss",
-			&identity, &ilen, &tag, &tlen, &content, &clen) == FAILURE)
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssz",
+			&identity, &ilen, &tag, &tlen, &content) == FAILURE)
 	{
 		// Do nothing
 	}
 
 	xstr_t tag_xs = XSTR_INIT((unsigned char *)tag, tlen);
 
-	xstr_t content_xs = XSTR_INIT((unsigned char *)content, clen);
-
-	xstr_t identity_xs;
-	unsigned char idbuf[64];
+	char idbuf[64];
+	char *p = idbuf, *end = idbuf + sizeof(idbuf) - 1;
+	zval *self_id = get_xic_self_id();
+	copymem(&p, end, "PHP+", 4);
+	copymem(&p, end, Z_STRVAL_P(self_id), Z_STRLEN_P(self_id));
 	if (ilen > 0)
 	{
-		int k = ilen + 4;
-		if (k > sizeof(idbuf) - 1)
-			k = sizeof(idbuf) - 1;
-		memcpy(idbuf, "PHP:", 4);
-		memcpy(idbuf + 4, identity, k - 4);
-		xstr_init(&identity_xs, idbuf, k);
+		copymem(&p, end, "+", 1);
+		copymem(&p, end, identity, ilen);
 	}
-	else
-	{
-		xstr_const(&identity_xs, "PHP");
-	}
+	*p = 0;
+	xstr_t identity_xs = XSTR_INIT((unsigned char*)idbuf, p - idbuf);
 
 	const char *filename = zend_get_executed_filename(TSRMLS_CC);
 	int lineno = zend_get_executed_lineno(TSRMLS_CC);
@@ -555,7 +563,29 @@ PHP_FUNCTION(dlog)
 
 	xstr_t locus_xs = XSTR_INIT((unsigned char *)lobuf, llen);
 
-	zdlog(&identity_xs, &tag_xs, &locus_xs, &content_xs);
+	if (Z_TYPE_P(content) == IS_STRING)
+	{
+		char *s = Z_STRVAL_P(content);
+		int len = Z_STRLEN_P(content);
+		xstr_t content_xs = XSTR_INIT((unsigned char *)s, len);
+		zdlog(&identity_xs, &tag_xs, &locus_xs, &content_xs);
+	}
+	else
+	{
+		try {
+			smart_str ss = {0};
+			vbs_packer_t pk;
+			vbs_packer_init(&pk, smart_write, &ss, -1);
+			vbs::v_encode_r(&pk, content TSRMLS_CC);
+			xstr_t content_xs = XSTR_INIT((unsigned char *)ss.c, ss.len);
+			xdlog(vbs_xfmt, idbuf, tag, lobuf, "%p{>VBS_RAW<}", &content_xs);
+			smart_str_free(&ss);
+		}
+		catch (std::exception& ex)
+		{
+			raise_Exception(0 TSRMLS_CC, "%s", ex.what());
+		}
+	}
 }
 
 static void php_xic_init_globals(zend_xic_globals *xic_globals TSRMLS_DC)
