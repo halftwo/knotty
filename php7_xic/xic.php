@@ -3,6 +3,7 @@
  * xic functions that implemented using PHP (instead of C language).
  * @package xic
  * @author jiagui
+ * @version 181030.181030.22
  */
 #
 # xic.so extension includes following constants:
@@ -26,7 +27,7 @@
 #	string vbs_pack(array $values);
 #	array vbs_unpack(string $vbs, int $offset, int $num [, int &$used]);
 #
-#	void dlog(string $identity, string $tag, string $content);
+#	void dlog(string $identity, string $tag, mixed $content);
 #
 #
 # xic.so extension also includes an exception class XError with construction function
