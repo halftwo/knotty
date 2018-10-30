@@ -206,7 +206,7 @@ static void do_compress(const char *pathname)
 
 		char cmd[PATH_MAX];
 		snprintf(cmd, sizeof(cmd), 
-			"/usr/bin/env PATH=.:%s:/usr/local/bin:/usr/bin:${PATH} lz4 -f %s %s 2> /dev/null",
+			"/usr/bin/env PATH=.:%s:/usr/local/bin:/usr/bin lz4 -f %s %s 2> /dev/null",
 			_program_dir, pathname, path2);
 		int rc = system(cmd);
 		status = WEXITSTATUS(rc);
@@ -223,7 +223,7 @@ static void do_compress(const char *pathname)
 	unlink(path2);
 }
 
-static void *compressor(void *arg)
+static void *compressor_thread(void *arg)
 {
 	char *pathname = (char *)arg;
 	pthread_detach(pthread_self());
@@ -240,7 +240,7 @@ static void _switch_log_file()
 	fclose(_logfile_fp);
 
 	pthread_t thr;
-	pthread_create(&thr, NULL, compressor, strdup(_log_pathname));
+	pthread_create(&thr, NULL, compressor_thread, strdup(_log_pathname));
 
 	_logfile_size = 0;
 	_logfile_fp = _open_log_file(_log_dir, &_logfile_time);
@@ -1072,9 +1072,12 @@ static int dw_callback(const dirwalk_item_t *item, void *ctx)
                 int prefix_len = sizeof(LOGFILE_PREFIX) - 1;
                 if (strncmp(filename, LOGFILE_PREFIX, prefix_len) == 0)
                 {
+			const char *current_time = (const char *)ctx;
                         const char *dir_end = filename - 1;
                         const char *dir_start = (char*)memrchr(pathname, '/', dir_end - pathname);
-                        if (dir_start && dir_end - dir_start == 8 && memcmp(dir_start + 1, &filename[prefix_len], 7) == 0)
+                        if (dir_start && dir_end - dir_start == 8 
+				&& memcmp(dir_start + 1, &filename[prefix_len], 7) == 0
+				&& strcmp(&filename[prefix_len], current_time) < 0)
                         {
                                 do_compress(item->path);
                         }
@@ -1084,9 +1087,14 @@ static int dw_callback(const dirwalk_item_t *item, void *ctx)
 	return 0;
 }
 
-void handle_old_logs()
+void *handle_old_logs_thread(void *)
 {
-	dirwalk_run(_log_dir, dw_callback, NULL);
+	pthread_detach(pthread_self());
+
+	char time_str[32];
+	get_time_str(time(NULL), true, time_str);
+	dirwalk_run(_log_dir, dw_callback, time_str);
+	return NULL;
 }
 
 static void sig_handler(int sig)
@@ -1098,6 +1106,10 @@ static void cleanup()
 {
 	if (_logfile_fp)
 		fclose(_logfile_fp);
+
+	char pathname[PATH_MAX];
+	snprintf(pathname, sizeof(pathname), "%s/zlog", _log_dir);
+	unlink(pathname);
 
 	do_compress(_log_pathname);
 }
@@ -1243,7 +1255,7 @@ int main(int argc, char **argv)
 		goto error;
 	}
 
-	handle_old_logs();
+	pthread_create(&thr, NULL, handle_old_logs_thread, NULL);
 
 	dispatcher = XEvent::Dispatcher::create(NULL);
 
