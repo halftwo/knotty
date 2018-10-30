@@ -25,7 +25,7 @@ FcgiQuest::FcgiQuest(ostk_t *ostk, const FcgiClientPtr& client, const FcgiCallba
 
 	const FcgiConfig& conf = _client->conf();
 	_request_uri = ostk_xstr_maker(_ostk)('/')(_kq->service())("::")(_kq->method())
-				.printf("/%04x-%08x", _rid, random()).end();
+				.printf("#%04x-%08x", _rid, random()).end();
 	_script_filename = ostk_xstr_maker(_ostk)(conf.rootdir)('/')(_kq->service())('/')(conf.entryfile).end();
 }
 
