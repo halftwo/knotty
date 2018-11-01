@@ -977,12 +977,20 @@ ConnectionIPtr ProxyI::pickConnection(const QuestPtr& quest)
 				hint = ht->d_int;
 			else if (ht->kind == VBS_STRING || ht->kind == VBS_BLOB)
 				hint = crc32_checksum(ht->d_blob.data, ht->d_blob.len);
-			else if (ht->kind == VBS_FLOATING)
-				hint = ht->d_floating;
-			else if (ht->kind == VBS_DECIMAL)
-				decimal64_to_integer(ht->d_decimal64, &hint);
 			else
-				ht = NULL;
+			{
+				char buf[32];
+				int n = 0;
+				if (ht->kind == VBS_FLOATING)
+					n = snprintf(buf, sizeof(buf), "%.16G", ht->d_floating);
+				else if (ht->kind == VBS_DECIMAL)
+					n = decimal64_to_cstr(ht->d_decimal64, buf);
+
+				if (n > 0)
+					hint = crc32_checksum(buf, n);
+				else
+					ht = NULL;
+			}
 		}
 
 		if (!ht && xic_dlog_warning)
