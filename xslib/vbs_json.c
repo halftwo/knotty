@@ -1151,7 +1151,7 @@ static int _vbs_to_json(vbs_unpacker_t *job, writer_t *wr, int flags, bool must_
 		r = v.d_bool ? x_write(wr, "true", 4) : x_write(wr, "false", 5);
 		break;
 	case VBS_FLOATING:
-		n = snprintf(buf, sizeof(buf), "%#.17G", v.d_floating);
+		n = snprintf(buf, sizeof(buf), "%.16G", v.d_floating);
 		if (buf[n-1] == '.')
 			buf[n++] = '0';
 		r = x_write(wr, buf, n);
@@ -1267,7 +1267,7 @@ static int _print_vbs_data(writer_t *wr, const vbs_data_t *v, int flags)
 		r = v->d_bool ? x_write(wr, "true", 4) : x_write(wr, "false", 5);
 		break;
 	case VBS_FLOATING:
-		n = snprintf(buf, sizeof(buf), "%#.17G", v->d_floating);
+		n = snprintf(buf, sizeof(buf), "%.16G", v->d_floating);
 		if (buf[n-1] == '.')
 			buf[n++] = '0';
 		r = x_write(wr, buf, n);

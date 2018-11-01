@@ -504,7 +504,7 @@ int vbs_print_data(const vbs_data_t *pv, iobuf_t *ob)
 			r = iobuf_puts(ob, pv->d_bool ? "~T" : "~F");
 			break;
 		case VBS_FLOATING:
-			r = iobuf_printf(ob, "%#.17G", pv->d_floating);
+			r = iobuf_printf(ob, "%.16G", pv->d_floating);
 			break;
 		case VBS_DECIMAL:
 			r = vbs_print_decimal64(pv->d_decimal64, ob);

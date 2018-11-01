@@ -561,7 +561,7 @@ def _print_one(out, x, encoding, errors):
         if x: out.write("~T")
         else: out.write("~F")
     elif t == float:
-        out.write("%#.17G" % x)
+        out.write("%.16G" % x)
     elif t == Decimal:
         s = str(x) + 'D'
         out.write(s)

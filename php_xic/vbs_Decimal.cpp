@@ -103,7 +103,7 @@ bool create_Decimal(zval* obj, zval* zv TSRMLS_DC)
 		}
 		else if (Z_TYPE_P(zv) == IS_DOUBLE)
 		{
-			snprintf(buf, sizeof(buf), "%#.17G", Z_DVAL_P(zv));
+			snprintf(buf, sizeof(buf), "%.16G", Z_DVAL_P(zv));
 		}
 		else
 		{
