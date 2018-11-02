@@ -77,7 +77,7 @@ if test "$PHP_XIC" != "no"; then
 		xslib/xstr.c xslib/bset.c xslib/xstr_cxx.cpp \
 		xslib/rope.c xslib/xio.c xslib/xmem.c xslib/msec.c \
 		xslib/xlog.c xslib/xformat.c xslib/iobuf.c \
-		xslib/ostk.c xslib/xbase32.c xslib/xbuf.c \
+		xslib/ostk.c xslib/xbase32.c xslib/xbase57.c xslib/xbuf.c \
 		xslib/decContext.c xslib/decDouble.c xslib/decQuad.c \
 		xslib/decimal64.c xslib/mp.c xslib/bit.c \
 		xslib/unixfs.c xslib/vbs.c xslib/sha1.c xslib/sha256.c \

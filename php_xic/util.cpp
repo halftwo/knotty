@@ -139,7 +139,7 @@ ssize_t get_self_process_id(char *id, size_t size)
 
 	int len = size - 4;
 	int half = len / 2;
-	urandom_generate_id(id, len + 1);
+	urandom_generate_base57id(id, len + 1);
 	memmove(id + half + 3, id + half, len - half);
 	_get_pid_base32(id + half);
 	len += 3;

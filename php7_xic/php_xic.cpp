@@ -142,7 +142,7 @@ zval *get_xic_self_id()
 	zval* self_id = &XIC_G(the_self_id);
 	if (Z_ISUNDEF(*self_id))
 	{
-		char id[24];
+		char id[20];
 		int len = get_self_process_id(id, sizeof(id));
 		ZVAL_STRINGL(self_id, id, len);
 	}
