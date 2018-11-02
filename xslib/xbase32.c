@@ -3,14 +3,6 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#ifdef XSLIB_RCSID
-static const char rcsid[] = "$Id: xbase32.c 384 2016-10-13 01:42:59Z gremlin $";
-#endif
-
-const char xbase32_alphabet[] = "0123456789abcdefghjkmnpqrstvwxyz";
-const char xbase32_Alphabet[] = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-
-
 #define NI	-3
 #define SP	-2
 
@@ -24,6 +16,9 @@ static int8_t detab[128] = {
 	-1, 10, 11, 12, 13, 14, 15, 16, 17, -1, 18, 19, -1, 20, 21, -1,
 	22, 23, 24, 25, 26, -1, 27, 28, 29, 30, 31, -1, -1, -1, -1, -1,
 };
+
+const char xbase32_alphabet[] = "0123456789abcdefghjkmnpqrstvwxyz";
+const char xbase32_Alphabet[] = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
 static ssize_t _encode(const char *alphabet, char *out, const void *in, ssize_t len)
 {
@@ -72,7 +67,7 @@ static ssize_t _encode(const char *alphabet, char *out, const void *in, ssize_t 
 		d[0] = alphabet[c0 >> 3];
 	}
 
-	d += XBASE32_LEN(len);
+	d += XBASE32_ENCODED_LEN(len);
 	return d - out;
 }
 

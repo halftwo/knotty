@@ -1,0 +1,322 @@
+#include "xbase57.h"
+#include <stdint.h>
+#include <stdbool.h>
+#include <limits.h>
+
+#define NI	-3
+#define SP	-2
+
+static int8_t detab[256] = {
+	NI, -1, -1, -1, -1, -1, -1, -1, -1, SP, SP, SP, SP, SP, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	SP, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1,
+	-1, 10, 11, 12, 13, 14, 15, 16, 17, -1, 18, 19, 20, 21, 22, -1,
+	23, 24, 25, 26, 27, -1, 28, 29, 30, 31, 32, -1, -1, -1, -1, -1,
+	-1, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, -1, 44, 45, -1,
+	46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+};
+
+const char xbase57_alphabet[] = "0123456789ABCDEFGHJKLMNPQRSTVWXYZabcdefghijkmnpqrstuvwxyz";
+
+ssize_t xbase57_encode(char *out, const void *in, size_t len)
+{
+	const unsigned char *data = (const unsigned char *)in;
+	char *buf = out;
+
+	for (; len >= 8; len -= 8)
+	{
+		int i;
+		uint64_t acc = ((uint64_t)data[0] << 56)
+			| ((uint64_t)data[1] << 48)
+			| ((uint64_t)data[2] << 40)
+			| ((uint64_t)data[3] << 32)
+			| ((uint64_t)data[4] << 24)
+			| ((uint64_t)data[5] << 16)
+			| ((uint64_t)data[6] << 8)
+			| data[7];
+		data += 8;
+
+		for (i = 10; i > 0; i--)
+		{
+			buf[i] = xbase57_alphabet[acc % 57];
+			acc /= 57;
+		}
+		buf[0] = xbase57_alphabet[acc];
+		buf += 11;
+	}
+
+	if (len > 0)
+	{
+		int i;
+		int n = XBASE57_ENCODED_LEN(len);
+		uint64_t acc = 0;
+		for (i = 0; i < len; i++)
+		{
+			int shift = (7 - i) * 8;
+			acc |= ((uint64_t)data[i] << shift);
+		}
+
+		for (i = 11 - n; i > 0; i--)
+		{
+			acc /= 57;
+		}
+
+		for (i = n - 1; i > 0; i--)
+		{
+			buf[i] = xbase57_alphabet[acc % 57];
+			acc /= 57;
+		}
+		buf[0] = xbase57_alphabet[acc];
+		buf += n;
+	}
+
+	*buf = 0;
+	return buf - out;
+}
+
+ssize_t xbase57_decode(void *out, const char *in, size_t len)
+{
+	const char *src = in, *end = (const char *)-1;
+	char *dst = (char *)out;
+	bool find_end = true;
+	uint64_t acc = 0;
+	int cnt = 0;
+	const char *last = src;
+
+	if ((ssize_t)len >= 0)
+	{
+		end = src + len;
+		find_end = false;
+	}
+
+	for (; src < end; ++src)
+	{
+		int de = detab[(unsigned char)*src];
+		if (de < 0)
+		{
+			if (de == SP)
+				continue;
+
+			if (de == NI && find_end)
+				break;
+
+			return -(src + 1 - in);
+		}
+
+		if (cnt < 10)
+		{
+			last = src;
+			acc = acc * 57 + de;
+			++cnt;
+		}
+		else
+		{
+			/*
+			 * Detect overflow.  The largest 
+			 * 11-letter possible is   "txJqThJCLBx" to encode 
+			 * 0xffffffffffffffff, and "txJqThJCLBx" / 57 gives
+			 * 0x047dc11f7047dc11 at this point (i.e.
+			 * 0xffffffffffffffff / 57 = 0x047dc11f7047dc11)
+			 */
+			if (acc > UINT64_C(0x047dc11f7047dc11))
+				return -(last + 1 - in);
+
+			acc *= 57;
+			if (acc > UINT64_C(0xffffffffffffffff) - de)
+				return -(src + 1 - in);
+			acc += de;
+
+			*dst++ = acc >> 56;
+			*dst++ = acc >> 48;
+			*dst++ = acc >> 40;
+			*dst++ = acc >> 32;
+			*dst++ = acc >> 24;
+			*dst++ = acc >> 16;
+			*dst++ = acc >> 8;
+			*dst++ = acc;
+
+			acc = 0;
+			cnt = 0;
+		}
+	}
+
+	if (cnt)
+	{
+		static int8_t dlens[] = { 0, -1, 1, 2, -1, 3, 4, 5, -1, 6, 7, };
+		static uint64_t maxes[] = {0, 
+				UINT64_C(0x047944da05d3ad0c),	/* tjzzzzzzzzz / 57 */
+				UINT64_C(0x047dbddd16ed96b0),	/* txGzzzzzzzz / 57 */
+				UINT64_C(0x047dc11aff23a734),	/* txJpvzzzzzz / 57 */
+				UINT64_C(0x047dc11f6c4df39d),	/* txJqTazzzzz / 57 */
+				UINT64_C(0x047dc11f70446bdc),	/* txJqThGzzzz / 57 */
+				UINT64_C(0x047dc11f7047d7ca),	/* txJqThJC0zz / 57 */
+				UINT64_C(0x047dc11f7047dc0d),	/* txJqThJCL7z / 57 */
+		};
+
+		int i;
+		int shift;
+		int dlen = dlens[cnt];
+		if (dlen < 0)
+			return -(last + 1 - in);
+
+		for (i = cnt; i < 10; ++i)
+			acc = acc * 57 + 56;
+
+		if (acc > maxes[dlen])
+			return -(last + 1 - in);
+
+		acc = acc * 57 + 56;
+		for (i = 0; i < dlen; i++)
+		{
+			shift = (7 - i) * 8;
+			*dst++ = acc >> shift;
+		}
+
+		shift = (8 - dlen) * 8;
+		acc >>= shift;
+		acc <<= shift;
+
+		for (i = 11 - cnt; i > 0; i--)
+			acc /= 57;
+
+		if (*last != xbase57_alphabet[acc%57])
+			return -(last + 1 - in);
+	}
+
+	return dst - (char *)out;
+}
+
+
+#ifdef TEST_XBASE57
+
+#include "opt.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
+
+void usage(const char *prog)
+{
+	fprintf(stderr, "usage: %s -e string\n", prog);
+	fprintf(stderr, "       %s -x -d string\n", prog);
+	fprintf(stderr, "       %s -t\n", prog);
+	fprintf(stderr, "       %s -f file\n", prog);
+	exit(1);
+}
+
+int main(int argc, char **argv)
+{
+	char buf[1024];
+	char *prog = argv[0];
+	int optend;
+	const char *str = NULL;
+	const char *file = NULL;
+	bool test = false;
+	bool decode = false;
+	bool encode = false;
+	bool hex = false;
+
+	OPT_BEGIN(argc, argv, &optend) {
+	case 'e':
+		encode = true;
+		str = OPT_EARG(usage(prog));
+		break;
+	case 'd':
+		decode = true;
+		str = OPT_EARG(usage(prog));
+		break;
+	case 't':
+		test = true;
+		break;
+	case 'f':
+		file = OPT_EARG(usage(prog));
+		break;
+	case 'x':
+		hex = true;
+		break;
+	default:
+		usage(prog);
+	} OPT_END();
+
+	if (encode)
+	{
+		int len = strlen(str);
+		xbase57_encode(buf, str, len);
+		printf("encoded: %s\n", buf);
+	}
+	else if (decode)
+	{
+		int inlen = strlen(str);
+		int len = xbase57_decode(buf, str, inlen);
+		if (len > 0)
+		{
+			printf("decoded %d: ", len);
+			if (hex)
+			{
+				int i;
+				for (i = 0; i < len; i++)
+					printf("%02x", (uint8_t)buf[i]);
+			}
+			else
+			{
+				printf("%.*s", len, buf);
+			}
+			printf("\n");
+		}
+		else
+			fprintf(stderr, "decode failed\n");
+	}
+	else if (test)
+	{
+		int i, k;
+		char t[8] = { -1, -1, -1, -1, -1, -1, -1, -1, };
+		for (i = 1; i <= 8; i++)
+		{
+			xbase57_encode(buf, t, i);
+			printf("encoded %d ", i);
+			for (k = 0; k < i; k++)
+				fputs("FF", stdout);
+			for (k = i; k < 8; k++)
+				fputs("  ", stdout);
+			printf(" : %s\n", buf);
+		}
+	}
+	else if (file != NULL)
+	{
+		FILE *fp = fopen(file, "rb");
+		if (fp)
+		{
+			while (1)
+			{
+				char buf[48];
+				char line[80];
+				int n = fread(buf, 1, sizeof(buf), fp);
+				if (n > 0)
+				{
+					int len = xbase57_encode(line, buf, n);
+					line[len++] = '\n';
+					fwrite(line, 1, len, stdout);
+				}
+				else
+					break;
+			}
+			fclose(fp);
+		}
+	}
+	else
+	{
+		usage(prog);
+	}
+	return 0;
+}
+
+#endif

@@ -1,5 +1,6 @@
 #include "urandom.h"
 #include "xbase32.h"
+#include "xbase57.h"
 #include "xnet.h"
 #include <sys/types.h>
 #include <sys/time.h>
@@ -102,7 +103,7 @@ int urandom_get_int(int a, int b)
 	}
 }
 
-ssize_t urandom_generate_id(char id[], size_t size)
+ssize_t urandom_generate_base32id(char id[], size_t size)
 {
 	size_t bsize, len, i;
 	unsigned char *buf;
@@ -127,7 +128,7 @@ ssize_t urandom_generate_id(char id[], size_t size)
 		u32 += buf[i];
 	}
 
-	b32str = alloca(XBASE32_LEN(bsize) + 1);
+	b32str = alloca(XBASE32_ENCODED_LEN(bsize) + 1);
 	len = xbase32_encode(b32str, buf, bsize);
 	if (len >= size)
 	{
@@ -137,6 +138,44 @@ ssize_t urandom_generate_id(char id[], size_t size)
 
 	memcpy(id, b32str, len + 1);
 	id[0] = xbase32_alphabet[10 + (u32 / (UINT32_MAX / 22 + 1))]; /* make it always letter instead of digit */
+	return len;
+}
+
+ssize_t urandom_generate_base57id(char id[], size_t size)
+{
+	size_t bsize, len, i;
+	unsigned char *buf;
+	char *b57str;
+	uint32_t u32;
+
+	len = size - 1;
+	if ((ssize_t)len <= 0)
+		return len;
+
+	bsize = XBASE57_DECODED_LEN(len) + 1;
+	if (bsize < sizeof(uint32_t))
+		bsize = sizeof(uint32_t);
+
+       	buf = alloca(bsize);
+	urandom_get_bytes(buf, bsize);
+
+	u32 = (uint8_t)buf[0];
+	for (i = 1; i < sizeof(uint32_t); ++i)
+	{
+		u32 <<= 8;
+		u32 += buf[i];
+	}
+
+	b57str = alloca(XBASE57_ENCODED_LEN(bsize) + 1);
+	len = xbase57_encode(b57str, buf, bsize);
+	if (len >= size)
+	{
+		len = size - 1;
+		b57str[len] = 0;
+	}
+
+	memcpy(id, b57str, len + 1);
+	id[0] = xbase57_alphabet[10 + (u32 / (UINT32_MAX / 47 + 1))]; /* make it always letter instead of digit */
 	return len;
 }
 

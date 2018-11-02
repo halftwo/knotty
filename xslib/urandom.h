@@ -25,7 +25,13 @@ int urandom_get_int(int a, int b);
  * lower-case base32 characters.
  * The id will always be null-terminated.
  */
-ssize_t urandom_generate_id(char id[], size_t size); 
+ssize_t urandom_generate_base32id(char id[], size_t size); 
+
+
+/* The id begins with a letter and contains only base57 characters.
+ * The id will always be null-terminated.
+ */
+ssize_t urandom_generate_base57id(char id[], size_t size); 
 
 
 #ifdef __cplusplus

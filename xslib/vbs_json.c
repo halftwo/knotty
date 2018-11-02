@@ -1097,7 +1097,7 @@ static int _print_string(writer_t *wr, const xstr_t *xs, int flags)
 static int _print_blob(writer_t *wr, const xstr_t *xs)
 {
 #define BLOCK_SIZE	192
-	char buf[XBASE64_LEN(BLOCK_SIZE) + 1];
+	char buf[XBASE64_ENCODED_LEN(BLOCK_SIZE) + 1];
 	xstr_t s = *xs;
 	ssize_t n;
 

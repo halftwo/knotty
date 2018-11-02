@@ -1,13 +1,14 @@
 ##
 ##
 
-EDITION  = 181101
-REVISION = 181101
-RELEASE  = 23
+EDITION  = 181102
+REVISION = 181102
+RELEASE  = 21
 
 XSLIB_VERSION = $(EDITION).$(REVISION).$(RELEASE)
 
-OBJS_C = xsdef.o strbuf.o bit.o xnet.o xbase64.o xbase85.o xbase32.o \
+OBJS_C = xsdef.o strbuf.o bit.o xnet.o \
+	xbase64.o xbase85.o xbase32.o xbase57.o \
 	obpool.o jenkins.o md5.o sha1.o sha256.o crc.o crc64.o cpu.o \
 	xlog.o rdtsc.o hseq.o xbuf.o vbs_build.o rbtree.o \
 	daemon.o strhash.o hdict.o rijndael.o setting.o xutf8.o \

@@ -1,4 +1,3 @@
-/* $Id: xbase32.h 384 2016-10-13 01:42:59Z gremlin $ */
 /*
    The used character set is defined in http://www.crockford.com/wrmg/base32.html
 
@@ -17,7 +16,8 @@ extern "C" {
 #endif
 
 
-#define XBASE32_LEN(n)	(((n) * 8 + 4) / 5)
+#define XBASE32_ENCODED_LEN(n)	(((n) * 8 + 4) / 5)
+#define XBASE32_DECODED_LEN(n)	(((n) * 5) / 8)
 
 /*
  * Not used alphabetic characters:

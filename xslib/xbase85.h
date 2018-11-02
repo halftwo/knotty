@@ -1,4 +1,3 @@
-/* $Id: xbase85.h 379 2016-10-12 05:09:07Z gremlin $ */
 /*
    The used character set is defined in RFC1924.
 
@@ -16,7 +15,8 @@ extern "C" {
 #endif
 
 
-#define XBASE85_LEN(n)	(((n) * 5 + 3) / 4)
+#define XBASE85_ENCODED_LEN(n)	(((n) * 5 + 3) / 4)
+#define XBASE85_DECODED_LEN(n)	(((n) * 4) / 5)
 
 /*
  * Not used 9 non-space characters:

@@ -3,12 +3,6 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#ifdef XSLIB_RCSID
-static const char rcsid[] = "$Id: xbase85.c 379 2016-10-12 05:09:07Z gremlin $";
-#endif
-
-const char xbase85_alphabet[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
-
 #define NI	-3
 #define SP	-2
 
@@ -30,6 +24,8 @@ static int8_t detab[256] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
+
+const char xbase85_alphabet[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
 
 ssize_t xbase85_encode(char *out, const void *in, size_t len)
 {
@@ -111,7 +107,7 @@ ssize_t xbase85_decode(void *out, const char *in, size_t len)
 			if (de == NI && find_end)
 				break;
 
-			return -(src - in);
+			return -(src + 1 - in);
 		}
 
 		if (cnt < 4)
@@ -130,9 +126,9 @@ ssize_t xbase85_decode(void *out, const char *in, size_t len)
 			 * 0xffffffff = 0x03030303 * 85).
 			 */
 			if (0x03030303 < acc)
-				return -(last - in);
+				return -(last + 1 - in);
 			if (0xffffffff - de < (acc *= 85))
-				return -(src - in);
+				return -(src + 1 - in);
 			acc += de;
 
 			*dst++ = acc >> 24;
@@ -146,7 +142,7 @@ ssize_t xbase85_decode(void *out, const char *in, size_t len)
 	}
 
 	if (cnt == 1)
-		return -(last - in);
+		return -(last + 1 - in);
 
 	if (cnt)
 	{
@@ -156,7 +152,7 @@ ssize_t xbase85_decode(void *out, const char *in, size_t len)
 			acc *= 85;
 
 		if (0x03030300 < acc || (0x03030000 < acc && cnt == 3) || (0x03000000 < acc && cnt == 2))
-			return -(last - in);
+			return -(last + 1 - in);
 		acc *= 85;
 		acc += 0xffffff >> (cnt - 2) * 8;
 
@@ -164,19 +160,19 @@ ssize_t xbase85_decode(void *out, const char *in, size_t len)
 		{
 			acc &= ~(uint_fast32_t)0xffffff;
 			if (*last != xbase85_alphabet[(acc / (85 * 85 * 85)) % 85])
-				return -(last - in);
+				return -(last + 1 - in);
 		}
 		else if (cnt == 3)
 		{
 			acc &= ~(uint_fast32_t)0xffff;
 			if (*last != xbase85_alphabet[(acc / (85 * 85)) % 85])
-				return -(last - in);
+				return -(last + 1 - in);
 		}
 		else
 		{
 			acc &= ~(uint_fast32_t)0xff;
 			if (*last != xbase85_alphabet[(acc / 85) % 85])
-				return -(last - in);
+				return -(last + 1 - in);
 		}
 
 		*dst++ = acc >> 24;
@@ -244,7 +240,7 @@ int main(int argc, char **argv)
 		{
 			while (1)
 			{
-				char buf[60];
+				char buf[52];
 				char line[80];
 				int n = fread(buf, 1, sizeof(buf), fp);
 				if (n > 0)

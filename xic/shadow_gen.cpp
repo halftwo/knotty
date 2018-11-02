@@ -1,14 +1,13 @@
 #include "ShadowBox.h"
 #include "xslib/Srp6a.h"
 #include "xslib/opt.h"
-#include "xslib/xbase32.h"
 #include "xslib/xbase64.h"
 #include "xslib/urandom.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"180619.22"
+#define SHADOW_GEN_VERSION	"181102.22"
 
 void display_version(const char *program)
 {
@@ -152,7 +151,7 @@ try
 		}
 
 		left = (used < 8) ? 24 - used : 16;
-		urandom_generate_id(p, left + 1);
+		urandom_generate_base32id(p, left + 1);
 		identity = idbuf;
 	}
 
@@ -161,7 +160,7 @@ try
 	if (!password)
 	{
 		random_pass = true;
-		urandom_generate_id(passbuf, 41);
+		urandom_generate_base57id(passbuf, 41);
 		password = passbuf;
 	}
 	else if (strcmp(password, "-") == 0)

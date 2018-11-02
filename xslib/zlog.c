@@ -44,7 +44,7 @@ static void _do_compress(const char *pathname)
 
 	snprintf(zfile, sizeof(zfile), "%s/%s%s", dir, file, COMPRESS_SUFFIX);
 	snprintf(cmd, sizeof(cmd), 
-		"/usr/bin/env PATH=.:/usr/local/bin:/usr/bin:${PATH} lz4 -f %s %s 2> /dev/null", 
+		"/usr/bin/env PATH=.:/usr/local/bin:/usr/bin lz4 -f %s %s 2> /dev/null", 
 		pathname, zfile);
 	rc = system(cmd);
 	status = WEXITSTATUS(rc);
