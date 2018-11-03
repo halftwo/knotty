@@ -6,26 +6,18 @@
 #define NI	-3
 #define SP	-2
 
-static int8_t detab[256] = {
+static int8_t detab[128] = {
 	NI, -1, -1, -1, -1, -1, -1, -1, -1, SP, SP, SP, SP, SP, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	SP, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, -1, -1, -1, -1, -1, -1,
-	-1, 10, 11, 12, 13, 14, 15, 16, 17, -1, 18, 19, 20, 21, 22, -1,
-	23, 24, 25, 26, 27, -1, 28, 29, 30, 31, 32, -1, -1, -1, -1, -1,
-	-1, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, -1, 44, 45, -1,
-	46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, 49, 50, 51, 52, 53, 54, 55, 56, -1, -1, -1, -1, -1, -1,
+	-1,  0,  1,  2,  3,  4,  5,  6,  7, -1,  8,  9, 10, 11, 12, -1,
+	13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, -1, -1, -1, -1, -1,
+	-1, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, -1, 35, 36, 37,
+	38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, -1, -1, -1, -1, -1,
 };
 
-const char xbase57_alphabet[] = "0123456789ABCDEFGHJKLMNPQRSTVWXYZabcdefghijkmnpqrstuvwxyz";
+const char xbase57_alphabet[] = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
 
 ssize_t xbase57_encode(char *out, const void *in, size_t len)
 {
@@ -100,7 +92,8 @@ ssize_t xbase57_decode(void *out, const char *in, size_t len)
 
 	for (; src < end; ++src)
 	{
-		int de = detab[(unsigned char)*src];
+		int ch = (unsigned char)*src;
+		int de = (ch < 128) ? detab[ch] : -1;
 		if (de < 0)
 		{
 			if (de == SP)
@@ -122,8 +115,8 @@ ssize_t xbase57_decode(void *out, const char *in, size_t len)
 		{
 			/*
 			 * Detect overflow.  The largest 
-			 * 11-letter possible is   "txJqThJCLBx" to encode 
-			 * 0xffffffffffffffff, and "txJqThJCLBx" / 57 gives
+			 * 11-letter possible is   "37UydrUNWM7" to encode 
+			 * 0xffffffffffffffff, and "37UydrUNWM7" / 57 gives
 			 * 0x047dc11f7047dc11 at this point (i.e.
 			 * 0xffffffffffffffff / 57 = 0x047dc11f7047dc11)
 			 */
@@ -153,13 +146,13 @@ ssize_t xbase57_decode(void *out, const char *in, size_t len)
 	{
 		static int8_t dlens[] = { 0, -1, 1, 2, -1, 3, 4, 5, -1, 6, 7, };
 		static uint64_t maxes[] = {0, 
-				UINT64_C(0x047944da05d3ad0c),	/* tjzzzzzzzzz / 57 */
-				UINT64_C(0x047dbddd16ed96b0),	/* txGzzzzzzzz / 57 */
-				UINT64_C(0x047dc11aff23a734),	/* txJpvzzzzzz / 57 */
-				UINT64_C(0x047dc11f6c4df39d),	/* txJqTazzzzz / 57 */
-				UINT64_C(0x047dc11f70446bdc),	/* txJqThGzzzz / 57 */
-				UINT64_C(0x047dc11f7047d7ca),	/* txJqThJC0zz / 57 */
-				UINT64_C(0x047dc11f7047dc0d),	/* txJqThJCL7z / 57 */
+				UINT64_C(0x047944da05d3ad0c),	/* "3t999999999" / 57 */
+				UINT64_C(0x047dbddd16ed96b0),	/* "37S99999999" / 57 */
+				UINT64_C(0x047dc11aff23a734),	/* "37Ux5999999" / 57 */
+				UINT64_C(0x047dc11f6c4df39d),	/* "37Uydj99999" / 57 */
+				UINT64_C(0x047dc11f70446bdc),	/* "37UydrS9999" / 57 */
+				UINT64_C(0x047dc11f7047d7ca),	/* "37UydrUNA99" / 57 */
+				UINT64_C(0x047dc11f7047dc0d),	/* "37UydrUNWH9" / 57 */
 		};
 
 		int i;

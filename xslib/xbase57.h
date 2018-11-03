@@ -9,15 +9,15 @@ extern "C" {
 #endif
 
 /* 
- * In xbase57, every 8-bytes block is encoded to 11 letters.
+ * In xbase57, every 8-bytes block is encoded to 11 alphanumeric characters.
  */
 
 #define XBASE57_ENCODED_LEN(n)	(((n) * 11 + 7) / 8)
 #define XBASE57_DECODED_LEN(n)	(((n) * 8) / 11)
 
 /* The alphabet is:
- *     0123456789ABCDEFGHJKLMNPQRSTVWXYZabcdefghijkmnpqrstuvwxyz
- * Not used: IOUlo
+ *     ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789
+ * Not used: IOl01
  */
 extern const char xbase57_alphabet[];
 
@@ -41,5 +41,4 @@ ssize_t xbase57_decode(void *out, const char *in, size_t len);
 
 
 #endif
-
 

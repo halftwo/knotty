@@ -137,7 +137,7 @@ ssize_t urandom_generate_base32id(char id[], size_t size)
 	}
 
 	memcpy(id, b32str, len + 1);
-	id[0] = xbase32_alphabet[10 + (u32 / (UINT32_MAX / 22 + 1))]; /* make it always letter instead of digit */
+	id[0] = xbase32_alphabet[10 + (u32 / (UINT32_MAX / 22 + 1))]; /* make the first character always letter instead of digit */
 	return len;
 }
 
@@ -175,7 +175,7 @@ ssize_t urandom_generate_base57id(char id[], size_t size)
 	}
 
 	memcpy(id, b57str, len + 1);
-	id[0] = xbase57_alphabet[10 + (u32 / (UINT32_MAX / 47 + 1))]; /* make it always letter instead of digit */
+	id[0] = xbase57_alphabet[u32 / (UINT32_MAX / 49 + 1)]; /* make the first character always letter instead of digit */
 	return len;
 }
 
