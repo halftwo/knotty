@@ -1,6 +1,7 @@
 #include "EngineImp.h"
 #include "XicException.h"
 #include "dlog/dlog.h"
+#include "xslib/xsver.h"
 #include "xslib/uuid.h"
 #include "xslib/bit.h"
 #include "xslib/cstr.h"
