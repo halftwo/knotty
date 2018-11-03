@@ -1674,7 +1674,7 @@ struct PtEngine::PtThrob: public XTimerTask, private XMutex
 	char _start_time[24];
 	int _euid;
 	char _euser[32];
-	std::string _uuid;
+	std::string _id;
 	std::string _listen;
 	std::string _logword;
 	bool _enable;
@@ -1682,8 +1682,8 @@ struct PtEngine::PtThrob: public XTimerTask, private XMutex
 	struct timeval _utv;
 	struct rusage _usage;
 
-	PtThrob(time_t start, const std::string& uuid)
-		: _euid(-1), _uuid(uuid), _enable(true), _minute(0)
+	PtThrob(time_t start, const std::string& id)
+		: _euid(-1), _id(id), _enable(true), _minute(0)
 	{
 		dlog_local_time_str(start, _start_time);
 		gettimeofday(&_utv, NULL);
@@ -1777,8 +1777,8 @@ struct PtEngine::PtThrob: public XTimerTask, private XMutex
 					strcpy(shadow, "-");
 
 				xdlog(NULL, NULL, "THROB", PT_ENGINE_VERSION,
-					"start=%s uuid=%s info=euser:%s,MHz:%.0f,cpu:%.1f%%,xlog:%d,shadow:%s,cipher:%s listen=%s %s",
-					_start_time, _uuid.c_str(),
+					"start=%s id=%s info=euser:%s,MHz:%.0f,cpu:%.1f%%,xlog:%d,shadow:%s,cipher:%s listen=%s %s",
+					_start_time, _id.c_str(),
 					_euser, (freq / 1000000.0), cpu, xlog_level, shadow,
 					MyCipher::get_cipher_name_from_id(xic_cipher),
 					_listen.c_str(), _logword.c_str());
@@ -1800,7 +1800,7 @@ PtEngine::PtEngine(const SettingPtr& setting, const std::string& name)
 	_timer = XTimer::create();
 
 	xref_inc();
-	_throb.reset(new PtThrob(::time(NULL), _uuid));
+	_throb.reset(new PtThrob(::time(NULL), _id));
 	_throb->runTimerTask(_timer);
 	_timer->addTask(this, CON_REAP_INTERVAL);
 	_timer->start();

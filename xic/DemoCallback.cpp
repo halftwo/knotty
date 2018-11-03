@@ -41,7 +41,7 @@ xic::MethodTab CallbackServant::_methodtab(_methodpairs, XS_ARRCOUNT(_methodpair
 CallbackServant::CallbackServant(const xic::AdapterPtr& adapter, const xic::ProxyPtr& demoPrx)
 	: ServantI(&_methodtab), _adapter(adapter), _demoPrx(demoPrx)
 {
-	std::string service = "DemoCallback." + adapter->getEngine()->uuid();
+	std::string service = "DemoCallback." + adapter->getEngine()->id();
 
 	xref_inc();
 	_selfPrx = adapter->addServant(service, this);

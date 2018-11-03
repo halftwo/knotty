@@ -25,9 +25,9 @@
  * The release number consist of:
  * 	2-digit hour 	start from 10
  */
-#define XIC_V_EDITION 	181101
-#define XIC_V_REVISION 	181101
-#define XIC_V_RELEASE 	23
+#define XIC_V_EDITION 	181103
+#define XIC_V_REVISION 	181103
+#define XIC_V_RELEASE 	21
 
 #define XIC_VERSION	XS_TOSTR(XIC_V_EDITION) "." XS_TOSTR(XIC_V_REVISION) "." XS_TOSTR(XIC_V_RELEASE)
 
@@ -239,7 +239,7 @@ public:
 
 	virtual const SettingPtr& setting() const	= 0;
 	virtual const std::string& name() const		= 0;
-	virtual const std::string& uuid() const		= 0;
+	virtual const std::string& id() const		= 0;
 
 	virtual void setSecretBox(const SecretBoxPtr& secretBox) = 0;
 	virtual void setShadowBox(const ShadowBoxPtr& shadowBox) = 0;

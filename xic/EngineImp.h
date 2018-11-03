@@ -421,7 +421,7 @@ public:
 
 
 #define XIC_ENGINE_ADMIN_SERVANT_CMDS	\
-	CMD(uuid)		\
+	CMD(id)			\
 	CMD(info)		\
 	CMD(tune)		\
 	CMD(suicide)		\
@@ -430,7 +430,7 @@ public:
 class EngineI: public Engine, public ServantI
 {
 protected:
-	std::string _uuid;
+	std::string _id;
 	SettingPtr _setting;
 	std::string _name;
 	bool _stopped;
@@ -444,7 +444,7 @@ public:
 
 	virtual const SettingPtr& setting() const	{ return _setting; }
 	virtual const std::string& name() const		{ return _name; }
-	virtual const std::string& uuid() const		{ return _uuid; }
+	virtual const std::string& id() const		{ return _id; }
 
 	virtual ConnectionIPtr makeConnection(const std::string& service, const std::string& endpoint) = 0;
 	virtual void allowSuicide(bool ok);

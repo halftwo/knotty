@@ -2,7 +2,6 @@
 #include "XicException.h"
 #include "dlog/dlog.h"
 #include "xslib/xsver.h"
-#include "xslib/uuid.h"
 #include "xslib/bit.h"
 #include "xslib/cstr.h"
 #include "xslib/hex.h"
@@ -1897,11 +1896,9 @@ EngineI::EngineI(const SettingPtr& setting, const std::string& name)
 	: ServantI(&_methodtab), _setting(setting), _name(name),
 	_stopped(false), _allowSuicide(true)
 {
-	uuid_t uuid;
-	char buf[UUID_STRING_LEN + 1];
-	uuid_generate(uuid);
-	uuid_string(uuid, buf, sizeof(buf));
-	_uuid.assign(buf, UUID_STRING_LEN);
+	char buf[24];
+	urandom_generate_base57id(buf, sizeof(buf));
+	_id.assign(buf);
 }
 
 void EngineI::allowSuicide(bool ok)
@@ -1909,10 +1906,10 @@ void EngineI::allowSuicide(bool ok)
 	_allowSuicide = ok;
 }
 
-XIC_METHOD(EngineI, uuid)
+XIC_METHOD(EngineI, id)
 {
 	AnswerWriter aw;
-	aw.param("uuid", _uuid);
+	aw.param("id", _id);
 	return aw;
 }
 
@@ -1920,7 +1917,7 @@ XIC_METHOD(EngineI, suicide)
 {
 	Quest* q = quest.get();
 	VDict args = q->args();
-	const xstr_t& uuid = args.getXstr("uuid");
+	const xstr_t& id = args.getXstr("id");
 	int doom = args.getInt("doom", 0);
 
 	xdlog(vbs_xfmt, NULL, "XIC.SUICIDE", NULL,
@@ -1934,14 +1931,14 @@ XIC_METHOD(EngineI, suicide)
 		throw XERROR_MSG(xic::XicException, "suicide disallowd");
 	}
 
-	if (uuid.len > 0 && !xstr_case_equal_cstr(&uuid, _uuid.c_str()))
+	if (id.len > 0 && !xstr_case_equal_cstr(&id, _id.c_str()))
 	{
-		throw XERROR_MSG(xic::XicException, "uuid not match");
+		throw XERROR_MSG(xic::XicException, "id not match");
 	}
 
 	xic::WaiterPtr waiter = current.asynchronous();
 	AnswerWriter aw;
-	aw.param("uuid", _uuid);
+	aw.param("id", _id);
 	waiter->response(aw);
 
 	this->shutdown();
@@ -2058,7 +2055,7 @@ XIC_METHOD(EngineI, info)
 	AnswerWriter aw;
 
 	aw.param("dlog.identity", dlog_identity());
-	aw.param("engine.uuid", _uuid);
+	aw.param("engine.id", _id);
 	aw.param("engine.name", _name);
 	aw.param("xslib.version", xslib_version_string());
 
