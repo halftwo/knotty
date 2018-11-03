@@ -4,7 +4,7 @@
 * A framework to provide xic service with php in fcgi.
 * @package x4fcgi 
 * @author jiagui
-* @version 170802.181030.20
+* @version 170802.181103.21
 * Following is an example program.
 *
 --------------- BEGIN OF EXAMPLE PROGRAM ------------
@@ -210,10 +210,6 @@ function x4fcgi_serve($callback)
 			$msg = "CALLBACK_RETURN_NON_ARRAY (".gettype($out_args)."): ".$out_args;
 			error_log($msg, 4);
 			throw new xic_ServantException($msg, 500);
-		}
-		else if (empty($out_args))
-		{
-			$out_args = vbs_dict();
 		}
 
 		$out_args['__x4fcgi_callee_id__'] = xic_self_id();
