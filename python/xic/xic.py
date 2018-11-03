@@ -28,7 +28,7 @@ import dlog
 import struct
 import socket
 import traceback
-import uuid
+import random
 import time
 import os
 import sys
@@ -1312,7 +1312,7 @@ class _EngineServant(Servant):
 
         return {
             "dlog.identity": dlog._identity,
-            "engine.uuid": eg._uuid,
+            "engine.id": eg._id,
             "engine.start_time": eg._start_time,
             "engine.version": XIC_ENGINE_VERSION,
             "throb.logword": eg._logword,
@@ -1488,7 +1488,14 @@ class _EngineServant(Servant):
             }
         except:
             return {}
-            
+
+def _random_base57id(n):
+    Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789"
+    Id = Alphabet[random.randint(0,48)]
+    for i in range(1, n):
+        Id = Id + Alphabet[random.randint(0,56)]
+    return Id
+
 
 class Engine(object):
 
@@ -1504,7 +1511,7 @@ class Engine(object):
         self._serverPool = _Pool(server_pool_size)
         self._clientPool = _Pool(client_pool_size)
         self._logword = ""
-        self._uuid = str(uuid.uuid4())
+        self._id = _random_base57id(23)
         self._servant = _EngineServant(self)
         self._start_time = time.strftime("%Y%m%d-%H%M%S")
         self._listenAddress = ''
@@ -1579,7 +1586,7 @@ class Engine(object):
         start_time = "start=" + self._start_time 
         version = XIC_ENGINE_VERSION
         while True:
-            dlog.xdlog("", "THROB", version, start_time, "uuid="+self._uuid, "listen="+self._listenAddress, self._logword)
+            dlog.xdlog("", "THROB", version, start_time, "id="+self._id, "listen="+self._listenAddress, self._logword)
             t = time.time()
             left = 60 - (t % 60)
             _sleep(left)
