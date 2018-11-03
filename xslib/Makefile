@@ -1,13 +1,7 @@
 ##
 ##
 
-EDITION  = 181103
-REVISION = 181103
-RELEASE  = 20
-
-XSLIB_VERSION = $(EDITION).$(REVISION).$(RELEASE)
-
-OBJS_C = xsdef.o strbuf.o bit.o xnet.o \
+OBJS_C = xsver.o strbuf.o bit.o xnet.o \
 	xbase64.o xbase85.o xbase32.o xbase57.o \
 	obpool.o jenkins.o md5.o sha1.o sha256.o crc.o crc64.o cpu.o \
 	xlog.o rdtsc.o hseq.o xbuf.o vbs_build.o rbtree.o \
@@ -39,7 +33,7 @@ CFLAGS = -g -Wall -fPIC -O2
 
 CXXFLAGS = -g -Wall -fPIC -O2
 
-CPPFLAGS = -DXSLIB_VERSION=$(XSLIB_VERSION)
+CPPFLAGS = 
 
 
 all: libxs.a libxsxtra.a

@@ -81,15 +81,5 @@
 #endif /* __cplusplus */
 
 
-#ifdef __cplusplus
-extern "C" {
 #endif
 
-const char *xslib_version_string();
-const char *xslib_version_rcsid();
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
