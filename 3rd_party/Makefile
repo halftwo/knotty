@@ -59,6 +59,6 @@ lz4:
 
 lz4-clean:
 	$(RM) lz4
-	$(RM) -r lz4-1.7.5
+	$(RM) -r lz4-1.8.3
 
 
