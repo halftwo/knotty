@@ -116,7 +116,8 @@ static int center_sock = -1;
 static unsigned long dlog_idle;
 static time_t last_connect_time;
 static unsigned long num_reconnect;
-static unsigned int compress_threshold = 256;
+
+const unsigned int compress_threshold = 512;
 static unsigned long long num_compressed_block;
 static unsigned long long num_compress_failure;
 static unsigned long long num_incompressible;
