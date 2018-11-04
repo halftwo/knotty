@@ -424,7 +424,7 @@ public:
 	CMD(id)			\
 	CMD(info)		\
 	CMD(tune)		\
-	CMD(suicide)		\
+	CMD(kill)		\
 	/* END OF CMDS */
 
 class EngineI: public Engine, public ServantI
@@ -434,7 +434,7 @@ protected:
 	SettingPtr _setting;
 	std::string _name;
 	bool _stopped;
-	bool _allowSuicide;
+	bool _allowRemoteKill;
 
 	virtual void _doom(int seconds)			= 0;
 	virtual void _info(xic::AnswerWriter& aw)	= 0;
@@ -447,7 +447,7 @@ public:
 	virtual const std::string& id() const		{ return _id; }
 
 	virtual ConnectionIPtr makeConnection(const std::string& service, const std::string& endpoint) = 0;
-	virtual void allowSuicide(bool ok);
+	virtual void allowRemoteKill(bool ok);
 
 private:
 	static MethodTab::PairType _methodpairs[];

@@ -1894,16 +1894,16 @@ MethodTab EngineI::_methodtab(_methodpairs, XS_ARRCOUNT(_methodpairs));
 
 EngineI::EngineI(const SettingPtr& setting, const std::string& name)
 	: ServantI(&_methodtab), _setting(setting), _name(name),
-	_stopped(false), _allowSuicide(true)
+	_stopped(false), _allowRemoteKill(false)
 {
 	char buf[24];
 	urandom_generate_base57id(buf, sizeof(buf));
 	_id.assign(buf);
 }
 
-void EngineI::allowSuicide(bool ok)
+void EngineI::allowRemoteKill(bool ok)
 {
-	_allowSuicide = ok;
+	_allowRemoteKill = ok;
 }
 
 XIC_METHOD(EngineI, id)
@@ -1913,7 +1913,7 @@ XIC_METHOD(EngineI, id)
 	return aw;
 }
 
-XIC_METHOD(EngineI, suicide)
+XIC_METHOD(EngineI, kill)
 {
 	Quest* q = quest.get();
 	VDict args = q->args();
@@ -1926,9 +1926,9 @@ XIC_METHOD(EngineI, suicide)
 		XSTR_P(&q->service()), XSTR_P(&q->method()), 
 		q->context_dict(), q->args_dict());
 
-	if (!_allowSuicide)
+	if (!_allowRemoteKill)
 	{
-		throw XERROR_MSG(xic::XicException, "suicide disallowd");
+		throw XERROR_MSG(xic::XicException, "remote kill disallowd");
 	}
 
 	if (id.len > 0 && !xstr_case_equal_cstr(&id, _id.c_str()))

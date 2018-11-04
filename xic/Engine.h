@@ -25,9 +25,9 @@
  * The release number consist of:
  * 	2-digit hour 	start from 10
  */
-#define XIC_V_EDITION 	181103
-#define XIC_V_REVISION 	181103
-#define XIC_V_RELEASE 	21
+#define XIC_V_EDITION 	181104
+#define XIC_V_REVISION 	181104
+#define XIC_V_RELEASE 	19
 
 #define XIC_VERSION	XS_TOSTR(XIC_V_EDITION) "." XS_TOSTR(XIC_V_REVISION) "." XS_TOSTR(XIC_V_RELEASE)
 
@@ -252,7 +252,7 @@ public:
 	virtual void throb(const std::string& logword) 	= 0;
 	virtual void shutdown() 			= 0;	// should NOT block caller.
 	virtual void waitForShutdown()			= 0;	// DO block caller.
-	virtual void allowSuicide(bool ok)		= 0;	// suicide is allowed by default.
+	virtual void allowRemoteKill(bool ok)		= 0;	// RemoteKill is disallowed by default.
 
 	virtual time_t time()				= 0;
 	virtual int sleep(int seconds)			= 0;	// current thread sleep, not the engine
