@@ -48,13 +48,13 @@ st-clean:
 
 
 lz4:
-	tar -xf lz4-1.7.5.tar.gz
-	(cd lz4-1.7.5 					\
+	tar -xf lz4-1.8.3.tar.gz
+	(cd lz4-1.8.3 					\
 		&& make 				\
 		&& cp -p lib/lz4.h ../$(TOP_DIR)/include	\
 		&& cp -p lib/liblz4.a ../$(TOP_DIR)/lib 	\
 		&& cd ..				\
-		&& ln -s lz4-1.7.5 lz4 			\
+		&& ln -s lz4-1.8.3 lz4 			\
 	)
 
 lz4-clean:

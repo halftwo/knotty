@@ -11,7 +11,7 @@ include
 3rd_party/st
 3rd_party/st-1.9/
 3rd_party/lz4
-3rd_party/lz4-1.7.5/
+3rd_party/lz4-1.8.3/
 dlog/dlog_center
 dlog/dlog_write
 dlog/dlogd
