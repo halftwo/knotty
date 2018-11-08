@@ -987,7 +987,7 @@ again:
 			_timeout = th_timeout;
 	}
 
-	xlog(XLOG_DEBUG, "epoll_wait(), fcount=%zu, tcount=%zu, timeout=%d", _fcount, _tcount, _timeout);
+	xlog(XLOG_DEBUG, "epoll_wait() %d fcount=%zu, tcount=%zu, timeout=%d", _epfd, _fcount, _tcount, _timeout);
 	int n = epoll_wait(_epfd, &_ep_events[0], _ep_events.size(), _timeout);
 	_tm_ref_msec = 0;
 	_fd_ref_id = 0;
