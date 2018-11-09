@@ -602,7 +602,7 @@ bool EpollDisp::addFd(FdHandler* handler, int fd, int events)
 	events &= READ_EVENT | WRITE_EVENT | EDGE_TRIGGER | ONE_SHOT;
 	struct epoll_event ep;
 	ep.data.fd = fd;
-	ep.events = ((events & READ_EVENT) ? (EPOLLIN | EPOLLPRI) : 0)
+	ep.events = ((events & READ_EVENT) ? (EPOLLIN | EPOLLPRI | EPOLLRDHUP) : 0)
 		| ((events & WRITE_EVENT) ? EPOLLOUT : 0);
 	if (ep.events == 0)
 		return false;
@@ -1011,7 +1011,7 @@ again:
 			int ev = _ep_events[i].events;
 			int events = ((ev & (EPOLLIN | EPOLLPRI)) ? READ_EVENT : 0)
 				| ((ev & (EPOLLOUT)) ? WRITE_EVENT : 0)
-				| ((ev & (EPOLLHUP | EPOLLERR)) ? CLOSE_EVENT : 0);
+				| ((ev & (EPOLLHUP | EPOLLRDHUP | EPOLLERR)) ? CLOSE_EVENT : 0);
 
 			Lock lock(*this);
 			if ((size_t)fd >= _fd2hr.size() || !_fd2hr[fd])

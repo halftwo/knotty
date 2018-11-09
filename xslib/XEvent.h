@@ -132,6 +132,9 @@ public:
 	virtual size_t countFd() const 					= 0;
 	virtual size_t countTask() const 				= 0;
 
+	// NB: If the events is NOT bit-or'ed with EDGE_TRIGGER, the FdHandler 
+	// will be removed from the dispatcher automatically after some events
+	// are fired. You should re-add it to the dispatcher if it's desired.
 	virtual bool addFd(FdHandler* hr, int fd, int events) 		{ return false; }
 	virtual bool replaceFd(FdHandler* hr, int fd, int events) 	{ return false; }
 	virtual bool removeFd(FdHandler* hr) 				{ return false; }
