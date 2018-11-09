@@ -4,7 +4,7 @@
 * A framework to provide xic service with php in fcgi.
 * @package x4fcgi 
 * @author jiagui
-* @version 170802.181103.21
+* @version 170802.181109.20
 * Following is an example program.
 *
 --------------- BEGIN OF EXAMPLE PROGRAM ------------
@@ -286,6 +286,7 @@ function x4fcgi_serve($callback)
 		if ($ver == 2)
 			fwrite($output_fp, "\x00\x00\x00\x00xIc4FcGi\x00\x00\x00\x00", 16);
 		fclose($output_fp);
+		fastcgi_finish_request();
 	}
 	else
 	{
