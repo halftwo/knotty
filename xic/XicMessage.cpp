@@ -106,7 +106,7 @@ XicMessage::~XicMessage()
 				catch (std::exception& ex)
 				{
 					XError* x = dynamic_cast<XError*>(&ex);
-					xlog(XLOG_ERR, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
+					xlog(XLOG_ERROR, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
 				}
 			}
 		} while (_cleanup_stack);

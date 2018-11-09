@@ -50,7 +50,7 @@ extern bool xic_dlog_cq;
 extern bool xic_dlog_ca;
 extern bool xic_dlog_cae;
 
-extern bool xic_dlog_warning;	// true
+extern bool xic_dlog_warn;	// true
 extern bool xic_dlog_debug;
 
 // in milliseconds, 0 for no timeout

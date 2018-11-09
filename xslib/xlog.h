@@ -21,9 +21,7 @@ enum {
 
 	XLOG_ALERT	= 0,
 	XLOG_ERROR	= 1,
-	XLOG_ERR	= 1,
 	XLOG_WARN	= 2,
-	XLOG_WARNING	= 2,
 	XLOG_NOTICE	= 3,
 	XLOG_INFO	= 4,
 	XLOG_DEBUG	= 5,

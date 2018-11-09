@@ -277,7 +277,7 @@ int xnet_ip_sockaddr(const char *host, uint16_t port, struct sockaddr_in *addr)
 			errcode = getaddrinfo(host, NULL, &hints, &res);
 			if (errcode != 0)
 			{
-				xlog(XLOG_WARNING, "getaddrinfo() failed: %s\n", gai_strerror(errcode));
+				xlog(XLOG_WARN, "getaddrinfo() failed: %s\n", gai_strerror(errcode));
 			}
 			else
 			{
@@ -316,7 +316,7 @@ static int _ip4or6_sockaddr(const char *host, uint16_t port, bool ipv6first, str
 		errcode = getaddrinfo(host, NULL, &hints, &res);
 		if (errcode != 0)
 		{
-			xlog(XLOG_WARNING, "getaddrinfo() failed: %s\n", gai_strerror(errcode));
+			xlog(XLOG_WARN, "getaddrinfo() failed: %s\n", gai_strerror(errcode));
 		}
 		else
 		{

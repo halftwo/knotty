@@ -711,7 +711,7 @@ class Connection(object):
 
         elif answer:
             if xic_dlog_warning:
-                dlog.dlog("XIC.WARNING", "peer=%s #=answer for oneway quest discarded" % self._peer_addr)
+                dlog.dlog("XIC.WARN", "peer=%s #=answer for oneway quest discarded" % self._peer_addr)
             # XXX: oneway quest got an answer
             pass
 
@@ -1683,7 +1683,7 @@ def _apply_setting(setting):
             resource.setrlimit(resource.RLIMIT_NOFILE, (n, hard))
     except Exception as ex:
         if xic_dlog_warning:
-            dlog.dlog("XIC.WARNING", "resource.setrlimit() failed.", ex)
+            dlog.dlog("XIC.WARN", "resource.setrlimit() failed.", ex)
 
     gid = -1
     try:
@@ -1696,7 +1696,7 @@ def _apply_setting(setting):
             gid = gr.gr_gid
     except Exception as ex:
         if xic_dlog_warning:
-            dlog.dlog("XIC.WARNING", "set xic.group failed.", ex)
+            dlog.dlog("XIC.WARN", "set xic.group failed.", ex)
 
     try:
         import pwd
@@ -1708,7 +1708,7 @@ def _apply_setting(setting):
                 os.setgid(pw.pw_gid)
     except Exception as ex:
         if xic_dlog_warning:
-            dlog.dlog("XIC.WARNING", "set xic.user failed.", ex)
+            dlog.dlog("XIC.WARN", "set xic.user failed.", ex)
 
 
 def oneway_method(func):
@@ -1721,7 +1721,7 @@ def oneway_method(func):
         r = func(self, quest, current)
         if r != None and xic_dlog_warning:
             method = func.__name__
-            dlog.dlog("XIC.WARNING", "Oneway method %s return non-None result: %s" % (method, r))
+            dlog.dlog("XIC.WARN", "Oneway method %s return non-None result: %s" % (method, r))
         return None
     return wrapper
 

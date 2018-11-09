@@ -520,9 +520,9 @@ void StConnection::do_timeout(int rw)
 
 	set_exception(ex);
 
-	if (xic_dlog_warning)
+	if (xic_dlog_warn)
 	{
-		dlog("XIC.WARNING", "peer=%s+%d #=%s timeout", _peer_ip, _peer_port, op);
+		dlog("XIC.WARN", "peer=%s+%d #=%s timeout", _peer_ip, _peer_port, op);
 	}
 
 	if (_recv_sth)
@@ -744,9 +744,9 @@ void StConnection::_send_qmsg(const XicMessagePtr& msg)
 		if (_sf && _state >= ST_ACTIVE)
 			st_cond_signal(_send_cond);
 	}
-	else if (xic_dlog_warning)
+	else if (xic_dlog_warn)
 	{
-		dlog("XIC.WARNING", "peer=%s+%d #=send msg (type:%d) to closed connection", _peer_ip, _peer_port, msg->msgType());
+		dlog("XIC.WARN", "peer=%s+%d #=send msg (type:%d) to closed connection", _peer_ip, _peer_port, msg->msgType());
 	}
 }
 
@@ -818,8 +818,8 @@ void StConnection::sendQuest(const QuestPtr& quest, const ResultIPtr& r)
 	}
 	catch (XError& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		if (r)
 		{
@@ -913,15 +913,15 @@ void StConnection::recv_fiber()
 	}
 	catch (XError& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		set_exception(ex.clone());
 	}
 	catch (std::exception& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		set_exception(new XERROR_MSG(UnknownException, ex.what()));
 	}
@@ -1006,15 +1006,15 @@ void StConnection::send_fiber()
 	}
 	catch (XError& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		set_exception(ex.clone());
 	}
 	catch (std::exception& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		set_exception(new XERROR_MSG(UnknownException, ex.what()));
 	}
@@ -1075,9 +1075,9 @@ void StListener::accept_fiber()
 		st_netfd_t sf = st_accept(_sf, (struct sockaddr *)&peer_addr, &peer_len, ST_UTIME_NO_TIMEOUT);
 		if (sf == NULL)
 		{
-			if (xic_dlog_warning)
+			if (xic_dlog_warn)
 			{
-				dlog("XIC.WARNING", "#=st_accept() failed, errno=%d %m", errno);
+				dlog("XIC.WARN", "#=st_accept() failed, errno=%d %m", errno);
 			}
 
 			if (errno != EINTR)
@@ -1091,11 +1091,11 @@ void StListener::accept_fiber()
 		int fd = st_netfd_fileno(sf);
 		if (!is_allowed((const struct sockaddr *)&peer_addr, peer_len))
 		{
-			if (xic_dlog_warning)
+			if (xic_dlog_warn)
 			{
 				char ip[40];
 				int port = xnet_get_peer_ip_port(fd, ip);
-				dlog("XIC.WARNING", "peer=%s+%d #=client ip not allowed", ip, port);
+				dlog("XIC.WARN", "peer=%s+%d #=client ip not allowed", ip, port);
 			}
 
 			CheckWriter cw("FORBIDDEN");
@@ -1118,8 +1118,8 @@ void StListener::accept_fiber()
 		}
 		catch (std::exception& ex)
 		{
-			if (xic_dlog_warning)
-				dlog("XIC.WARNING", "#=StConnection() failed, exception=%s", ex.what());
+			if (xic_dlog_warn)
+				dlog("XIC.WARN", "#=StConnection() failed, exception=%s", ex.what());
 
 			st_netfd_close(sf);
 		}
@@ -1965,8 +1965,8 @@ void StThreadPool::wait_thread()
 {
 	if (_thrNum >= _thrMax)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "#=SThreadPool.SizeMax(%zd) limits reached, size=%zd", _thrMax, _thrNum);
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "#=SThreadPool.SizeMax(%zd) limits reached, size=%zd", _thrMax, _thrNum);
 
 		do
 		{
@@ -2126,8 +2126,8 @@ static void *sig_sthread(void *arg)
 		if (rc != sizeof(int))
 			throw XERROR_FMT(XError, "st_read()=%d", rc);
 
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "#=signal(%d) catched", sig);
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "#=signal(%d) catched", sig);
 
 		if (xic_engine)
 			xic_engine->shutdown();
@@ -2196,7 +2196,7 @@ public:
 
 int xic::start_xic_st(xic_application_function func, int argc, char **argv, const SettingPtr& setting)
 {
-	xlog_level = XLOG_WARNING;
+	xlog_level = XLOG_WARN;
 	StApp app(func);
 	return app.main(argc, argv, setting);
 }

@@ -35,7 +35,7 @@ void *xrealloc(void *ptr, size_t size)
 {
 	void *p = realloc(ptr, size);
 	if (!p)
-		xlog(XLOG_ERR, "realloc(%p, %lu) failed", ptr, (unsigned long)size);
+		xlog(XLOG_ERROR, "realloc(%p, %lu) failed", ptr, (unsigned long)size);
 	return p;
 }
 

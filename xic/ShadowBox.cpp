@@ -53,7 +53,7 @@ ShadowBoxPtr ShadowBox::reload()
 	}
 	catch (std::exception& ex)
 	{
-		xlog(XLOG_WARNING, "shadow file failed to reload, file=%s, ex=%s", _filename.c_str(), ex.what());
+		xlog(XLOG_WARN, "shadow file failed to reload, file=%s, ex=%s", _filename.c_str(), ex.what());
 	}
 	return sb;
 }

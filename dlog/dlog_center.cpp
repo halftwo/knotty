@@ -580,7 +580,7 @@ int Worker::do_read()
 
 		if (_block->pkt.size < DLOG_PACKET_HEAD_SIZE || _block->pkt.size > DLOG_PACKET_MAX_SIZE)
 		{
-			xlog(XLOG_ERR, "pkt.size=%d should be >= %d and <= %d", _block->pkt.size, 
+			xlog(XLOG_ERROR, "pkt.size=%d should be >= %d and <= %d", _block->pkt.size, 
 					(int)DLOG_PACKET_HEAD_SIZE, (int)DLOG_PACKET_MAX_SIZE);
 			goto error;
 		}

@@ -61,7 +61,7 @@ bool xic::xic_dlog_cq;
 bool xic::xic_dlog_ca;
 bool xic::xic_dlog_cae;
 
-bool xic::xic_dlog_warning = true;
+bool xic::xic_dlog_warn = true;
 bool xic::xic_dlog_debug;
 
 int xic::xic_timeout_connect;
@@ -273,9 +273,9 @@ static void _set_rlimit(int resource, rlim_t n)
 		rlim.rlim_max = n;
 
 	rc = setrlimit(resource, &rlim);
-	if (rc < 0 && xic_dlog_warning)
+	if (rc < 0 && xic_dlog_warn)
 	{
-		dlog("XIC.WARNING", "setrlimit(%d, %jd) failed, errno=%d %m", resource, (intmax_t)n, errno);
+		dlog("XIC.WARN", "setrlimit(%d, %jd) failed, errno=%d %m", resource, (intmax_t)n, errno);
 	}
 }
 
@@ -287,16 +287,16 @@ static void _tune_up_hard_nofile(rlim_t n)
 		int rc = getrlimit(RLIMIT_NOFILE, &rlim);
 		if (rc < 0)
 		{
-			if (xic_dlog_warning)
-				dlog("XIC.WARNING", "getrlimit() failed, errno=%d %m", errno);
+			if (xic_dlog_warn)
+				dlog("XIC.WARN", "getrlimit() failed, errno=%d %m", errno);
 		}
 		else if (rlim.rlim_max != RLIM_INFINITY && rlim.rlim_max < n)
 		{
 			rlim.rlim_max = n;
 			rc = setrlimit(RLIMIT_NOFILE, &rlim);
-			if (rc < 0 && xic_dlog_warning)
+			if (rc < 0 && xic_dlog_warn)
 			{
-				dlog("XIC.WARNING", "setrlimit() failed, errno=%d %m", errno);
+				dlog("XIC.WARN", "setrlimit() failed, errno=%d %m", errno);
 			}
 		}
 	}
@@ -448,7 +448,7 @@ void xic::prepareEngine(const SettingPtr& setting)
 		}
 
 		xic_dlog_debug = setting->getBool("xic.dlog.debug");
-		xic_dlog_warning = setting->getBool("xic.dlog.warning", true);
+		xic_dlog_warn = setting->getBool("xic.dlog.warn", true);
 	}
 }
 
@@ -993,11 +993,11 @@ ConnectionIPtr ProxyI::pickConnection(const QuestPtr& quest)
 			}
 		}
 
-		if (!ht && xic_dlog_warning)
+		if (!ht && xic_dlog_warn)
 		{
 			const xstr_t& service = quest->service();
 			const xstr_t& method = quest->method();
-			dlog("XIC.WARNING", "XIC_HINT invalid or not specified in context, Q=%.*s::%.*s C%p{>VBS_DICT<}",
+			dlog("XIC.WARN", "XIC_HINT invalid or not specified in context, Q=%.*s::%.*s C%p{>VBS_DICT<}",
 				XSTR_P(&service), XSTR_P(&method), ctx.dict());
 		}
 
@@ -1209,15 +1209,15 @@ void ConnectionI::handle_quest(const AdapterPtr& ad, CurrentI& current)
 		{
 			answer = except2answer(ex, method, service, _endpoint);
 			trace = false;
-			if (xic_dlog_warning && dynamic_cast<xic::XicException*>(&ex))
+			if (xic_dlog_warn && dynamic_cast<xic::XicException*>(&ex))
 			{
-				dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s exception=%s",
+				dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s exception=%s",
 					_peer_ip, _peer_port, XSTR_P(&service), XSTR_P(&method), ex.what());
 			}
 		}
-		else if (xic_dlog_warning)
+		else if (xic_dlog_warn)
 		{
-			dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s exception=%s",
+			dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s exception=%s",
 				_peer_ip, _peer_port, XSTR_P(&service), XSTR_P(&method), ex.what());
 		}
 	}
@@ -1226,9 +1226,9 @@ void ConnectionI::handle_quest(const AdapterPtr& ad, CurrentI& current)
 	{
 		if (answer)
 		{
-			if (xic_dlog_warning && !answer->status())
+			if (xic_dlog_warn && !answer->status())
 			{
-				dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s #=Servant::process() function called"
+				dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s #=Servant::process() function called"
 					" Current::asynchronous() and returned an answer simultaneously",
 					_peer_ip, _peer_port, XSTR_P(&service), XSTR_P(&method));
 			}
@@ -1321,9 +1321,9 @@ void ConnectionI::handle_quest(const AdapterPtr& ad, CurrentI& current)
 					"Huge sized answer responded from servant, size=%u>%u",
 					answer->bodySize(), xic_message_size);
 
-				if (xic_dlog_warning)
+				if (xic_dlog_warn)
 				{
-					dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s exception=%s",
+					dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s exception=%s",
 						_peer_ip, _peer_port, XSTR_P(&service), XSTR_P(&method), ex.what());
 				}
 				answer = except2answer(ex, method, service, endpoint());
@@ -1332,9 +1332,9 @@ void ConnectionI::handle_quest(const AdapterPtr& ad, CurrentI& current)
 
 			replyAnswer(answer);
 		}
-		else if (xic_dlog_warning)
+		else if (xic_dlog_warn)
 		{
-			dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s #=answer for oneway quest discarded",
+			dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s #=answer for oneway quest discarded",
 				_peer_ip, _peer_port, XSTR_P(&service), XSTR_P(&method));
 		}
 	}
@@ -1609,8 +1609,8 @@ void ConnectionI::handle_check(const CheckPtr& check)
 	}
 	catch (XError& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d #=client authentication failed, %s", _peer_ip, _peer_port, ex.message().c_str());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d #=client authentication failed, %s", _peer_ip, _peer_port, ex.message().c_str());
 
 		CheckWriter cw("FORBIDDEN");
 		cw.param("reason", ex.message());
@@ -1634,9 +1634,9 @@ AnswerPtr WaiterI::trace(const AnswerPtr& answer) const
 void WaiterI::response(const std::exception& ex)
 {
 	response(except2answer(ex, _method, _service, _con->endpoint()), false);
-	if (xic_dlog_warning && dynamic_cast<const xic::XicException*>(&ex))
+	if (xic_dlog_warn && dynamic_cast<const xic::XicException*>(&ex))
 	{
-		dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s exception=%s",
+		dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s exception=%s",
 			_con->peer_ip(), _con->peer_port(), XSTR_P(&_service), XSTR_P(&_method), ex.what());
 	}
 }
@@ -1672,9 +1672,9 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 		if (!a)
 		{
 			XERROR_VAR_MSG(ServantException, ex, "Null answer responded from servant");
-			if (xic_dlog_warning)
+			if (xic_dlog_warn)
 			{
-				dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s exception=%s",
+				dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s exception=%s",
 					con->peer_ip(), con->peer_port(), XSTR_P(&_service), XSTR_P(&_method), ex.what());
 			}
 			answer2 = except2answer(ex, _method, _service, _con->endpoint());
@@ -1756,9 +1756,9 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 				"Huge sized answer responded from servant, size=%u>%u",
 				a->bodySize(), xic_message_size);
 
-			if (xic_dlog_warning)
+			if (xic_dlog_warn)
 			{
-				dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s exception=%s",
+				dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s exception=%s",
 					con->peer_ip(), con->peer_port(), XSTR_P(&_service), XSTR_P(&_method), ex.what());
 			}
 			answer2 = except2answer(ex, _method, _service, _con->endpoint());
@@ -1768,9 +1768,9 @@ void WaiterImp::response(const AnswerPtr& answer, bool trace)
 
 		con->replyAnswer(answer2.get() ? answer2 : answer);
 	}
-	else if (xic_dlog_warning)
+	else if (xic_dlog_warn)
 	{
-		dlog("XIC.WARNING", "peer=%s+%d Q=%.*s::%.*s #=Answer already sent",
+		dlog("XIC.WARN", "peer=%s+%d Q=%.*s::%.*s #=Answer already sent",
 			_con->peer_ip(), _con->peer_port(), XSTR_P(&_service), XSTR_P(&_method));
 	}
 }
@@ -1969,7 +1969,7 @@ static void xaw_dlog(AnswerWriter& aw, const char *name)
 	dw.kv("cq", xic_dlog_cq);
 	dw.kv("ca", xic_dlog_ca);
 	dw.kv("cae", xic_dlog_cae);
-	dw.kv("warning", xic_dlog_warning);
+	dw.kv("warn", xic_dlog_warn);
 	dw.kv("debug", xic_dlog_debug);
 }
 
@@ -2095,8 +2095,8 @@ XIC_METHOD(EngineI, tune)
 			xic_dlog_ca = it.boolValue();
 		if (d.getNode("cae", it))
 			xic_dlog_cae = it.boolValue();
-		if (d.getNode("warning", it))
-			xic_dlog_warning = it.boolValue();
+		if (d.getNode("warn", it))
+			xic_dlog_warn = it.boolValue();
 		if (d.getNode("debug", it))
 			xic_dlog_debug = it.boolValue();
 
@@ -2236,9 +2236,9 @@ XIC_METHOD(EngineI, tune)
 					x = RLIM_INFINITY;
 				rlim.rlim_cur = x;
 				int rc = setrlimit(RLIMIT_CORE, &rlim);
-				if (rc < 0 && xic_dlog_warning)
+				if (rc < 0 && xic_dlog_warn)
 				{
-					dlog("XIC.WARNING", "setrlimit() failed, errno=%d %m", errno);
+					dlog("XIC.WARN", "setrlimit() failed, errno=%d %m", errno);
 				}
 			}
 		}
@@ -2251,14 +2251,14 @@ XIC_METHOD(EngineI, tune)
 					x = RLIM_INFINITY;
 				rlim.rlim_cur = x;
 				int rc = setrlimit(RLIMIT_NOFILE, &rlim);
-				if (rc < 0 && xic_dlog_warning)
+				if (rc < 0 && xic_dlog_warn)
 				{
-					dlog("XIC.WARNING", "setrlimit() failed, errno=%d %m", errno);
+					dlog("XIC.WARN", "setrlimit() failed, errno=%d %m", errno);
 				}
 			}
-			else if (rlim.rlim_cur > (uint64_t)x && xic_dlog_warning)
+			else if (rlim.rlim_cur > (uint64_t)x && xic_dlog_warn)
 			{
-				dlog("XIC.WARNING", "Not permitted to set rlimit.nofile less than curent value");
+				dlog("XIC.WARN", "Not permitted to set rlimit.nofile less than curent value");
 			}
 		}
 
@@ -2270,14 +2270,14 @@ XIC_METHOD(EngineI, tune)
 					x = RLIM_INFINITY;
 				rlim.rlim_cur = x;
 				int rc = setrlimit(RLIMIT_AS, &rlim);
-				if (rc < 0 && xic_dlog_warning)
+				if (rc < 0 && xic_dlog_warn)
 				{
-					dlog("XIC.WARNING", "setrlimit() failed, errno=%d %m", errno);
+					dlog("XIC.WARN", "setrlimit() failed, errno=%d %m", errno);
 				}
 			}
-			else if (rlim.rlim_cur > (uint64_t)x && xic_dlog_warning)
+			else if (rlim.rlim_cur > (uint64_t)x && xic_dlog_warn)
 			{
-				dlog("XIC.WARNING", "Not permitted to set rlimit.as less than curent value");
+				dlog("XIC.WARN", "Not permitted to set rlimit.as less than curent value");
 			}
 		}
 
@@ -2296,9 +2296,9 @@ XIC_METHOD(EngineI, tune)
 	std::string group = make_string(args.getXstr("group"));
 	if (!user.empty() || !group.empty())
 	{
-		if (unix_set_user_group(user.c_str(), group.c_str()) < 0 && xic_dlog_warning)
+		if (unix_set_user_group(user.c_str(), group.c_str()) < 0 && xic_dlog_warn)
 		{
-			dlog("XIC.WARNING", "Failed to set process user to '%s' or group to '%s'", user.c_str(), group.c_str());
+			dlog("XIC.WARN", "Failed to set process user to '%s' or group to '%s'", user.c_str(), group.c_str());
 		}
 
 		char buf[64];

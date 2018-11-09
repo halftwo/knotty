@@ -43,7 +43,7 @@ static void initialize()
 	sigaddset(&signal_mask, SIGPIPE);
 	int rc = pthread_sigmask(SIG_BLOCK, &signal_mask, NULL);
 	if (rc != 0)
-		xlog(XLOG_ERR, "pthread_sigmask()=%d", rc);
+		xlog(XLOG_ERROR, "pthread_sigmask()=%d", rc);
 }
 
 
@@ -331,7 +331,7 @@ public:
 		catch (std::exception& ex)
 		{
 			XError* x = dynamic_cast<XError*>(&ex);
-			xlog(XLOG_ERR, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
+			xlog(XLOG_ERROR, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
 		}
 	}
 
@@ -1149,7 +1149,7 @@ void EpollDisp::work()
 	catch (std::exception& ex)
 	{
 		XError* x = dynamic_cast<XError*>(&ex);
-		xlog(XLOG_ERR, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
+		xlog(XLOG_ERROR, "EXCEPTION: %s\n%s", ex.what(), x ? x->calltrace().c_str() : "");
 	}
 
 	{
@@ -1200,7 +1200,7 @@ bool EpollDisp::new_thread(bool wait)
 	if (rc != 0)
 	{
 		xref_dec();
-		xlog(XLOG_ERR, "pthread_create()=%d", rc);
+		xlog(XLOG_ERROR, "pthread_create()=%d", rc);
 		return false;
 	}
 	return true;

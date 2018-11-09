@@ -407,8 +407,8 @@ void PtConnection::_grace(Lock& lock)
 			}
 			catch (std::exception& ex)
 			{
-				if (xic_dlog_warning)
-					dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+				if (xic_dlog_warn)
+					dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 			}
 			_engine->getTimer()->replaceTaskLaterThan(this, closeTimeout());
 		}
@@ -441,8 +441,8 @@ void PtConnection::close(bool force)
 {
 	if (force)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d #=closing connection forcefully", _peer_ip, _peer_port);
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d #=closing connection forcefully", _peer_ip, _peer_port);
 
 		disconnect();
 	}
@@ -768,15 +768,15 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 	}
 	catch (XError& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		set_exception(ex.clone());
 	}
 	catch (std::exception& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		set_exception(new XERROR_MSG(UnknownException, ex.what()));
 	}
@@ -830,9 +830,9 @@ void PtConnection::_send_qmsg(Lock& lock, const XicMessagePtr& msg)
 				throw *_ex;
 		}
 	}
-	else if (xic_dlog_warning)
+	else if (xic_dlog_warn)
 	{
-		dlog("XIC.WARNING", "peer=%s+%d #=send msg (type:%d) to closed connection",
+		dlog("XIC.WARN", "peer=%s+%d #=send msg (type:%d) to closed connection",
 			_peer_ip, _peer_port, msg->msgType());
 	}
 }
@@ -912,8 +912,8 @@ void PtConnection::sendQuest(const QuestPtr& quest, const ResultIPtr& r)
 	}
 	catch (XError& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		if (r)
 		{
@@ -995,9 +995,9 @@ void PtConnection::do_timeout(int rw)
 		set_exception(ex);
 	}
 
-	if (xic_dlog_warning)
+	if (xic_dlog_warn)
 	{
-		dlog("XIC.WARNING", "peer=%s+%d #=%s timeout", _peer_ip, _peer_port, op);
+		dlog("XIC.WARN", "peer=%s+%d #=%s timeout", _peer_ip, _peer_port, op);
 	}
 
 	disconnect();
@@ -1074,8 +1074,8 @@ int PtConnection::do_read(const XEvent::DispatcherPtr& dispatcher)
 	}
 	catch (XError& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		Lock lock(*this);
 		LOC_HALT(&_iloc);
@@ -1083,8 +1083,8 @@ int PtConnection::do_read(const XEvent::DispatcherPtr& dispatcher)
 	}
 	catch (std::exception& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		Lock lock(*this);
 		LOC_HALT(&_iloc);
@@ -1144,9 +1144,9 @@ int PtConnection::_write_q(Lock& lock)
 
 				if (rc < 0)
 				{
-					if (xic_dlog_warning)
+					if (xic_dlog_warn)
 					{
-						dlog("XIC.WARNING", "peer=%s+%d #=xnet_writev_nonblock()=%zd, errno=%d",
+						dlog("XIC.WARN", "peer=%s+%d #=xnet_writev_nonblock()=%zd, errno=%d",
 							_peer_ip, _peer_port, rc, errno);
 					}
 					goto error;
@@ -1203,15 +1203,15 @@ int PtConnection::_write_q(Lock& lock)
 	}
 	catch (XError& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		set_exception(ex.clone());
 	}
 	catch (std::exception& ex)
 	{
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "peer=%s+%d exception=%s", _peer_ip, _peer_port, ex.what());
 
 		set_exception(new XERROR_MSG(UnknownException, ex.what()));
 	}
@@ -1262,8 +1262,8 @@ void PtListener::event_on_fd(const XEvent::DispatcherPtr& dispatcher, int events
 			else if (errno == EAGAIN)
 				break;
 
-			if (xic_dlog_warning)
-				dlog("XIC.WARNING", "#=accept() failed, errno=%d %m", errno);
+			if (xic_dlog_warn)
+				dlog("XIC.WARN", "#=accept() failed, errno=%d %m", errno);
 
 			dlog("XIC.ALERT", "#=PtListener::event_on_fd() fatal, shutdown the engine");
 			_engine->shutdown();
@@ -1272,11 +1272,11 @@ void PtListener::event_on_fd(const XEvent::DispatcherPtr& dispatcher, int events
 
 		if (!is_allowed((const struct sockaddr *)&peer_addr, peer_len))
 		{
-			if (xic_dlog_warning)
+			if (xic_dlog_warn)
 			{
 				char ip[40];
 				int port = xnet_get_peer_ip_port(sock, ip);
-				dlog("XIC.WARNING", "peer=%s+%d #=client ip not allowed", ip, port);
+				dlog("XIC.WARN", "peer=%s+%d #=client ip not allowed", ip, port);
 			}
 
 			CheckWriter cw("FORBIDDEN");
@@ -1301,8 +1301,8 @@ void PtListener::event_on_fd(const XEvent::DispatcherPtr& dispatcher, int events
 		}
 		catch (std::exception& ex)
 		{
-			if (xic_dlog_warning)
-				dlog("XIC.WARNING", "#=PtConnection() failed, exception=%s", ex.what());
+			if (xic_dlog_warn)
+				dlog("XIC.WARN", "#=PtConnection() failed, exception=%s", ex.what());
 
 			::close(sock);
 			continue;
@@ -2322,8 +2322,8 @@ static void *sig_thread(void *arg)
 		if (rc != 0)
 			throw XERROR_FMT(XError, "sigwait()=%d", rc);
 
-		if (xic_dlog_warning)
-			dlog("XIC.WARNING", "#=signal(%d) catched", sig);
+		if (xic_dlog_warn)
+			dlog("XIC.WARN", "#=signal(%d) catched", sig);
 
 		if (xic_engine)
 			xic_engine->shutdown();
@@ -2384,7 +2384,7 @@ public:
 
 int xic::start_xic_pt(xic_application_function func, int argc, char **argv, const SettingPtr& setting)
 {
-	xlog_level = XLOG_WARNING;
+	xlog_level = XLOG_WARN;
 	PtApp app(func);
 	return app.main(argc, argv, setting);
 }

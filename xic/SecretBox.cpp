@@ -63,7 +63,7 @@ SecretBoxPtr SecretBox::reload()
 	}
 	catch (std::exception& ex)
 	{
-		xlog(XLOG_WARNING, "secret file failed to reload, file=%s, ex=%s", _filename.c_str(), ex.what());
+		xlog(XLOG_WARN, "secret file failed to reload, file=%s, ex=%s", _filename.c_str(), ex.what());
 	}
 	return sb;
 }

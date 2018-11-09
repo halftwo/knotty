@@ -77,7 +77,7 @@ xic.dlog.cq = false
 xic.dlog.ca = false 
 xic.dlog.cae = false 
 
-xic.dlog.warning = true
+xic.dlog.warn = true
 xic.dlog.debug = false 
 
 
