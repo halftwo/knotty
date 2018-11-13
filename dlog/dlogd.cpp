@@ -56,6 +56,12 @@
 #define BATCH_SIZE	128
 #define BLOCK_SIZE	(DLOG_PACKET_MAX_SIZE + offsetof(struct block, pkt))
 
+#if PATH_MAX < 1024
+#define PATH_SIZE 1024
+#else
+#define PATH_SIZE PATH_MAX
+#endif
+
 struct block
 {
 	TAILQ_ENTRY(block) link;
@@ -104,7 +110,7 @@ static unsigned long long num_block_send;
 static time_t block_overflow_time;
 
 static plugin_t *plugin;
-static char plugin_file[PATH_MAX];
+static char plugin_file[PATH_SIZE];
 static time_t plugin_mtime;
 static char plugin_md5[33] = "-";
 static unsigned long long plugin_run;
@@ -1424,8 +1430,8 @@ int main(int argc, char **argv)
 	struct rlimit rlim;
 	pthread_t thr;
 	int udp6 = -1, tcp6 = -1, udp4 = -1, tcp4 = -1;
-	char pathbuf[PATH_MAX];
-	char prog_dirname[PATH_MAX];
+	char pathbuf[PATH_SIZE];
+	char prog_dirname[PATH_SIZE-64];
 	bool daemon = true;
 	const char *pg_file = NULL;
 	const char *user = NULL;
@@ -1470,7 +1476,7 @@ int main(int argc, char **argv)
 	init_global();
 
 	strcpy(pathbuf, prog);
-	path_realpath(prog_dirname, NULL, dirname(strdup(prog)));
+	path_realpath(prog_dirname, sizeof(prog_dirname), NULL, dirname(strdup(prog)));
 
 	if (daemon && daemon_init() < 0)
 	{
@@ -1560,7 +1566,7 @@ int main(int argc, char **argv)
 	signal(SIGTERM, sig_handler);
 
 	if (pg_file)
-		path_realpath(plugin_file, NULL, pg_file);
+		path_realpath(plugin_file, sizeof(plugin_file), NULL, pg_file);
 	else
 		snprintf(plugin_file, sizeof(plugin_file), "%s/%s.plugin", prog_dirname, _program_name);
 

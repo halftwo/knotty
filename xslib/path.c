@@ -15,9 +15,10 @@ static const char rcsid[] = "$Id: path.c,v 1.10 2013/09/20 13:26:34 gremlin Exp 
 #endif
 
 
-char *path_realpath(char *real_path, const char *dir, const char *name)
+ssize_t path_realpath(char *real_path, size_t size, const char *dir, const char *name)
 {
-	char path[4096];
+	char rlpath[PATH_MAX];
+	char path[PATH_MAX];
 	char *p = path, *end = path + sizeof(path);
 	char *r = NULL;
 
@@ -40,11 +41,21 @@ char *path_realpath(char *real_path, const char *dir, const char *name)
 		p = cstr_pputc(p, end, '/');
 		p = cstr_pcopy(p, end, name);
 	}
-	r = realpath(path, real_path);
+	r = realpath(path, rlpath);
 done:
 	if (r == NULL)
+	{
 		real_path[0] = 0;
-	return r;
+		return -1;
+	}
+
+	p = memccpy(real_path, rlpath, 0, size);
+	if (p)
+		return p - 1 - real_path;
+
+	if (size > 0)
+		real_path[size-1] = 0;
+	return strlen(rlpath);
 }
 
 size_t path_join(char *dst, const char *reference, const char *path)

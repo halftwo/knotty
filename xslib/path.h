@@ -17,7 +17,7 @@ extern "C" {
 
 /* If ~dir~ is NULL, use the current working directory as ~dir~.
  */
-char *path_realpath(char real_path[PATH_MAX], const char *dir, const char *name);
+ssize_t path_realpath(char *real_path, size_t size, const char *dir, const char *name);
 
 
 /* If ~path~ is an absolute pathname, ~dst~ is set to ~path~.

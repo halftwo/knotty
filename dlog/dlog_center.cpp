@@ -59,6 +59,12 @@
 
 #define BLOCK_SIZE	(DLOG_PACKET_MAX_SIZE + offsetof(struct packet_block, pkt))
 
+#if PATH_MAX < 1024
+#define PATH_SIZE 1024
+#else
+#define PATH_SIZE PATH_MAX
+#endif
+
 
 static const char *TYPECODE = ">#@!????????????";
 
@@ -71,7 +77,7 @@ struct packet_block
 	struct dlog_packet pkt;
 };
 
-static char _program_dir[PATH_MAX];
+static char _program_dir[PATH_SIZE-64];
 static char _program_name[32];
 
 static XEvent::DispatcherPtr dispatcher;
@@ -92,8 +98,8 @@ static struct block_queue _queue_pair[2], *_current_queue;
 static int _endian;
 
 static volatile time_t _current_time;
-static char _log_dir[PATH_MAX];
-static char _log_pathname[PATH_MAX];
+static char _log_dir[PATH_SIZE-128];
+static char _log_pathname[PATH_SIZE];
 static FILE *_logfile_fp;
 static time_t _logfile_time;
 static int _logfile_size;
@@ -122,7 +128,7 @@ static xatomiclong_t num_zip_block;
 static xatomiclong_t num_unzip_fail;
 
 static plugin_t *plugin;
-static char plugin_file[PATH_MAX];
+static char plugin_file[PATH_SIZE];
 static time_t plugin_mtime;
 static char plugin_md5[33] = "-";
 static unsigned long long plugin_run;
@@ -130,7 +136,7 @@ static unsigned long long plugin_error;
 static unsigned long long plugin_discard;
 
 static banlist_t *banlist;
-static char banlist_file[PATH_MAX];
+static char banlist_file[PATH_SIZE];
 static time_t banlist_mtime;
 
 static int64_t usec_diff(const struct timeval* t1, const struct timeval* t2)
@@ -143,7 +149,7 @@ static int64_t usec_diff(const struct timeval* t1, const struct timeval* t2)
 static FILE *_open_log_file(const char *dir, time_t *fp_time)
 {
 	char time_str[32];
-	char subdir[PATH_MAX];
+	char subdir[PATH_SIZE-64];
 	FILE *fp = NULL;
 
 	time_t now = dispatcher->msecRealtime() / 1000;
@@ -159,7 +165,7 @@ static FILE *_open_log_file(const char *dir, time_t *fp_time)
 	fp = fopen(_log_pathname, "ab");
 	if (fp)
 	{
-		char pathname[PATH_MAX];
+		char pathname[PATH_SIZE];
 		int dir_len = strlen(dir);
 
 		snprintf(pathname, sizeof(pathname), "%s/%s%s", dir, LOGFILE_PREFIX, time_str);
@@ -197,14 +203,14 @@ static void do_compress(const char *pathname)
 	const char *filename = pathname + subdir_len + 1;
 	assert(strncmp(filename, LOGFILE_PREFIX, sizeof(LOGFILE_PREFIX)-1) == 0);
 
-	char path2[PATH_MAX];
+	char path2[PATH_SIZE];
 	int status = -1;
 	if (size > 0)
 	{
 		snprintf(path2, sizeof(path2), "%.*s/%s%s", subdir_len, pathname,
 			&filename[sizeof(LOGFILE_PREFIX) - 1], ZIPFILE_SUFFIX);
 
-		char cmd[PATH_MAX];
+		char cmd[PATH_SIZE*2+256];
 		snprintf(cmd, sizeof(cmd), 
 			"/usr/bin/env PATH=.:%s:/usr/local/bin:/usr/bin lz4 -f %s %s 2> /dev/null",
 			_program_dir, pathname, path2);
@@ -1107,7 +1113,7 @@ static void cleanup()
 	if (_logfile_fp)
 		fclose(_logfile_fp);
 
-	char pathname[PATH_MAX];
+	char pathname[PATH_SIZE];
 	snprintf(pathname, sizeof(pathname), "%s/zlog", _log_dir);
 	unlink(pathname);
 
@@ -1156,7 +1162,7 @@ int main(int argc, char **argv)
 	pthread_t thr;
 	int sock = -1;
 	int optend;
-	char pathbuf[PATH_MAX];
+	char pathbuf[PATH_SIZE];
 	bool daemon = true;
 	const char *pg_file = NULL;
 	const char *ban_file = NULL;
@@ -1207,9 +1213,9 @@ int main(int argc, char **argv)
 	init_global();
 
 	strcpy(pathbuf, prog);
-	path_realpath(_program_dir, NULL, dirname(pathbuf));
+	path_realpath(_program_dir, sizeof(_program_dir), NULL, dirname(pathbuf));
 
-	if (!path_realpath(_log_dir, NULL, argv[optend]))
+	if (!path_realpath(_log_dir, sizeof(_log_dir), NULL, argv[optend]))
 	{
 		fprintf(stderr, "can't get the real path of `%s`, errno=%d, %m\n", argv[optend], errno);
 		goto error;
@@ -1288,7 +1294,7 @@ int main(int argc, char **argv)
 	signal(SIGTERM, sig_handler);
 
 	if (ban_file)
-		path_realpath(banlist_file, NULL, ban_file);
+		path_realpath(banlist_file, sizeof(banlist_file), NULL, ban_file);
 	else
 	{
 		snprintf(banlist_file, sizeof(banlist_file), "%s/%s.ban", _program_dir, _program_name);
@@ -1298,7 +1304,7 @@ int main(int argc, char **argv)
 
 	if (pg_file)
 	{
-		path_realpath(plugin_file, NULL, pg_file);
+		path_realpath(plugin_file, sizeof(plugin_file), NULL, pg_file);
 	}
 	else
 	{
