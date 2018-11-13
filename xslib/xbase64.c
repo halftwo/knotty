@@ -145,7 +145,7 @@ ssize_t xbase64_decode(const xbase64_t *b64, void *out, const char *in, size_t l
 	unsigned char *d = (unsigned char *)out;
 	unsigned char *s = (unsigned char *)in;
 	unsigned char *end = ((ssize_t)len < 0) ? (unsigned char *)-1 : s + len;
-	int c, x, r, n;
+	int c = 0, x, r, n;
 
 	for (r = 0, n = 0; s < end && (c = *s++) != 0; )
 	{

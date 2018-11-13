@@ -1147,7 +1147,9 @@ uint16_t xnet_get_sock_ipv4(int sock, uint32_t *ip)
 	}
 	else if (addr.family == AF_INET6 && xnet_ipv6_is_ipv4(addr.a6.sin6_addr.s6_addr))
 	{
-		*ip = ntohl(*(uint32_t*)&addr.a6.sin6_addr.s6_addr[12]);
+		uint32_t raw;
+		memcpy(&raw, &addr.a6.sin6_addr.s6_addr[12], 4);
+		*ip = ntohl(raw);
 		return ntohs(addr.a6.sin6_port);
 	}
 error:
@@ -1170,7 +1172,9 @@ uint16_t xnet_get_peer_ipv4(int sock, uint32_t *ip)
 	}
 	else if (addr.family == AF_INET6 && xnet_ipv6_is_ipv4(addr.a6.sin6_addr.s6_addr))
 	{
-		*ip = ntohl(*(uint32_t*)&addr.a6.sin6_addr.s6_addr[12]);
+		uint32_t raw;
+		memcpy(&raw, &addr.a6.sin6_addr.s6_addr[12], 4);
+		*ip = ntohl(raw);
 		return ntohs(addr.a6.sin6_port);
 	}
 error:
