@@ -219,17 +219,17 @@ int xnet_socketpair(int sv[2])
 	return socketpair(AF_LOCAL, SOCK_STREAM, 0, sv);
 }
 
-int xnet_sockaddr_ip(const struct sockaddr_in *addr, char ip[16])
-{
-	inet_ntop(AF_INET, &addr->sin_addr, ip, 16);
-	return ntohs(addr->sin_port);
-}
-
 int xnet_sockaddr_to_ip(const struct sockaddr *addr, char ip[], size_t len)
 {
 	if (addr->sa_family == AF_INET6)
 	{
 		struct sockaddr_in6 *a6 = (struct sockaddr_in6 *)addr;
+		if (xnet_ipv6_is_ipv4(a6->sin6_addr.s6_addr))
+		{
+			if (inet_ntop(AF_INET, &a6->sin6_addr.s6_addr[12], ip, len))
+				return ntohs(a6->sin6_port);
+		}
+			
 		if (inet_ntop(AF_INET6, &a6->sin6_addr, ip, len))
 			return ntohs(a6->sin6_port);
 	}
@@ -243,57 +243,6 @@ int xnet_sockaddr_to_ip(const struct sockaddr *addr, char ip[], size_t len)
 	if (len > 0)
 		ip[0] = 0;
 	return 0;
-}
-
-int xnet_ip_sockaddr(const char *host, uint16_t port, struct sockaddr_in *addr)
-{
-	int errcode = 0;
-
-	addr->sin_family = AF_INET;
-	addr->sin_addr.s_addr = htonl(INADDR_ANY);
-
-	if (host && host[0])
-	{
-		struct in_addr ipaddr;
-
-		if (inet_aton(host, &ipaddr))
-		{
-			addr->sin_addr = ipaddr;
-		}
-		else if (strcasecmp(host, "localhost") == 0)
-		{
-			addr->sin_addr.s_addr = htonl(INADDR_LOOPBACK);
-		}
-		else
-		{
-			struct addrinfo hints = {0}, *res = NULL;
-
-			/* Don't use gethostbyname(), it's not thread-safe. 
-			   Use getaddrinfo() instead.
-			 */
-			hints.ai_family = AF_INET;
-			hints.ai_socktype = SOCK_STREAM;
-			hints.ai_protocol = IPPROTO_TCP;
-			errcode = getaddrinfo(host, NULL, &hints, &res);
-			if (errcode != 0)
-			{
-				xlog(XLOG_WARN, "getaddrinfo() failed: %s\n", gai_strerror(errcode));
-			}
-			else
-			{
-				assert(res->ai_family == AF_INET && res->ai_socktype == SOCK_STREAM);
-				assert(res->ai_addrlen == sizeof(*addr));
-
-				memcpy(addr, (struct sockaddr_in *)res->ai_addr, sizeof(*addr));
-			}
-
-			if (res)
-				freeaddrinfo(res);
-		}
-	}
-
-	addr->sin_port = htons(port);
-	return errcode ? -1 : 0;
 }
 
 static int _ip4or6_sockaddr(const char *host, uint16_t port, bool ipv6first, struct sockaddr *addr)
@@ -1185,56 +1134,98 @@ int xnet_clear_close_on_exec(int fd)
 
 uint16_t xnet_get_sock_ipv4(int sock, uint32_t *ip)
 {
-	struct sockaddr_in addr;
+	xnet_inet_sockaddr_t addr;
 	socklen_t addr_len = sizeof(addr);
 
-	if (getsockname(sock, (struct sockaddr *)&addr, &addr_len) == 0 && addr.sin_family == AF_INET)
+	if (getsockname(sock, (struct sockaddr *)&addr, &addr_len) == -1)
+		goto error;
+
+	if (addr.family == AF_INET)
 	{
-		*ip = ntohl(addr.sin_addr.s_addr);
-		return ntohs(addr.sin_port);
+		*ip = ntohl(addr.a4.sin_addr.s_addr);
+		return ntohs(addr.a4.sin_port);
 	}
+	else if (addr.family == AF_INET6 && xnet_ipv6_is_ipv4(addr.a6.sin6_addr.s6_addr))
+	{
+		*ip = ntohl(*(uint32_t*)&addr.a6.sin6_addr.s6_addr[12]);
+		return ntohs(addr.a6.sin6_port);
+	}
+error:
 	*ip = htonl(INADDR_ANY);
 	return 0;
 }
 
 uint16_t xnet_get_peer_ipv4(int sock, uint32_t *ip)
 {
-	struct sockaddr_in addr;
+	xnet_inet_sockaddr_t addr;
 	socklen_t addr_len = sizeof(addr);
 
-	if (getpeername(sock, (struct sockaddr *)&addr, &addr_len) == 0 && addr.sin_family == AF_INET)
+	if (getpeername(sock, (struct sockaddr *)&addr, &addr_len) == -1)
+		goto error;
+
+	if (addr.family == AF_INET)
 	{
-		*ip = ntohl(addr.sin_addr.s_addr);
-		return ntohs(addr.sin_port);
+		*ip = ntohl(addr.a4.sin_addr.s_addr);
+		return ntohs(addr.a4.sin_port);
 	}
+	else if (addr.family == AF_INET6 && xnet_ipv6_is_ipv4(addr.a6.sin6_addr.s6_addr))
+	{
+		*ip = ntohl(*(uint32_t*)&addr.a6.sin6_addr.s6_addr[12]);
+		return ntohs(addr.a6.sin6_port);
+	}
+error:
 	*ip = htonl(INADDR_ANY);
 	return 0;
 }
 
 uint16_t xnet_get_sock_ipv6(int sock, uint8_t ip[16])
 {
-	struct sockaddr_in6 addr;
+	xnet_inet_sockaddr_t addr;
 	socklen_t addr_len = sizeof(addr);
 
-	if (getsockname(sock, (struct sockaddr *)&addr, &addr_len) == 0 && addr.sin6_family == AF_INET6)
+	if (getsockname(sock, (struct sockaddr *)&addr, &addr_len) == -1)
+		goto error;
+
+	if (addr.family == AF_INET6)
 	{
-		memcpy(ip, addr.sin6_addr.s6_addr, 16);
-		return ntohs(addr.sin6_port);
+		memcpy(ip, addr.a6.sin6_addr.s6_addr, 16);
+		return ntohs(addr.a6.sin6_port);
 	}
+	else if (addr.family == AF_INET)
+	{
+		memset(ip, 0, 10);
+		ip[10] = 0xff;
+		ip[11] = 0xff;
+		memcpy(&ip[12], &addr.a4.sin_addr, 4);
+		return ntohs(addr.a4.sin_port);
+	}
+error:
 	memcpy(ip, in6addr_any.s6_addr, 16);
 	return 0;
 }
 
 uint16_t xnet_get_peer_ipv6(int sock, uint8_t ip[16])
 {
-	struct sockaddr_in6 addr;
+	xnet_inet_sockaddr_t addr;
 	socklen_t addr_len = sizeof(addr);
 
-	if (getpeername(sock, (struct sockaddr *)&addr, &addr_len) == 0 && addr.sin6_family == AF_INET6)
+	if (getpeername(sock, (struct sockaddr *)&addr, &addr_len) == -1)
+		goto error;
+
+	if (addr.family == AF_INET6)
 	{
-		memcpy(ip, addr.sin6_addr.s6_addr, 16);
-		return ntohs(addr.sin6_port);
+		memcpy(ip, addr.a6.sin6_addr.s6_addr, 16);
+		return ntohs(addr.a6.sin6_port);
 	}
+	else if (addr.family == AF_INET)
+	{
+		memset(ip, 0, 10);
+		ip[10] = 0xff;
+		ip[11] = 0xff;
+		memcpy(&ip[12], &addr.a4.sin_addr, 4);
+		return ntohs(addr.a4.sin_port);
+	}
+error:
 	memcpy(ip, in6addr_any.s6_addr, 16);
 	return 0;
 }

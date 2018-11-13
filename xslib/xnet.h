@@ -63,13 +63,11 @@ int xnet_udp_connect_sockaddr(const struct sockaddr *addr, socklen_t addrlen);
 int xnet_socketpair(int sv[2]);
 
 
-int xnet_ip_sockaddr(const char *host, uint16_t port, struct sockaddr_in *addr);
 int xnet_ip46_sockaddr(const char *host, uint16_t port, struct sockaddr *addr);
 int xnet_ip64_sockaddr(const char *host, uint16_t port, struct sockaddr *addr);
 
 /* Return port number or -1 on error.
  */
-int xnet_sockaddr_ip(const struct sockaddr_in *addr, char ip4str[XNET_IP4STR_SIZE]);
 int xnet_sockaddr_to_ip(const struct sockaddr *addr, char ipstr[], size_t len);
 
 
