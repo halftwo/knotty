@@ -35,16 +35,14 @@ static void get_time(time_t *t)
 
 static void _do_compress(const char *pathname)
 {
-	char zfile[PATH_MAX];
-	char cmd[PATH_MAX];
-	char *file = basename(strdupa(pathname));
-	char *dir = dirname(strdupa(pathname));
 	int rc;
 	int status = -1;
+	int pathlen = strlen(pathname);
+	char *zfile = alloca(pathlen + 16);
+	char *cmd = alloca(pathlen * 2 + 128);
 
-	snprintf(zfile, sizeof(zfile), "%s/%s%s", dir, file, COMPRESS_SUFFIX);
-	snprintf(cmd, sizeof(cmd), 
-		"/usr/bin/env PATH=.:/usr/local/bin:/usr/bin lz4 -f %s %s 2> /dev/null", 
+	sprintf(zfile, "%s%s", pathname, COMPRESS_SUFFIX);
+	sprintf(cmd, "/usr/bin/env PATH=.:/usr/local/bin:/usr/bin lz4 -f %s %s 2> /dev/null", 
 		pathname, zfile);
 	rc = system(cmd);
 	status = WEXITSTATUS(rc);
