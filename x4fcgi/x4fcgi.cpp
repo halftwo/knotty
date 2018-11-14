@@ -17,8 +17,8 @@
 #include <vector>
 
 #define X4FCGI_V_EDITION          181103
-#define X4FCGI_V_REVISION         181103
-#define X4FCGI_V_RELEASE          22
+#define X4FCGI_V_REVISION         181114
+#define X4FCGI_V_RELEASE          20
 
 #define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
 

@@ -7,12 +7,27 @@
 #include "xslib/iobuf.h"
 #include "xslib/ostk.h"
 #include "xslib/ostk_cxx.h"
+#include "xslib/xbase32.h"
 #include <assert.h>
 #include <errno.h>
 #include <unistd.h>
 
 
 static xatomic_t _last_request_id;
+
+static void format_base32id(char buf[9], uint32_t rid)
+{
+	static uint16_t pid = getpid();
+	buf[0] = xbase32_alphabet[(pid >> 10) & 0x1F];
+	buf[1] = xbase32_alphabet[(pid >> 5) & 0x1F];
+	buf[2] = xbase32_alphabet[pid & 0x1F];
+	buf[3] = xbase32_alphabet[(rid >> 20) & 0x1F];
+	buf[4] = xbase32_alphabet[(rid >> 15) & 0x1F];
+	buf[5] = xbase32_alphabet[(rid >> 10) & 0x1F];
+	buf[6] = xbase32_alphabet[(rid >> 5) & 0x1F];
+	buf[7] = xbase32_alphabet[rid & 0x1F];
+	buf[8] = 0;
+}
 
 FcgiQuest::FcgiQuest(ostk_t *ostk, const FcgiClientPtr& client, const FcgiCallbackPtr& callback,
 			const xic::QuestPtr& kq, const std::string& endpoint)
@@ -23,9 +38,11 @@ FcgiQuest::FcgiQuest(ostk_t *ostk, const FcgiClientPtr& client, const FcgiCallba
 	_params_len = 0;
 	_endpoint = endpoint;
 
+	char b32id[9];
+	format_base32id(b32id, _rid);
+
 	const FcgiConfig& conf = _client->conf();
-	_request_uri = ostk_xstr_maker(_ostk)('/')(_kq->service())("::")(_kq->method())
-				.printf("#%04x-%08x", _rid, random()).end();
+	_request_uri = ostk_xstr_maker(_ostk)('/')(_kq->service())("::")(_kq->method())('#')(b32id).end();
 	_script_filename = ostk_xstr_maker(_ostk)(conf.rootdir)('/')(_kq->service())('/')(conf.entryfile).end();
 }
 

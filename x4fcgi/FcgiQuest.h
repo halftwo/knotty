@@ -44,7 +44,7 @@ class FcgiQuest: public XRefCount
 	xstr_t _script_filename;
 	xstr_t _request_uri;
 	int64_t _txid;
-	uint16_t _rid;
+	uint32_t _rid;
 	bool _retry;
 	std::vector<struct iovec, ostk_allocator<struct iovec> > _iov;
 
