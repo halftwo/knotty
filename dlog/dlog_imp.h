@@ -14,7 +14,7 @@ extern "C" {
 
 #define DLOG_V_EDITION 		181115
 #define DLOG_V_REVISION 	181115
-#define DLOG_V_RELEASE 		19
+#define DLOG_V_RELEASE 		22
 
 #define DLOG_VERSION		XS_TOSTR(DLOG_V_EDITION) "." XS_TOSTR(DLOG_V_REVISION) "." XS_TOSTR(DLOG_V_RELEASE)
 
@@ -56,23 +56,6 @@ struct dlog_timeval		/* Obsolete */
 {
 	int32_t tv_sec;
 	int32_t tv_usec;
-};
-
-struct dlog_record_v2
-{
-	uint16_t size;          /* include the size itself and trailing '\0' */
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-	uint8_t version:4, type:3, truncated:1;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-	uint8_t truncated:1, type:3, version:4;
-#else
-# error "unsupported endian"
-#endif 
-	uint8_t locus_end;
-	uint16_t port;
-	int16_t pid;
-	struct dlog_timeval time;
-	char str[];
 };
 
 struct dlog_record_v3
@@ -138,17 +121,6 @@ struct dlog_record_v5
 	char str[];
 };
 
-struct dlog_packet_v2
-{
-	uint32_t size;		/* include the size itself */
-	uint8_t ver_major;
-	uint8_t ver_minor;
-	uint8_t flag;
-	uint8_t _reserved;
-	struct dlog_timeval time;
-	char ip[16];
-	char buf[];
-};
 
 struct dlog_packet_v3
 {

@@ -554,12 +554,13 @@ int Worker::do_read()
 		}
 
 		pkt_endian = (_block->pkt.flag & DLOG_PACKET_FLAG_BIG_ENDIAN) ? 1 : 0;
-		if (pkt_endian != _endian)
-		{
-			xnet_swap(&_block->pkt.size, sizeof(_block->pkt.size));
-		}
 
-		if (_block->pkt.version >= 2 &&_block->pkt.version <= 4)
+		if (_block->pkt.version == DLOG_PACKET_VERSION)
+		{
+			if (pkt_endian != _endian)
+				xnet_swap(&_block->pkt.msec, sizeof(_block->pkt.msec));
+		}
+		else if (_block->pkt.version >= 3 &&_block->pkt.version < DLOG_PACKET_VERSION)
 		{
 			if (_block->pkt.version == 4)
 			{
@@ -570,34 +571,26 @@ int Worker::do_read()
 			}
 			else
 			{
-				if (_block->pkt.version == 2)
-				{
-					struct dlog_packet_v2 *v2 = (struct dlog_packet_v2 *)&_block->pkt;
-					uint8_t flag = v2->flag;
-					_block->pkt.version = 3;
-					_block->pkt.flag = flag;
-					_block->pkt._reserved1 = 0;
-					_block->pkt._reserved2 = 0;
-				}
 				struct dlog_packet_v3 *v3 = (struct dlog_packet_v3 *)&_block->pkt;
 				if (pkt_endian != _endian)
 				{
 					xnet_swap(&v3->time.tv_sec, sizeof(v3->time.tv_sec));
 					xnet_swap(&v3->time.tv_usec, sizeof(v3->time.tv_usec));
 				}
+				_block->pkt.msec = int64_t(v3->time.tv_sec) * 1000 + v3->time.tv_usec / 1000;
 			}
 			_block->pkt.version = DLOG_PACKET_VERSION;
-		}
-		else if (_block->pkt.version == DLOG_PACKET_VERSION)
-		{
-			if (pkt_endian != _endian)
-				xnet_swap(&_block->pkt.msec, sizeof(_block->pkt.msec));
 		}
 		else
 		{
 			xlog(XLOG_ERROR, "pkt.version=%d should be >= %d and <= %d", 
 					_block->pkt.version, 2, DLOG_PACKET_VERSION);
 			goto error;
+		}
+
+		if (pkt_endian != _endian)
+		{
+			xnet_swap(&_block->pkt.size, sizeof(_block->pkt.size));
 		}
 
 		if (_block->pkt.size < DLOG_PACKET_HEAD_SIZE || _block->pkt.size > DLOG_PACKET_MAX_SIZE)
@@ -636,44 +629,37 @@ int Worker::do_read()
 		}
 		if (send_ack() < 0)
 			goto error;
-	
-		if (_block->pkt.version >= 2 && _block->pkt.version <= DLOG_PACKET_VERSION)
-		{
-			if (_block->pkt.flag & DLOG_PACKET_FLAG_IPV6) /* ipv6 binary */
-			{
-				xnet_ipv6_ntoa(_block->pkt.ip64, _block->pkt_ip);
-			}
-			else /* ip string */
-			{
-				if (_block->pkt.ip64[0] == 0 || _block->pkt.ip64[0] == '-')
-					memcpy(_block->pkt_ip, _ip, sizeof(_ip));
-				else
-					memcpy(_block->pkt_ip, _block->pkt.ip64, 16);
-			}
 
-			xatomiclong_inc(&num_block);
-			if (_block->pkt.flag & (DLOG_PACKET_FLAG_LZO | DLOG_PACKET_FLAG_LZ4))
-			{
-				xatomiclong_inc(&num_zip_block);
-				struct packet_block *b = acquire_block();
-				if (_decompress(b, _block))
-				{
-					release_block(_block);
-					_block = b;
-				}
-				else
-				{
-					xatomiclong_inc(&num_unzip_fail);
-					xatomiclong_inc(&num_block_error);
-				}
-			}
-
-			insert_into_current_queue(_block);
-		}
-		else	/* Unsupported packet version */
+		if (_block->pkt.flag & DLOG_PACKET_FLAG_IPV6) /* ipv6 binary */
 		{
-			release_block(_block);
+			xnet_ipv6_ntoa(_block->pkt.ip64, _block->pkt_ip);
 		}
+		else /* ip string */
+		{
+			if (_block->pkt.ip64[0] == 0 || _block->pkt.ip64[0] == '-')
+				memcpy(_block->pkt_ip, _ip, sizeof(_ip));
+			else
+				memcpy(_block->pkt_ip, _block->pkt.ip64, 16);
+		}
+
+		xatomiclong_inc(&num_block);
+		if (_block->pkt.flag & (DLOG_PACKET_FLAG_LZO | DLOG_PACKET_FLAG_LZ4))
+		{
+			xatomiclong_inc(&num_zip_block);
+			struct packet_block *b = acquire_block();
+			if (_decompress(b, _block))
+			{
+				release_block(_block);
+				_block = b;
+			}
+			else
+			{
+				xatomiclong_inc(&num_unzip_fail);
+				xatomiclong_inc(&num_block_error);
+			}
+		}
+
+		insert_into_current_queue(_block);
 		_block = NULL;
 
 		xlog(XLOG_DEBUG, "Worker: read block from %s", _ip);
@@ -839,23 +825,18 @@ void *logger(void *arg)
 				rec_head[DLOG_RECORD_HEAD_SIZE] = 0;
 				recstr = cur + DLOG_RECORD_HEAD_SIZE;
 
-				if (rec->version < 2 || rec->version > DLOG_RECORD_VERSION || rec->bigendian != 0)
+				if (rec->version == DLOG_RECORD_VERSION)
 				{
-					num_record_error++;
-					break;
+					if (pkt_endian != _endian)
+						xnet_swap(&rec->msec, sizeof(rec->msec));
 				}
-
-				if (pkt_endian != _endian)
-				{
-					xnet_swap(&rec->size, sizeof(rec->size));
-					xnet_swap(&rec->pid, sizeof(rec->pid));
-				}
-
-				if (rec->version >= 2 && rec->version <= 4)
+				else if (rec->version >= 3 && rec->version < DLOG_RECORD_VERSION)
 				{
 					if (rec->version == 4)
 					{
 						struct dlog_record_v4 *v4 = (struct dlog_record_v4 *)rec_head;
+						if (pkt_endian != _endian)
+							xnet_swap(&v4->usec, sizeof(v4->usec));
 						rec->msec = v4->usec / 1000;
 					}
 					else
@@ -870,19 +851,21 @@ void *logger(void *arg)
 					}
 					rec->version = DLOG_RECORD_VERSION;
 				}
-				else if (rec->version == DLOG_RECORD_VERSION)
-				{
-					if (pkt_endian != _endian)
-						xnet_swap(&rec->msec, sizeof(rec->msec));
-				}
 				else
 				{
 					num_record_error++;
 					break;
 				}
 
+				if (pkt_endian != _endian)
+				{
+					xnet_swap(&rec->size, sizeof(rec->size));
+					xnet_swap(&rec->pid, sizeof(rec->pid));
+				}
+
 				if (rec->size < (DLOG_RECORD_HEAD_SIZE + rec->locus_end + 2)
-					|| (cur + rec->size) > pkt_end)
+					|| (cur + rec->size) > pkt_end
+					|| rec->bigendian != 0)
 				{
 					num_record_error++;
 					break;

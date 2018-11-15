@@ -1102,9 +1102,9 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 
 #undef FP
 
-void check_and_adjust_record_header(struct dlog_record *rec)
+static void check_and_adjust_record_header(struct dlog_record *rec)
 {
-	if (rec->version < DLOG_RECORD_VERSION)
+	if (rec->version >= 3 && rec->version < DLOG_RECORD_VERSION)
 	{
 		rec->version = DLOG_RECORD_VERSION;
 	}
@@ -1129,7 +1129,7 @@ void check_and_adjust_record_header(struct dlog_record *rec)
 		throw XERROR_FMT(XError, "Invalid record size (%d), locus_end=%d", rec->size, rec->locus_end);
 }
 
-void check_record_whole(struct dlog_record *rec)
+static void check_record_whole(struct dlog_record *rec)
 {
 	if (((char *)rec)[rec->size - 1] != '\0')
 	{
