@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 
-__version__ = "180429.180429.13"
+__version__ = "181115.181115.22"
 
 import socket
 import os
@@ -20,7 +20,7 @@ DLOG_PORT = 6109
 DLOG_STDERR = 0x01
 DLOG_PERROR = 0x02
 
-RECORD_VERSION = 4
+RECORD_VERSION = 5
 TYPE_RAW = 0
 
 IDENT_MAX = 63
