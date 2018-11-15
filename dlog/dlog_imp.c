@@ -3,6 +3,7 @@
 #endif
 #include "dlog_imp.h"
 #include "xslib/xformat.h"
+#include "xslib/xsver.h"
 #include <sys/types.h>
 #include <unistd.h>
 #include <string.h>
@@ -10,8 +11,6 @@
 
 #define PROGRAM program_invocation_short_name
 extern char *program_invocation_short_name;
-
-const char dlog_version_rcsid[] = "$dlog: " DLOG_VERSION " $";
 
 static struct dlog_record _record_prototype = 
 {
@@ -202,7 +201,11 @@ void dlog_make(struct dlog_record *rec, xfmt_callback_function callback,
 	va_start(ap, format);
 	dlog_vmake(rec, callback, identity, tag, locus, format, ap);
 	va_end(ap);
+}
 
-	(void)dlog_version_rcsid;	/* make compiler happy */
+const char* dlog_version_rcsid()
+{
+	xslib_version_rcsid();
+	return "$dlog: " DLOG_VERSION " $";
 }
 
