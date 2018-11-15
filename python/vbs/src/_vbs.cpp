@@ -13,9 +13,10 @@
 #include <map>
 #include <vector>
 
-#define VBS_REVISION	20140306
-#define VBS_RELEASE	20140513
-#define VBS_VERSION	XS_TOSTR(VBS_REVISION)"."XS_TOSTR(VBS_RELEASE)
+#define VBS_V_EDITION	181115
+#define VBS_V_REVISION	181115
+#define VBS_V_RELEASE	22
+#define VBS_VERSION	XS_TOSTR(VBS_V_REVISION) "." XS_TOSTR(VBS_V_RELEASE) "." XS_TOSTR(VBS_V_RELEASE)
 
 #define BUF_SIZE	4096
 #define ITEM_NUM	(BUF_SIZE/sizeof(void *))
@@ -593,15 +594,15 @@ static PyObject* _decode_dict(vbs_unpacker_t *job, const char *encoding, const c
 static PyObject* _decode_one(vbs_unpacker_t *job, const char *encoding, const char *errors)
 {
 	vbs_data_t dat;
-	int kind;
-	int rc = vbs_unpack_primitive(job, &dat, &kind);
+	int variety;
+	int rc = vbs_unpack_primitive(job, &dat, &variety);
 	if (rc < 0)
 	{
 		PyErr_SetString(PyExc_Exception, "vbs_unpack_primitive() failed");
 		return NULL;
 	}
 
-	switch(dat.type)
+	switch(dat.kind)
 	{
 	case VBS_INTEGER:
 		return PyLong_FromLongLong(dat.d_int);
