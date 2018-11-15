@@ -1,4 +1,4 @@
-#! /bin/env python
+#! /usr/bin/env python
 
 from __future__ import print_function
 
@@ -97,7 +97,7 @@ def xdlog(identity, tag, locus, *arg):
     
     composeInfo = truncated << 7 | TYPE_RAW << 4 | 0x08 | RECORD_VERSION
     recordSize = RECORD_HEAD_SIZE + 2 + len(itlocus) + len(strArg)
-    data = struct.pack(">H2B2Hl", recordSize, composeInfo, len(itlocus),
+    data = struct.pack(">H2B2Hq", recordSize, composeInfo, len(itlocus),
              0, _pid, 0) + itlocus + b' ' + strArg + b'\0'
     
     # send log 
