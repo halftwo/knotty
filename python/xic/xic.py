@@ -14,9 +14,9 @@ XXX: It seems this module is not working with gevent.
 """
 from __future__ import print_function
 
-XIC_V_EDITION  = 170614
-XIC_V_REVISION = 170614
-XIC_V_RELEASE  = 18
+XIC_V_EDITION  = 181115
+XIC_V_REVISION = 181115
+XIC_V_RELEASE  = 22
 
 __version__ = str(XIC_V_EDITION) + "." + str(XIC_V_REVISION) + "." + str(XIC_V_RELEASE)
 
@@ -1496,6 +1496,10 @@ def _random_base57id(n):
         Id = Id + Alphabet[random.randint(0,56)]
     return Id
 
+def _get_timestr(t):
+	y, m, d, H, M, S, wd, _, _ = time.localtime(t)
+	wday = "mtwrfsu"[wd]
+	return "%02d%02d%02d%c%02d%02d%02d" % (y%100, m, d, wday, H, M, S)
 
 class Engine(object):
 
@@ -1513,7 +1517,7 @@ class Engine(object):
         self._logword = ""
         self._id = _random_base57id(23)
         self._servant = _EngineServant(self)
-        self._start_time = time.strftime("%Y%m%d-%H%M%S")
+        self._start_time = _get_timestr(None)
         self._listenAddress = ''
 
     @property
