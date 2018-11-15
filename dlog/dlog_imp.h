@@ -12,9 +12,9 @@ extern "C" {
 #endif
 
 
-#define DLOG_V_EDITION 		180801
-#define DLOG_V_REVISION 	181104
-#define DLOG_V_RELEASE 		21
+#define DLOG_V_EDITION 		181115
+#define DLOG_V_REVISION 	181115
+#define DLOG_V_RELEASE 		19
 
 #define DLOG_VERSION		XS_TOSTR(DLOG_V_EDITION) "." XS_TOSTR(DLOG_V_REVISION) "." XS_TOSTR(DLOG_V_RELEASE)
 
@@ -22,8 +22,8 @@ extern "C" {
 #define DLOG_CENTER_PORT		6108
 #define DLOGD_PORT			6109
 
-#define DLOG_RECORD_VERSION		4
-#define DLOG_PACKET_VERSION		4
+#define DLOG_RECORD_VERSION		5
+#define DLOG_PACKET_VERSION		5
 
 #define DLOG_TYPE_RAW 			0
 #define DLOG_TYPE_COOKED		1
@@ -47,8 +47,8 @@ extern "C" {
 #define DLOG_PACKET_MAX_SIZE		(65536-256)
 
 
-#define dlog_record 			dlog_record_v4
-#define dlog_packet			dlog_packet_v4
+#define dlog_record 			dlog_record_v5
+#define dlog_packet			dlog_packet_v5
 
 
 
@@ -117,6 +117,26 @@ struct dlog_record_v4
 	char str[];
 };
 
+struct dlog_record_v5
+{
+	uint16_t size;          /* include the size itself and trailing '\0' */
+
+	/* If bigendian is 1, the byte order is big endian.
+	   Otherwise, the byte order is native order.
+	 */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	uint8_t version:3, bigendian:1, type:3, truncated:1;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	uint8_t truncated:1, type:3, bigendian:1, version:3;
+#else
+# error "unsupported endian"
+#endif 
+	uint8_t locus_end;
+	uint16_t port;
+	uint16_t pid;
+	int64_t msec;		/* milliseconds from unix epoch */
+	char str[];
+};
 
 struct dlog_packet_v2
 {
@@ -153,6 +173,19 @@ struct dlog_packet_v4
 	uint8_t ip64[16];
 	char buf[];
 };
+
+struct dlog_packet_v5
+{
+	uint32_t size;		/* include the size itself */
+	uint8_t version;
+	uint8_t flag;
+	uint8_t _reserved1;
+	uint8_t _reserved2;
+	int64_t msec;		/* milliseconds from unix epoch */
+	uint8_t ip64[16];
+	char buf[];
+};
+
 
 void dlog_compose(struct dlog_record *rec, const xstr_t *identity,
 		const xstr_t *tag, const xstr_t *locus, const xstr_t *content);

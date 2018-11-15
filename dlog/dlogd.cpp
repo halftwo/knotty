@@ -234,9 +234,8 @@ static void do_log(struct dlog_record *rec)
 
 static void log_it(struct dlog_record *rec, bool block)
 {
-	int64_t ms = dispatcher->msecRealtime();
-	time_t sec = ms / 1000;
-	rec->usec = ms * 1000;
+	rec->msec = dispatcher->msecRealtime();
+	time_t sec = rec->msec / 1000;
 
 	if (!block)
 		last_record_time = sec;
@@ -518,7 +517,7 @@ static void *sender_thread(void *arg)
 			}
 
 			int64_t current_ms = dispatcher->msecRealtime();
-			pkt->usec = current_ms * 1000;
+			pkt->msec = current_ms;
 			pkt->version = DLOG_PACKET_VERSION;
 			memcpy(pkt->ip64, the_ip64, sizeof(pkt->ip64));
 			if (_endian)

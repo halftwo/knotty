@@ -71,7 +71,7 @@ static const char *TYPECODE = ">#@!????????????";
 struct packet_block
 {
 	TAILQ_ENTRY(packet_block) link;
-	int64_t usec;
+	int64_t msec;
 	char pkt_ip[40];
 	char out_addr[48];
 	struct dlog_packet pkt;
@@ -577,11 +577,13 @@ int Worker::do_read()
 				xnet_swap(&v3->time.tv_usec, sizeof(v3->time.tv_usec));
 			}
 			_block->pkt.version = DLOG_PACKET_VERSION;
-			_block->pkt.usec = int64_t(v3->time.tv_sec) * 1000000 + v3->time.tv_usec;
+			_block->pkt.msec = int64_t(v3->time.tv_sec) * 1000 + v3->time.tv_usec / 1000;
 		}
 		else if (pkt_endian != _endian)
 		{
-			xnet_swap(&_block->pkt.usec, sizeof(_block->pkt.usec));
+			xnet_swap(&_block->pkt.msec, sizeof(_block->pkt.msec));
+			if (_block->pkt.version == 4)
+				_block->pkt.msec /= 1000;
 		}
 
 		if (_block->pkt.size < DLOG_PACKET_HEAD_SIZE || _block->pkt.size > DLOG_PACKET_MAX_SIZE)
@@ -592,7 +594,7 @@ int Worker::do_read()
 		}
 
 		msec = dispatcher->msecRealtime();
-		pkt_msec = _block->pkt.usec / 1000;
+		pkt_msec = _block->pkt.msec;
 		diff = msec - pkt_msec;
 		delta = diff - _diff;
 		if ((delta > -4000 && delta < 4000) || (_last_msec != 0 && llabs(diff) > llabs(_diff)))
@@ -602,7 +604,7 @@ int Worker::do_read()
 		_last_msec = msec;
 
 		msec = pkt_msec + _diff;
-		_block->usec = msec * 1000;
+		_block->msec = msec;
 		active_time = msec / 1000;
 		memcpy(_block->out_addr, _addr, sizeof(_addr));
 
@@ -805,7 +807,7 @@ void *logger(void *arg)
 			int pkt_endian = (pkt->flag & DLOG_PACKET_FLAG_BIG_ENDIAN) ? 1 : 0;
 			char *pkt_end = (char *)pkt + pkt->size;
 			char *cur = (char *)pkt + DLOG_PACKET_HEAD_SIZE;
-			int64_t usec_shift = block->usec - pkt->usec;
+			int64_t msec_shift = block->msec - pkt->msec;
 			while (cur < pkt_end)
 			{
 				bool discard = false;
@@ -844,11 +846,13 @@ void *logger(void *arg)
 						xnet_swap(&v3->time.tv_usec, sizeof(v3->time.tv_usec));
 					}
 					rec->version = DLOG_RECORD_VERSION;
-					rec->usec = int64_t(v3->time.tv_sec) * 1000000 + v3->time.tv_usec;
+					rec->msec = int64_t(v3->time.tv_sec) * 1000 + v3->time.tv_usec / 1000;
 				}
 				else if (pkt_endian != _endian)
 				{
-					xnet_swap(&rec->usec, sizeof(rec->usec));
+					xnet_swap(&rec->msec, sizeof(rec->msec));
+					if (rec->version == 4)
+						rec->msec /= 1000;
 				}
 
 				if (rec->size < (DLOG_RECORD_HEAD_SIZE + rec->locus_end + 2)
@@ -875,8 +879,8 @@ void *logger(void *arg)
 					// continue;
 				}
 			
-				rec->usec += usec_shift;
-				time_t rec_time = rec->usec / 1000000;
+				rec->msec += msec_shift;
+				time_t rec_time = rec->msec / 1000;
 				if (rec_time != last_time)
 				{
 					last_time = rec_time;
