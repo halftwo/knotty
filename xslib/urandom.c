@@ -105,77 +105,45 @@ int urandom_get_int(int a, int b)
 
 ssize_t urandom_generate_base32id(char id[], size_t size)
 {
-	size_t bsize, len, i;
-	unsigned char *buf;
-	char *b32str;
-	uint32_t u32;
+	uint64_t x = 0;
+	ssize_t k;
+	ssize_t len = size - 1;
 
-	len = size - 1;
-	if ((ssize_t)len <= 0)
-		return len;
+	if (len < 0)
+		return -1;
 
-	bsize = (len * 5 + 7) / 8;
-	if (bsize < sizeof(uint32_t))
-		bsize = sizeof(uint32_t);
-
-       	buf = alloca(bsize);
-	urandom_get_bytes(buf, bsize);
-
-	u32 = (uint8_t)buf[0];
-	for (i = 1; i < sizeof(uint32_t); ++i)
+	for (k = 0; k < len; k += 12)
 	{
-		u32 <<= 8;
-		u32 += buf[i];
+		int n = len - k;
+		if (n > 12)
+			n = 12;
+		urandom_get_bytes(&x, sizeof(x));
+		xbase32_pad_from_uint64(id + k, n, x);
 	}
-
-	b32str = alloca(XBASE32_ENCODED_LEN(bsize) + 1);
-	len = xbase32_encode(b32str, buf, bsize);
-	if (len >= size)
-	{
-		len = size - 1;
-		b32str[len] = 0;
-	}
-
-	memcpy(id, b32str, len + 1);
-	id[0] = xbase32_alphabet[10 + (u32 / (UINT32_MAX / 22 + 1))]; /* make the first character always letter instead of digit */
+	id[0] = xbase32_alphabet[x / (UINT64_MAX / 22 + 1)]; /* make the first character always letter instead of digit */
+	id[len] = 0;
 	return len;
 }
 
 ssize_t urandom_generate_base57id(char id[], size_t size)
 {
-	size_t bsize, len, i;
-	unsigned char *buf;
-	char *b57str;
-	uint32_t u32;
+	uint64_t x = 0;
+	ssize_t k;
+	ssize_t len = size - 1;
 
-	len = size - 1;
-	if ((ssize_t)len <= 0)
-		return len;
+	if (len < 0)
+		return -1;
 
-	bsize = XBASE57_DECODED_LEN(len) + 1;
-	if (bsize < sizeof(uint32_t))
-		bsize = sizeof(uint32_t);
-
-       	buf = alloca(bsize);
-	urandom_get_bytes(buf, bsize);
-
-	u32 = (uint8_t)buf[0];
-	for (i = 1; i < sizeof(uint32_t); ++i)
+	for (k = 0; k < len; k += 10)
 	{
-		u32 <<= 8;
-		u32 += buf[i];
+		int n = len - k;
+		if (n > 10)
+			n = 10;
+		urandom_get_bytes(&x, sizeof(x));
+		xbase57_pad_from_uint64(id + k, n, x);
 	}
-
-	b57str = alloca(XBASE57_ENCODED_LEN(bsize) + 1);
-	len = xbase57_encode(b57str, buf, bsize);
-	if (len >= size)
-	{
-		len = size - 1;
-		b57str[len] = 0;
-	}
-
-	memcpy(id, b57str, len + 1);
-	id[0] = xbase57_alphabet[u32 / (UINT32_MAX / 49 + 1)]; /* make the first character always letter instead of digit */
+	id[0] = xbase57_alphabet[x / (UINT64_MAX / 49 + 1)]; /* make the first character always letter instead of digit */
+	id[len] = 0;
 	return len;
 }
 
