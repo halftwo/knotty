@@ -5,7 +5,7 @@
 #include "xslib/vbs_pack.h"
 #include "xslib/xio.h"
 #include "xslib/ostk.h"
-#include "xslib/xbase32.h"
+#include "xslib/xbase57.h"
 #include "xslib/urandom.h"
 #include "xslib/xnet.h"
 #include "zend_API.h"
@@ -59,16 +59,6 @@ void raise_Exception(long code TSRMLS_DC, const char *format, ...)
 	zend_object *ex = zend_throw_exception(zend_exception_get_default(TSRMLS_C), buf, code);
 }
 
-static uint16_t _get_pid_base32(char buf[3])
-{
-	uint16_t pid = getpid();
-
-	buf[0] = xbase32_alphabet[(pid >> 10) & 0x1F];
-	buf[1] = xbase32_alphabet[(pid >> 5) & 0x1F];
-	buf[2] = xbase32_alphabet[pid & 0x1F];
-	return pid;
-}
-
 ssize_t get_self_process_id(char *id, size_t size)
 {
 	assert((ssize_t)size >= 8);
@@ -77,7 +67,7 @@ ssize_t get_self_process_id(char *id, size_t size)
 	int half = len / 2;
 	urandom_generate_base57id(id, len + 1);
 	memmove(id + half + 3, id + half, len - half);
-	_get_pid_base32(id + half);
+	xbase57_pad_from_uint64(id + half, 3, getpid());
 	len += 3;
 	id[len] = 0;
 	return len;
