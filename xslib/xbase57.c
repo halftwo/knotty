@@ -1,6 +1,7 @@
 #include "xbase57.h"
-#include <stdint.h>
+#include "bit.h"
 #include <stdbool.h>
+#include <string.h>
 #include <limits.h>
 
 #define NI	-3
@@ -75,7 +76,7 @@ ssize_t xbase57_encode(char *out, const void *in, size_t len)
 	return buf - out;
 }
 
-ssize_t xbase57_decode(void *out, const char *in, size_t len)
+ssize_t _do_decode(void *out, const char *in, size_t len, bool ignore_space)
 {
 	const char *src = in, *end = (const char *)-1;
 	char *dst = (char *)out;
@@ -97,7 +98,11 @@ ssize_t xbase57_decode(void *out, const char *in, size_t len)
 		if (de < 0)
 		{
 			if (de == SP)
-				continue;
+			{
+				if (ignore_space)
+					continue;
+				return -(src + 1 - in);
+			}
 
 			if (de == NI && find_end)
 				break;
@@ -186,6 +191,131 @@ ssize_t xbase57_decode(void *out, const char *in, size_t len)
 	}
 
 	return dst - (char *)out;
+}
+
+ssize_t xbase57_decode(void *out, const char *in, size_t len)
+{
+	return _do_decode(out, in, len, true);
+}
+
+
+ssize_t xbase57_from_uint64(char *out, uint64_t n)
+{
+	int i, j;
+	int k = 0;
+	while (n > 0)
+	{
+		out[k] = xbase57_alphabet[n % 57];
+		n /= 57;
+		k++;
+	}
+	out[k] = 0;
+
+	for (i = 0, j = k - 1; i < j; i++, j--)
+	{
+		char ch = out[i];
+		out[i] = out[j];
+		out[j] = ch;
+	}
+
+	return k;
+}
+
+ssize_t xbase57_pad_from_uint64(char *out, size_t len, uint64_t n)
+{
+	ssize_t k = 0;
+	ssize_t i = len - 1;
+	for (; i >= 0; i--)
+	{
+		if (n > 0)
+		{
+			out[i] = xbase57_alphabet[n % 57];
+			n /= 57;
+			k++;
+		}
+		else
+		{
+			out[i] = xbase57_alphabet[0];
+		}
+	}
+
+	while (n > 0)
+	{
+		n /= 57;
+		k++;
+	}
+
+	return k;
+}
+
+static int _block_to_uint64(const char *block, int len, uint64_t *n)
+{
+	int i, k;
+	uint64_t acc = 0;
+
+	if (len > 11)
+		len = 11;
+
+	k = len < 10 ? len : 10;
+	for (i = 0; i < k; i++)
+	{
+		int ch = (unsigned char)block[i];
+		int de = (ch < 128) ? detab[ch] : -1;
+		if (de < 0)
+			return i;
+		acc = acc * 57 + de;
+	}
+
+	if (len > 10)
+	{
+		if (acc > UINT64_C(0x047dc11f7047dc11))
+			return false;
+		acc *= 57;
+
+		int ch = (unsigned char)block[i];
+		int de = (ch < 128) ? detab[ch] : -1;
+		if (de < 0)
+			return i;
+		if (acc > UINT64_C(0xffffffffffffffff) - de)
+			return i;
+		acc += de;
+	}
+
+	*n = acc;
+	return len;
+}
+
+ssize_t xbase57_to_uint64(const char *b57str, size_t len, uint64_t* n)
+{
+	int nz_k = 0;
+	uint64_t nz_value = 0;
+	int k;
+
+	if ((ssize_t)len < 0)
+		len = strlen(b57str);
+
+	for (k = 0; len > 0; k++)
+	{
+		uint64_t value = 0;
+		int num = len >= 11 ? 11 : len;
+		len -= num;
+		if (_block_to_uint64(b57str + len, num, &value) < num)
+			return -1;
+
+		if (k == 0)
+			*n = value;
+
+		if (value != 0)
+		{
+			nz_k = k;
+			nz_value = value;
+		}
+	}
+
+	if (nz_value == 0)
+		return 0;
+
+	return nz_k * 64 + bit_msb64_find(nz_value) + 1;
 }
 
 
