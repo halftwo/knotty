@@ -1,6 +1,6 @@
 #include "xbase32.h"
-#include <stdint.h>
-#include <stdbool.h>
+#include "bit.h"
+#include <string.h>
 #include <limits.h>
 
 #define NI	-3
@@ -164,6 +164,90 @@ ssize_t xbase32_decode(void *out, const char *in, size_t len)
 
 	return d - (char *)out;
 }
+
+
+ssize_t xbase32_from_uint64(char *out, uint64_t n)
+{
+	int i, j;
+	int k = 0;
+	while (n > 0)
+	{
+		out[k] = xbase32_alphabet[n & 0x1f];
+		n >>= 5;
+		k++;
+	}
+	out[k] = 0;
+
+	for (i = 0, j = k - 1; i < j; i++, j--)
+	{
+		char ch = out[i];
+		out[i] = out[j];
+		out[j] = ch;
+	}
+
+	return k;
+}
+
+ssize_t xbase32_pad_from_uint64(char *out, size_t len, uint64_t n)
+{
+	ssize_t k = 0;
+	ssize_t i = len - 1;
+	for (; i >= 0; i--)
+	{
+		if (n > 0)
+		{
+			out[i] = xbase32_alphabet[n & 0x1f];
+			n >>= 5;
+			k++;
+		}
+		else
+		{
+			out[i] = xbase32_alphabet[0];
+		}
+	}
+
+	while (n > 0)
+	{
+		n >>= 5;
+		k++;
+	}
+
+	return k;
+}
+
+ssize_t xbase32_to_uint64(const char *b32str, size_t len, uint64_t* n)
+{
+	ssize_t i;
+	int nz_value = 0;
+	size_t nz_shift = 0;
+	size_t shift = 0;
+	uint64_t m = 0;
+	if ((ssize_t)len < 0)
+		len = strlen(b32str);
+
+	for (i = len - 1; i >= 0; i--, shift += 5)
+	{
+		int c = (unsigned char)b32str[i];
+		int x = (c < 128) ? detab[c] : -1;
+		if (x < 0)
+			return -1;
+
+		if (x > 0)
+		{
+			nz_value = x;
+			nz_shift = shift;
+			if (shift < 64)
+				m |= ((uint64_t)x) << shift;
+		}
+	}
+	*n = m;
+
+	if (nz_value == 0)
+		return 0;
+
+	return nz_shift + bit_msb32_find(nz_value) + 1;
+}
+
 
 static char _luhn_char(const char *alphabet, const char *base32str, size_t len)
 {
