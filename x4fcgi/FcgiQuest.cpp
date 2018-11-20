@@ -18,15 +18,8 @@ static xatomic_t _last_request_id;
 static void format_base32id(char buf[10], uint32_t rid)
 {
 	static uint16_t pid = getpid();
-	buf[0] = xbase32_alphabet[(pid >> 10) & 0x1F];
-	buf[1] = xbase32_alphabet[(pid >> 5) & 0x1F];
-	buf[2] = xbase32_alphabet[pid & 0x1F];
-	buf[3] = xbase32_alphabet[(rid >> 25) & 0x1F];
-	buf[4] = xbase32_alphabet[(rid >> 20) & 0x1F];
-	buf[5] = xbase32_alphabet[(rid >> 15) & 0x1F];
-	buf[6] = xbase32_alphabet[(rid >> 10) & 0x1F];
-	buf[7] = xbase32_alphabet[(rid >> 5) & 0x1F];
-	buf[8] = xbase32_alphabet[rid & 0x1F];
+	xbase32_pad_from_uint64(buf, 3, pid);
+	xbase32_pad_from_uint64(buf+3, 6, rid);
 	buf[9] = 0;
 }
 
