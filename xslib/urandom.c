@@ -105,44 +105,62 @@ int urandom_get_int(int a, int b)
 
 ssize_t urandom_generate_base32id(char id[], size_t size)
 {
-	uint64_t x = 0;
-	ssize_t k;
+	uint64_t *x = 0;
+	ssize_t i, num, k;
 	ssize_t len = size - 1;
 
 	if (len < 0)
 		return -1;
 
-	for (k = 0; k < len; k += 12)
+	if (len == 0)
 	{
-		int n = len - k;
+		id[0] = 0;
+		return 0;
+	}
+
+	num = (len + 11) / 12;
+	x = alloca(sizeof(x[0]) * num);
+	urandom_get_bytes(x, sizeof(x[0]) * num);
+
+	for (k = 0, i = 0; k < len; k += 12, i++)
+	{
+		ssize_t n = len - k;
 		if (n > 12)
 			n = 12;
-		urandom_get_bytes(&x, sizeof(x));
-		xbase32_pad_from_uint64(id + k, n, x);
+		xbase32_pad_from_uint64(id + k, n, x[i]);
 	}
-	id[0] = xbase32_alphabet[x / (UINT64_MAX / 22 + 1)]; /* make the first character always letter instead of digit */
+	id[0] = xbase32_alphabet[x[0] / (UINT64_MAX / 22 + 1)]; /* make the first character always letter instead of digit */
 	id[len] = 0;
 	return len;
 }
 
 ssize_t urandom_generate_base57id(char id[], size_t size)
 {
-	uint64_t x = 0;
-	ssize_t k;
+	uint64_t *x = 0;
+	ssize_t i, num, k;
 	ssize_t len = size - 1;
 
 	if (len < 0)
 		return -1;
 
-	for (k = 0; k < len; k += 10)
+	if (len == 0)
 	{
-		int n = len - k;
+		id[0] = 0;
+		return 0;
+	}
+
+	num = (len + 9) / 10;
+	x = alloca(sizeof(x[0]) * num);
+	urandom_get_bytes(x, sizeof(x[0]) * num);
+
+	for (k = 0, i = 0; k < len; k += 10, i++)
+	{
+		ssize_t n = len - k;
 		if (n > 10)
 			n = 10;
-		urandom_get_bytes(&x, sizeof(x));
-		xbase57_pad_from_uint64(id + k, n, x);
+		xbase57_pad_from_uint64(id + k, n, x[i]);
 	}
-	id[0] = xbase57_alphabet[x / (UINT64_MAX / 49 + 1)]; /* make the first character always letter instead of digit */
+	id[0] = xbase57_alphabet[x[0] / (UINT64_MAX / 49 + 1)]; /* make the first character always letter instead of digit */
 	id[len] = 0;
 	return len;
 }
