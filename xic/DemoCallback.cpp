@@ -19,6 +19,7 @@ class CallbackServant: public xic::ServantI
 	xic::AdapterPtr _adapter;
 	xic::ProxyPtr _demoPrx;
 	xic::ProxyPtr _selfPrx;
+	time_t _start_time;
 public:
 	CallbackServant(const xic::AdapterPtr& adapter, const xic::ProxyPtr& demoPrx);
 	virtual ~CallbackServant();
@@ -42,6 +43,7 @@ CallbackServant::CallbackServant(const xic::AdapterPtr& adapter, const xic::Prox
 	: ServantI(&_methodtab), _adapter(adapter), _demoPrx(demoPrx)
 {
 	std::string service = "DemoCallback." + adapter->getEngine()->id();
+	_start_time = time(NULL);
 
 	xref_inc();
 	_selfPrx = adapter->addServant(service, this);
@@ -90,19 +92,13 @@ XIC_METHOD(CallbackServant, cb_time)
 		time(&t);
 	}
 
+        char buf[32];
         xic::AnswerWriter aw;
 	aw.param("con", current.con->info());
+        aw.param("start", dlog_local_time_str(_start_time, buf));
         aw.param("time", t);
-
-	xic::VDictWriter dw = aw.paramVDict("strftime");
-
-        char buf[32];
-	dlog_utc_time_str(t, buf);
-        dw.kv("utc", buf);
-
-	dlog_local_time_str(t, buf);
-        dw.kv("local", buf);
-
+        aw.param("utc", dlog_utc_time_str(t, buf));
+        aw.param("local", dlog_local_time_str(t, buf));
         return aw;
 }
 
