@@ -73,7 +73,7 @@ struct packet_block
 	TAILQ_ENTRY(packet_block) link;
 	int64_t msec;
 	char pkt_ip[40];
-	char ext_addr[47];
+	char ext_ip[40];
 	bool ip_diff;
 	struct dlog_packet pkt;
 };
@@ -370,7 +370,6 @@ private:
 	int64_t _last_msec;
 	int64_t _diff;
 	char _ip[40];
-	char _addr[47];
 	uint16_t _port;
 	loc_t _loc;
 	struct packet_block *_block;
@@ -451,7 +450,6 @@ Worker::Worker(int sock)
 	_ack_num = 0;
 
 	_port = xnet_get_peer_ip_port(_event_fd, _ip);
-	snprintf(_addr, sizeof(_addr), "%s+%u", _ip, _port);
 	xatomic_inc(&num_client);
 	xdlog(NULL, _program_name, "NODE_CONNECT", NULL, "v2 peer=%s+%u", _ip, _port);
 }
@@ -614,7 +612,6 @@ int Worker::do_read()
 		msec = pkt_msec + _diff;
 		_block->msec = msec;
 		active_time = msec / 1000;
-		memcpy(_block->ext_addr, _addr, sizeof(_block->ext_addr));
 
 		LOC_ANCHOR
 		{
@@ -642,6 +639,7 @@ int Worker::do_read()
 			else
 				memcpy(_block->pkt_ip, _block->pkt.ip64, 16);
 		}
+		memcpy(_block->ext_ip, _ip, sizeof(_block->ext_ip));
 		_block->ip_diff = (strcmp(_block->pkt_ip, _ip) != 0);
 
 		xatomiclong_inc(&num_block);
@@ -927,7 +925,7 @@ void *logger(void *arg)
 					{
 						rc = fprintf(_logfile_fp, "%c%s %s/%s %d+%d %s%s\n",
 							TYPECODE[rec->type], last_record_time_str,
-							block->ext_addr, block->pkt_ip, 
+							block->ext_ip, block->pkt_ip,
 							rec->pid, rec->port,
 							recstr, rec->truncated ? "\a ..." : "");
 					}
@@ -935,7 +933,7 @@ void *logger(void *arg)
 					{
 						rc = fprintf(_logfile_fp, "%c%s %s %d+%d %s%s\n",
 							TYPECODE[rec->type], last_record_time_str,
-							block->ext_addr,
+							block->ext_ip,
 							rec->pid, rec->port,
 							recstr, rec->truncated ? "\a ..." : "");
 					}
