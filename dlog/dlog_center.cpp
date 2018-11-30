@@ -861,6 +861,7 @@ void *logger(void *arg)
 				{
 					xnet_swap(&rec->size, sizeof(rec->size));
 					xnet_swap(&rec->pid, sizeof(rec->pid));
+					xnet_swap(&rec->port, sizeof(rec->port));
 				}
 
 				if (rec->size < (DLOG_RECORD_HEAD_SIZE + rec->locus_end + 2)

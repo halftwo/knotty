@@ -1116,7 +1116,7 @@ static void check_and_adjust_record_header(struct dlog_record *rec)
 	{
 		rec->bigendian = 0;
 		xnet_msb16(&rec->size);
-		xnet_msb16((uint16_t*)&rec->pid);
+		xnet_msb16(&rec->pid);
 	}
 
 	if (rec->type != DLOG_TYPE_RAW)
@@ -1187,7 +1187,7 @@ void DlogUdpWorker::do_read()
 			else if (len == 0)
 				break;
 
-			port = (addr.family == AF_INET6) ? addr.a6.sin6_port : addr.a4.sin_port;
+			port = ntohs((addr.family == AF_INET6) ? addr.a6.sin6_port : addr.a4.sin_port);
 
 			if (len < (ssize_t)DLOG_RECORD_HEAD_SIZE)
 				throw XERROR_FMT(XError, "Size of recvfrom()ed data too small (%zd)", len);
