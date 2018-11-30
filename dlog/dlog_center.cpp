@@ -73,7 +73,8 @@ struct packet_block
 	TAILQ_ENTRY(packet_block) link;
 	int64_t msec;
 	char pkt_ip[40];
-	char out_addr[48];
+	char ext_addr[47];
+	bool ip_diff;
 	struct dlog_packet pkt;
 };
 
@@ -368,8 +369,8 @@ private:
 	int _event_fd;
 	int64_t _last_msec;
 	int64_t _diff;
-	char _addr[48];
 	char _ip[40];
+	char _addr[47];
 	uint16_t _port;
 	loc_t _loc;
 	struct packet_block *_block;
@@ -613,7 +614,7 @@ int Worker::do_read()
 		msec = pkt_msec + _diff;
 		_block->msec = msec;
 		active_time = msec / 1000;
-		memcpy(_block->out_addr, _addr, sizeof(_addr));
+		memcpy(_block->ext_addr, _addr, sizeof(_block->ext_addr));
 
 		LOC_ANCHOR
 		{
@@ -641,6 +642,7 @@ int Worker::do_read()
 			else
 				memcpy(_block->pkt_ip, _block->pkt.ip64, 16);
 		}
+		_block->ip_diff = (strcmp(_block->pkt_ip, _ip) != 0);
 
 		xatomiclong_inc(&num_block);
 		if (_block->pkt.flag & (DLOG_PACKET_FLAG_LZO | DLOG_PACKET_FLAG_LZ4))
@@ -921,22 +923,20 @@ void *logger(void *arg)
 				if (!discard)
 				{
 					int rc;
-					if (rec->type == DLOG_TYPE_SYS && 
-						(!strncmp(recstr, "dlogd ", 6) || !strncmp(recstr, "dstsd ", 6)))
+					if (block->ip_diff)
 					{
-						char *p = (char *)memrchr(recstr, ' ', rec->locus_end);
-						int len = p ? p - recstr : 0;
-						rc = fprintf(_logfile_fp, "%c%s %s %d+%d %.*s %s %s%s\n",
+						rc = fprintf(_logfile_fp, "%c%s %s/%s %d+%d %s%s\n",
 							TYPECODE[rec->type], last_record_time_str,
-							block->pkt_ip, rec->pid, rec->port,
-							len, recstr, block->out_addr,
-							&recstr[rec->locus_end + 1], rec->truncated ? "\a ..." : "");
+							block->ext_addr, block->pkt_ip, 
+							rec->pid, rec->port,
+							recstr, rec->truncated ? "\a ..." : "");
 					}
 					else
 					{
 						rc = fprintf(_logfile_fp, "%c%s %s %d+%d %s%s\n",
 							TYPECODE[rec->type], last_record_time_str,
-							block->pkt_ip, rec->pid, rec->port,
+							block->ext_addr,
+							rec->pid, rec->port,
 							recstr, rec->truncated ? "\a ..." : "");
 					}
 
