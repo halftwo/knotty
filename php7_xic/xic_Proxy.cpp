@@ -78,6 +78,7 @@ PHP_METHOD(xic_Proxy, setContext)
 		return;
 	}
 
+	update_ctx_cid(ctx);
 	update_ctx_caller(ctx);
 	vbs_packer_t pk;
 	std::ostringstream os;
@@ -137,17 +138,23 @@ PHP_METHOD(xic_Proxy, invoke)
 		vbs_packer_init(&pk, rope_xio.write, &args_rope, 100);
 		vbs::v_encode_args(&pk, args TSRMLS_CC);
 
-		std::string ctx_string;
-		if (ctx)
+		zval arr;
+		ZVAL_UNDEF(&arr);
+		if (!ctx)
 		{
-			update_ctx_caller(ctx);
-			std::ostringstream os;
-			vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
-			vbs::v_encode_ctx(&pk, ctx TSRMLS_CC);
-			if (pk.error)
-				throw XERROR_MSG(XError, "Invalid context");
-			ctx_string = os.str();
+			array_init(&arr);
+			ctx = &arr;
 		}
+
+		update_ctx_cid(ctx);
+		update_ctx_caller(ctx);
+		std::ostringstream os;
+		vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
+		vbs::v_encode_ctx(&pk, ctx TSRMLS_CC);
+		Z_TRY_DELREF_P(&arr);
+		if (pk.error)
+			throw XERROR_MSG(XError, "Invalid context");
+		std::string ctx_string = os.str();
 
 		xstr_t res = prx->invoke(method, args_rope, ctx_string);
 		ON_BLOCK_EXIT(free, res.data);
@@ -219,17 +226,23 @@ PHP_METHOD(xic_Proxy, invokeOneway)
 		vbs_packer_init(&pk, rope_xio.write, &args_rope, 100);
 		vbs::v_encode_args(&pk, args TSRMLS_CC);
 
-		std::string ctx_string;
-		if (ctx)
+		zval arr;
+		ZVAL_UNDEF(&arr);
+		if (!ctx)
 		{
-			update_ctx_caller(ctx);
-			std::ostringstream os;
-			vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
-			vbs::v_encode_ctx(&pk, ctx TSRMLS_CC);
-			if (pk.error)
-				throw XERROR_MSG(XError, "Invalid context");
-			ctx_string = os.str();
+			array_init(&arr);
+			ctx = &arr;
 		}
+
+		update_ctx_cid(ctx);
+		update_ctx_caller(ctx);
+		std::ostringstream os;
+		vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
+		vbs::v_encode_ctx(&pk, ctx TSRMLS_CC);
+		Z_TRY_DELREF_P(&arr);
+		if (pk.error)
+			throw XERROR_MSG(XError, "Invalid context");
+		std::string ctx_string = os.str();
 
 		prx->invoke_oneway(method, args_rope, ctx_string);
 	}

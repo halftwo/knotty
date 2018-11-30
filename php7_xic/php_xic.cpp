@@ -17,6 +17,7 @@
 #include "Zend/zend_smart_str.h"
 #include "xslib/vbs_pack.h"
 #include "xslib/xsdef.h"
+#include "xslib/xbase57.h"
 #include "dlog/dlog.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(xic)
@@ -78,6 +79,8 @@ zend_function_entry xic_functions[] = {
 	PHP_FE(xic_engine, NULL)
 	PHP_FE(xic_self_id, NULL)
 	PHP_FE(xic_self, NULL)
+	PHP_FE(xic_get_cid, NULL)
+	PHP_FE(xic_set_cid, NULL)
 	PHP_FE(vbs_blob, NULL)
 	PHP_FE(vbs_dict, NULL)
 	PHP_FE(vbs_decimal, NULL)
@@ -161,6 +164,15 @@ zval *get_xic_self()
 	return self;
 }
 
+zval *get_xic_cid()
+{
+	zval* cid = &XIC_G(the_cid);
+	if (Z_ISUNDEF(*cid))
+		return NULL;
+	return cid;
+}
+
+
 /* proto object xic_engine()
    Return the xic Engine object 
    If error, return NULL.
@@ -195,6 +207,50 @@ PHP_FUNCTION(xic_self)
 	RETURN_ZVAL(zv, 1, 0);
 }
 
+
+/* proto string xic_get_cid();
+ */
+PHP_FUNCTION(xic_get_cid)
+{
+	zval* zv = get_xic_cid();
+	if (zv)
+		RETURN_ZVAL(zv, 1, 0);
+
+	RETVAL_STRINGL(NULL, 0);
+}
+
+
+/* proto void xic_set_cid(string $cid);
+ */
+PHP_FUNCTION(xic_set_cid)
+{
+	char *cid = NULL;
+	size_t len = 0;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s/", &cid, &len) != SUCCESS)
+	{
+		raise_Exception(0 TSRMLS_CC, "Wrong parameters for xic_set_cid(string $cid)");
+	}
+
+	if (len > 0 && (len != 17 || strspn(cid, xbase57_alphabet) < len))
+	{
+		raise_Exception(0 TSRMLS_CC, "Invalid cid for xic_set_cid(string $cid)");
+	}
+
+	char buf[18];
+	if (len <= 0)
+	{
+		cid = buf;
+		len = generate_xic_cid(buf);
+	}
+
+	zval* zv = &XIC_G(the_cid);
+	if (!Z_ISUNDEF(*zv))
+	{
+		Z_DELREF_P(zv);
+	}
+
+	ZVAL_STRINGL(zv, cid, len);
+}
 
 PHP_FUNCTION(vbs_blob)
 {
@@ -671,6 +727,13 @@ PHP_RSHUTDOWN_FUNCTION(xic)
 	if (!Z_ISUNDEF(XIC_G(the_self_id)))
 	{
 		zval* zv = &XIC_G(the_self_id);
+		zval_ptr_dtor(zv);
+		ZVAL_UNDEF(zv);
+	}
+
+	if (!Z_ISUNDEF(XIC_G(the_cid)))
+	{
+		zval* zv = &XIC_G(the_cid);
 		zval_ptr_dtor(zv);
 		ZVAL_UNDEF(zv);
 	}

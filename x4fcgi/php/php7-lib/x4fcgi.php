@@ -4,7 +4,7 @@
 * A framework to provide xic service with php in fcgi.
 * @package x4fcgi 
 * @author jiagui
-* @version 170802.181109.20
+* @version 181130.181130.20
 * Following is an example program.
 *
 --------------- BEGIN OF EXAMPLE PROGRAM ------------
@@ -121,6 +121,22 @@ function x4fcgi_serve($callback)
 			$input_bytes = stream_get_contents($input_fp);
 			fclose($input_fp);
 			$quest = xic_Quest::withInputBytes($input_bytes);
+			if (array_key_exists("CID", $quest->context))
+			{
+				$cid = $quest->context["CID"];
+				try {
+					xic_set_cid($cid);
+				}
+				catch (Throwable $ex)
+				{
+					xic_set_cid("");
+					error_log($ex->getMessage(), 4);
+				}
+			}
+			else
+			{
+				xic_set_cid("");
+			}
 		}
 		else
 		{
@@ -131,6 +147,7 @@ function x4fcgi_serve($callback)
 				exit(1);
 			}
 
+			xic_set_cid("");
 			$program = $argv[0];
 			$method = $argv[1];
 			$service = basename(dirname(realpath($program)));

@@ -19,6 +19,10 @@ std::string get_self_process(const char *id);
 std::string get_default_ctx();
 void update_ctx_caller(zval *ctx);
 
+zval *get_xic_cid();
+int generate_xic_cid(char cid[18]);
+void update_ctx_cid(zval *ctx);
+
 zend_string *get_ClassName(zval *obj);
 
 void raise_Exception(long code TSRMLS_DC, const char *format, ...);

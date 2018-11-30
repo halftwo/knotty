@@ -171,3 +171,39 @@ void update_ctx_caller(zval *ctx)
 	}
 }
 
+
+int generate_xic_cid(char cid[18])
+{
+	uint32_t r[3];
+	urandom_get_bytes(&r, sizeof(r));
+	xbase57_pad_from_uint64(cid, 6, r[0]);
+	xbase57_encode(cid + 6, &r[1], 8);
+	cid[17] = 0;
+	return 17;
+}
+
+void update_ctx_cid(zval *ctx)
+{
+	HashTable *ht = HASH_OF(ctx);
+	if (ht)
+	{
+		zval* cid = get_xic_cid();
+		if (cid)
+		{
+			Z_ADDREF_P(cid);
+			zend_hash_str_update(ht, "CID", sizeof("CID") - 1, cid);
+		}
+		else
+		{
+			char buf[18];
+			int len = generate_xic_cid(buf);
+
+			zval zv;
+			ZVAL_UNDEF(&zv);
+			ZVAL_STRINGL(&zv, buf, len);
+			zend_hash_str_update(ht, "CID", sizeof("CID") - 1, &zv);
+		}
+	}
+}
+
+

@@ -12,8 +12,12 @@
 #
 # xic.so extension includes following functions:
 #	xic_Engine xic_engine();
+#
 #	string xic_self_id();
 #	string xic_self();
+#
+#	string xic_get_cid();
+#	void xic_set_cid(string $cid);
 #
 #	v_Blob vbs_blob(string $s);
 #	v_Dict vbs_dict(array $a);
@@ -43,8 +47,6 @@
 # Object of class xic_Proxy has folloing methods:
 #	array xic_Proxy::invoke(string $method, array $args [, array $ctx]);
 #	void xic_Proxy::invokeOneway(string $method, array $args [, array $ctx]);
-#	void xic_Proxy::setContext(array $ctx);
-#	array xic_Proxy::getContext();
 #	string xic_Proxy::service();
 #
 
