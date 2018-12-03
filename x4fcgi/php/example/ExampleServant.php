@@ -17,7 +17,10 @@ class ExampleServant extends \xic_Servant
 
 	protected function _xic_foo($quest)
 	{
-		return array("callee" => xic_self(), "quest" => $quest);
+		return array("callee"=>xic_self(), 
+				"quest"=>$quest, 
+				"phpxic"=>xic_build_info(),
+			);
 	}
 
 	protected function _xic_bar($quest)
