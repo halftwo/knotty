@@ -114,6 +114,32 @@ PHP_METHOD(xic_Proxy, getContext)
 	}
 }
 
+static std::string pack_ctx(zval *ctx)
+{
+	zval arr;
+	if (!ctx)
+	{
+		ZVAL_UNDEF(&arr);
+		array_init(&arr);
+	}
+
+	zval *x = ctx ? ctx : &arr;
+	update_ctx_cid(x);
+	update_ctx_caller(x);
+
+	vbs_packer_t pk;
+	std::ostringstream os;
+	vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
+	vbs::v_encode_ctx(&pk, x TSRMLS_CC);
+	if (!ctx)
+		Z_DELREF_P(&arr);
+
+	if (pk.error)
+		throw XERROR_MSG(XError, "Invalid context");
+
+	return os.str();
+}
+
 /* proto array xic_Proxy::invoke(string $method, array $args [, array $ctx])
  */
 PHP_METHOD(xic_Proxy, invoke)
@@ -138,24 +164,7 @@ PHP_METHOD(xic_Proxy, invoke)
 		vbs_packer_init(&pk, rope_xio.write, &args_rope, 100);
 		vbs::v_encode_args(&pk, args TSRMLS_CC);
 
-		zval arr;
-		ZVAL_UNDEF(&arr);
-		if (!ctx)
-		{
-			array_init(&arr);
-			ctx = &arr;
-		}
-
-		update_ctx_cid(ctx);
-		update_ctx_caller(ctx);
-		std::ostringstream os;
-		vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
-		vbs::v_encode_ctx(&pk, ctx TSRMLS_CC);
-		Z_TRY_DELREF_P(&arr);
-		if (pk.error)
-			throw XERROR_MSG(XError, "Invalid context");
-		std::string ctx_string = os.str();
-
+		std::string ctx_string = pack_ctx(ctx);
 		xstr_t res = prx->invoke(method, args_rope, ctx_string);
 		ON_BLOCK_EXIT(free, res.data);
 		vbs_unpacker_t uk = VBS_UNPACKER_INIT(res.data, res.len, 100);
@@ -226,24 +235,7 @@ PHP_METHOD(xic_Proxy, invokeOneway)
 		vbs_packer_init(&pk, rope_xio.write, &args_rope, 100);
 		vbs::v_encode_args(&pk, args TSRMLS_CC);
 
-		zval arr;
-		ZVAL_UNDEF(&arr);
-		if (!ctx)
-		{
-			array_init(&arr);
-			ctx = &arr;
-		}
-
-		update_ctx_cid(ctx);
-		update_ctx_caller(ctx);
-		std::ostringstream os;
-		vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
-		vbs::v_encode_ctx(&pk, ctx TSRMLS_CC);
-		Z_TRY_DELREF_P(&arr);
-		if (pk.error)
-			throw XERROR_MSG(XError, "Invalid context");
-		std::string ctx_string = os.str();
-
+		std::string ctx_string = pack_ctx(ctx);
 		prx->invoke_oneway(method, args_rope, ctx_string);
 	}
 	catch (std::exception& ex)
