@@ -119,7 +119,6 @@ static std::string pack_ctx(zval *ctx)
 	zval arr;
 	if (!ctx)
 	{
-		ZVAL_UNDEF(&arr);
 		array_init(&arr);
 	}
 
@@ -132,7 +131,9 @@ static std::string pack_ctx(zval *ctx)
 	vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
 	vbs::v_encode_ctx(&pk, x TSRMLS_CC);
 	if (!ctx)
-		Z_DELREF_P(&arr);
+	{
+		zval_ptr_dtor(&arr);
+	}
 
 	if (pk.error)
 		throw XERROR_MSG(XError, "Invalid context");
