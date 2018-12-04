@@ -22,7 +22,7 @@
 #	v_Blob vbs_blob(string $s);
 #	v_Dict vbs_dict(array $a);
 #	v_Decimal vbs_decimal(string $s);
-#	v_Data vbs_data(mixed $d, ing descriptor);
+#	v_Data vbs_data(mixed $d, int descriptor);
 #
 #	string vbs_encode(mixed $value);
 #	mixed vbs_decode(string $vbs [, int &$used]);
