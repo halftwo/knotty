@@ -255,7 +255,7 @@ void v_pack(vbs_packer_t *job, zval *arr TSRMLS_DC)
 	v_encode_list_without_headtail(job, arr TSRMLS_CC);
 }
 
-void v_encode_args(vbs_packer_t *job, zval *args TSRMLS_DC)
+void v_encode_args_without_headtail(vbs_packer_t *job, zval *args TSRMLS_DC)
 {
 	if (VALID_OBJECT(args, vbs::classEntry_Dict))
 	{
@@ -274,7 +274,6 @@ void v_encode_args(vbs_packer_t *job, zval *args TSRMLS_DC)
 	HashTableRef dummy(ht);
 
 	int num = ht ? zend_hash_num_elements(ht) : 0;
-	vbs_pack_head_of_dict0(job);
 	if (num > 0)
 	{
 		HashPosition pos;
@@ -306,12 +305,13 @@ void v_encode_args(vbs_packer_t *job, zval *args TSRMLS_DC)
 			}
 		}
 	}
-	vbs_pack_tail(job);
 }
 
-void v_encode_ctx(vbs_packer_t *job, zval *ctx TSRMLS_DC)
+void v_encode_args(vbs_packer_t *job, zval *args TSRMLS_DC)
 {
-	v_encode_args(job, ctx TSRMLS_CC);
+	vbs_pack_head_of_dict0(job);
+	v_encode_args_without_headtail(job, args TSRMLS_CC);
+	vbs_pack_tail(job);
 }
 
 static bool v_decode_array(vbs_unpacker_t *job, bool is_dict, zval *z TSRMLS_DC)

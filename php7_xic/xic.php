@@ -3,7 +3,7 @@
  * xic functions that implemented using PHP (instead of C language).
  * @package xic
  * @author jiagui
- * @version 181030.181030.22
+ * @version 181204.181204.13
  */
 #
 # xic.so extension includes following constants:
@@ -16,7 +16,7 @@
 #	string xic_self_id();
 #	string xic_self();
 #
-#	string xic_get_cid();
+#	string xic_cid();
 #	void xic_set_cid(string $cid);
 #
 #	v_Blob vbs_blob(string $s);

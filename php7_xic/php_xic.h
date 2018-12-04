@@ -3,13 +3,13 @@
 
 #include "util.h"
 
-#define PHP_XIC_EDITION     181130
-#define PHP_XIC_REVISION    181203
-#define PHP_XIC_RELEASE     23
+#define PHP_XIC_EDITION     181204
+#define PHP_XIC_REVISION    181204
+#define PHP_XIC_RELEASE     13
 
 #define PHP_XIC_VERSION     XS_TOSTR(PHP_XIC_EDITION) "." XS_TOSTR(PHP_XIC_REVISION) "." XS_TOSTR(PHP_XIC_RELEASE)
 
-#define XIC_SO_VERSION		"2.4.1"
+#define XIC_SO_VERSION		"2.5.0"
 
 
 extern zend_module_entry xic_module_entry;
@@ -77,9 +77,9 @@ PHP_FUNCTION(xic_self_id);
 PHP_FUNCTION(xic_self);
 
 
-/* proto string xic_get_cid();
+/* proto string xic_cid();
  */
-PHP_FUNCTION(xic_get_cid);
+PHP_FUNCTION(xic_cid);
 
 
 /* proto void xic_set_cid(string $cid);

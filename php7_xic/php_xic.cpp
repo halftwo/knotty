@@ -79,7 +79,7 @@ zend_function_entry xic_functions[] = {
 	PHP_FE(xic_engine, NULL)
 	PHP_FE(xic_self_id, NULL)
 	PHP_FE(xic_self, NULL)
-	PHP_FE(xic_get_cid, NULL)
+	PHP_FE(xic_cid, NULL)
 	PHP_FE(xic_set_cid, NULL)
 	PHP_FE(vbs_blob, NULL)
 	PHP_FE(vbs_dict, NULL)
@@ -168,7 +168,11 @@ zval *get_xic_cid()
 {
 	zval* cid = &XIC_G(the_cid);
 	if (Z_ISUNDEF(*cid))
-		return NULL;
+	{
+		char buf[18];
+		int len = generate_xic_cid(buf);
+		ZVAL_STRINGL(cid, buf, len);
+	}
 	return cid;
 }
 
@@ -208,9 +212,9 @@ PHP_FUNCTION(xic_self)
 }
 
 
-/* proto string xic_get_cid();
+/* proto string xic_cid();
  */
-PHP_FUNCTION(xic_get_cid)
+PHP_FUNCTION(xic_cid)
 {
 	zval* zv = get_xic_cid();
 	if (zv)
@@ -231,7 +235,8 @@ PHP_FUNCTION(xic_set_cid)
 		raise_Exception(0 TSRMLS_CC, "Wrong parameters for xic_set_cid(string $cid)");
 	}
 
-	if (len > 0 && (len != 17 || strspn(cid, xbase57_alphabet) < len))
+	if (len > 0 && (len != 17 || strspn(cid, xbase57_alphabet) < len 
+		|| (strchr(xbase57_alphabet, cid[0]) - xbase57_alphabet >= 49)))
 	{
 		raise_Exception(0 TSRMLS_CC, "Invalid cid for xic_set_cid(string $cid)");
 	}
@@ -246,7 +251,7 @@ PHP_FUNCTION(xic_set_cid)
 	zval* zv = &XIC_G(the_cid);
 	if (!Z_ISUNDEF(*zv))
 	{
-		Z_DELREF_P(zv);
+		zval_ptr_dtor(zv);
 	}
 
 	ZVAL_STRINGL(zv, cid, len);

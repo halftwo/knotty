@@ -17,11 +17,11 @@
 ssize_t get_self_process_id(char *id, size_t size);
 std::string get_self_process(const char *id);
 std::string get_default_ctx();
-void update_ctx_caller(zval *ctx);
 
 zval *get_xic_cid();
 int generate_xic_cid(char cid[18]);
-void update_ctx_cid(zval *ctx);
+
+std::string pack_ctx(zval *ctx);
 
 zend_string *get_ClassName(zval *obj);
 

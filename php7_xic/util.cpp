@@ -1,6 +1,7 @@
 #include "xslib/xsdef.h"
 #include "php_xic.h"
 #include "util.h"
+#include "vbs_codec.h"
 #include "xslib/ScopeGuard.h"
 #include "xslib/vbs_pack.h"
 #include "xslib/xio.h"
@@ -142,22 +143,60 @@ std::string get_self_process(const char *self_id)
 
 std::string get_default_ctx()
 {
+	return pack_ctx(NULL);
+}
+
+std::string pack_ctx(zval *ctx)
+{
+	std::ostringstream os;
+	vbs_packer_t pk = VBS_PACKER_INIT(ostream_xio.write, (std::ostream*)&os, 1);
+
+	vbs_pack_head_of_dict0(&pk);
+
+	zval* cid = get_xic_cid();
+	vbs_pack_lstr(&pk, "CID", 3);
+	if (cid)
+	{
+		vbs_pack_lstr(&pk, Z_STRVAL_P(cid), Z_STRLEN_P(cid));
+	}
+	else
+	{
+		char buf[18];
+		int len = generate_xic_cid(buf);
+		vbs_pack_lstr(&pk, buf, len);
+	}
+	
 	zval* caller = get_xic_self();
 	if (caller)
 	{
-		vbs_packer_t pk;
-		std::ostringstream os;
-		vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
-		vbs_pack_head_of_dict0(&pk);
 		vbs_pack_lstr(&pk, "CALLER", 6);
 		vbs_pack_lstr(&pk, Z_STRVAL_P(caller), Z_STRLEN_P(caller));
-		vbs_pack_tail(&pk);
-		return os.str();
 	}
-	return std::string();
+
+	if (ctx)
+	{
+		vbs::v_encode_args_without_headtail(&pk, ctx TSRMLS_CC);
+	}
+
+	vbs_pack_tail(&pk);
+	if (pk.error)
+		throw XERROR_MSG(XError, "Invalid context");
+
+	return os.str();
 }
 
-void update_ctx_caller(zval *ctx)
+int generate_xic_cid(char cid[18])
+{
+	uint32_t r[3];
+	urandom_get_bytes(&r, sizeof(r));
+	xbase57_pad_from_uint64(cid, 6, r[0]);
+	xbase57_encode(cid + 6, &r[1], 8);
+	cid[17] = 0;
+	return 17;
+}
+
+// Obselete
+static void update_ctx_caller(zval *ctx)
 {
 	zval* caller = get_xic_self();
 	if (caller)
@@ -171,18 +210,8 @@ void update_ctx_caller(zval *ctx)
 	}
 }
 
-
-int generate_xic_cid(char cid[18])
-{
-	uint32_t r[3];
-	urandom_get_bytes(&r, sizeof(r));
-	xbase57_pad_from_uint64(cid, 6, r[0]);
-	xbase57_encode(cid + 6, &r[1], 8);
-	cid[17] = 0;
-	return 17;
-}
-
-void update_ctx_cid(zval *ctx)
+// Obselete
+static void update_ctx_cid(zval *ctx)
 {
 	HashTable *ht = HASH_OF(ctx);
 	if (ht)

@@ -78,18 +78,8 @@ PHP_METHOD(xic_Proxy, setContext)
 		return;
 	}
 
-	update_ctx_cid(ctx);
-	update_ctx_caller(ctx);
-	vbs_packer_t pk;
-	std::ostringstream os;
-	vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
-	vbs::v_encode_ctx(&pk, ctx TSRMLS_CC);
-	if (pk.error)
-	{
-		raise_Exception(0 TSRMLS_CC, "Invalid context");
-		return;
-	}
-	prx->set_context(os.str());
+	std::string ctx_string = pack_ctx(ctx);
+	prx->set_context(ctx_string);
 }
 
 /* proto array xic_Proxy::getContext()
@@ -112,33 +102,6 @@ PHP_METHOD(xic_Proxy, getContext)
 		vbs::v_decode_r(&uk, &ctx TSRMLS_CC);
 		RETURN_ZVAL(&ctx, 1, 1);
 	}
-}
-
-static std::string pack_ctx(zval *ctx)
-{
-	zval arr;
-	if (!ctx)
-	{
-		array_init(&arr);
-	}
-
-	zval *x = ctx ? ctx : &arr;
-	update_ctx_cid(x);
-	update_ctx_caller(x);
-
-	vbs_packer_t pk;
-	std::ostringstream os;
-	vbs_packer_init(&pk, ostream_xio.write, (std::ostream*)&os, 1);
-	vbs::v_encode_ctx(&pk, x TSRMLS_CC);
-	if (!ctx)
-	{
-		zval_ptr_dtor(&arr);
-	}
-
-	if (pk.error)
-		throw XERROR_MSG(XError, "Invalid context");
-
-	return os.str();
 }
 
 /* proto array xic_Proxy::invoke(string $method, array $args [, array $ctx])

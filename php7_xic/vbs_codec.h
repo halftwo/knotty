@@ -25,9 +25,11 @@ void v_pack(vbs_packer_t *job, zval *arr TSRMLS_DC);
 bool v_unpack(vbs_unpacker_t *job, long num, zval *zz TSRMLS_DC);
 
 
+void v_encode_args_without_headtail(vbs_packer_t *job, zval *args TSRMLS_DC);
+
 void v_encode_args(vbs_packer_t *job, zval *args TSRMLS_DC);
 
-void v_encode_ctx(vbs_packer_t *job, zval *ctx TSRMLS_DC);
+#define v_encode_ctx v_encode_args
 
 
 };
