@@ -21,7 +21,7 @@ Fcgi.ConnectionMax = 2
 
 Fcgi.RootDir = /var/x4fcgi
 
-Fcgi.EntryFile = run.php
+Fcgi.EntryFile = X4Serve.php
 
 # in milliseconds
 Fcgi.Timeout = 0

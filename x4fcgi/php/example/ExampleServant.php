@@ -30,6 +30,7 @@ class ExampleServant extends \xic_Servant
 				"_COOKIE"=>$_COOKIE,	/* empty */
 				"_SERVER"=>$_SERVER,
 				"php"=>phpversion()." ".php_sapi_name(),
+				"phpxic"=>xic_build_info(),
 			);
 	}
 
