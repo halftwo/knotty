@@ -81,6 +81,8 @@ zend_function_entry xic_functions[] = {
 	PHP_FE(xic_self, NULL)
 	PHP_FE(xic_cid, NULL)
 	PHP_FE(xic_set_cid, NULL)
+	PHP_FE(xic_rid, NULL)
+	PHP_FE(xic_set_rid, NULL)
 	PHP_FE(vbs_blob, NULL)
 	PHP_FE(vbs_dict, NULL)
 	PHP_FE(vbs_decimal, NULL)
@@ -157,8 +159,9 @@ zval *get_xic_self()
 	zval* self = &XIC_G(the_self);
 	if (Z_ISUNDEF(*self))
 	{
-		zval* id = get_xic_self_id();
-		std::string s = get_self_process(Z_STRVAL_P(id));
+//		zval* id = get_xic_self_id();
+//		std::string s = get_self_process(Z_STRVAL_P(id));
+		std::string s = get_self_process(NULL);
 		ZVAL_STRINGL(self, (char *)s.data(), s.length());
 	}
 	return self;
@@ -176,6 +179,17 @@ zval *get_xic_cid()
 	return cid;
 }
 
+zval *get_xic_rid()
+{
+	zval* rid = &XIC_G(the_rid);
+	if (Z_ISUNDEF(*rid))
+	{
+		char buf[24];
+		int len = generate_xic_rid(buf, NULL, 0);
+		ZVAL_STRINGL(rid, buf, len);
+	}
+	return rid;
+}
 
 /* proto object xic_engine()
    Return the xic Engine object 
@@ -216,9 +230,9 @@ PHP_FUNCTION(xic_self)
  */
 PHP_FUNCTION(xic_cid)
 {
-	zval* zv = get_xic_cid();
-	if (zv)
-		RETURN_ZVAL(zv, 1, 0);
+	zval* cid = &XIC_G(the_cid);
+	if (!Z_ISUNDEF(*cid))
+		RETURN_ZVAL(cid, 1, 0);
 
 	RETVAL_STRINGL(NULL, 0);
 }
@@ -255,6 +269,76 @@ PHP_FUNCTION(xic_set_cid)
 	}
 
 	ZVAL_STRINGL(zv, cid, len);
+}
+
+
+/* proto string xic_rid();
+ */
+PHP_FUNCTION(xic_rid)
+{
+	zval* rid = &XIC_G(the_rid);
+	if (!Z_ISUNDEF(*rid))
+		RETURN_ZVAL(rid, 1, 0);
+
+	RETVAL_STRINGL(NULL, 0);
+}
+
+
+/* proto void xic_set_rid(string $rid);
+ */
+PHP_FUNCTION(xic_set_rid)
+{
+	char *rid = NULL;
+	size_t len = 0;
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s/", &rid, &len) != SUCCESS)
+	{
+		raise_Exception(0 TSRMLS_CC, "Wrong parameters for xic_set_rid(string $rid)");
+	}
+
+	bool valid = false;
+	if (len >= 11 && len <= 23)
+	{
+		size_t n = strspn(rid, xbase57_alphabet);
+		if (n >= 11)
+		{
+			if (n == len)
+			{
+				valid = true;
+			}
+			else if (n < len - 1 && rid[n] == '-')
+			{
+				size_t k = strspn(rid + n + 1, xbase57_alphabet);
+				if (n + 1 + k == len)
+				{
+					valid = true;
+				}
+			}
+		}
+	}
+	else if (len == 0)
+	{
+		valid = true;
+	}
+
+	if (!valid)
+	{
+		raise_Exception(0 TSRMLS_CC, "Invalid rid for xic_set_rid(string $rid)");
+	}
+
+	char buf[24];
+	if (len <= 0)
+	{
+		rid = buf;
+		len = generate_xic_rid(buf, NULL, 0);
+	}
+
+	zval* zv = &XIC_G(the_rid);
+	if (!Z_ISUNDEF(*zv))
+	{
+		zval_ptr_dtor(zv);
+	}
+
+	ZVAL_STRINGL(zv, rid, len);
 }
 
 PHP_FUNCTION(vbs_blob)
@@ -587,9 +671,9 @@ PHP_FUNCTION(dlog)
 
 	char idbuf[64];
 	char *p = idbuf, *end = idbuf + sizeof(idbuf) - 1;
-	zval *self_id = get_xic_self_id();
+	zval *rid = get_xic_rid();
 	copymem(&p, end, "PHP+", 4);
-	copymem(&p, end, Z_STRVAL_P(self_id), Z_STRLEN_P(self_id));
+	copymem(&p, end, Z_STRVAL_P(rid), Z_STRLEN_P(rid));
 	if (ilen > 0)
 	{
 		copymem(&p, end, "+", 1);
@@ -739,6 +823,13 @@ PHP_RSHUTDOWN_FUNCTION(xic)
 	if (!Z_ISUNDEF(XIC_G(the_cid)))
 	{
 		zval* zv = &XIC_G(the_cid);
+		zval_ptr_dtor(zv);
+		ZVAL_UNDEF(zv);
+	}
+
+	if (!Z_ISUNDEF(XIC_G(the_rid)))
+	{
+		zval* zv = &XIC_G(the_rid);
 		zval_ptr_dtor(zv);
 		ZVAL_UNDEF(zv);
 	}

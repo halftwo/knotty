@@ -74,7 +74,7 @@ ssize_t get_self_process_id(char *id, size_t size)
 	return len;
 }
 
-std::string get_self_process(const char *self_id)
+std::string get_self_process(const char *self_id/*NULL*/)
 {
 	std::string self_process = "XXX-UNKNOWN.php";
 	
@@ -135,7 +135,11 @@ std::string get_self_process(const char *self_id)
 	}
 #undef GETX
 
-	xstr_t xs = ostk_xstr_printf(ostk, "%.*s+%.*s+%s", XSTR_P(&method), XSTR_P(&program), self_id);
+	xstr_t xs;
+	if (self_id)
+		xs = ostk_xstr_printf(ostk, "%.*s+%.*s+%s", XSTR_P(&method), XSTR_P(&program), self_id);
+	else
+		xs = ostk_xstr_printf(ostk, "%.*s+%.*s", XSTR_P(&method), XSTR_P(&program));
 	self_process.assign((char *)xs.data, (size_t)xs.len);
 	ostk_destroy(ostk);
 	return self_process;
@@ -154,18 +158,21 @@ std::string pack_ctx(zval *ctx)
 	vbs_pack_head_of_dict0(&pk);
 
 	zval* cid = get_xic_cid();
-	vbs_pack_lstr(&pk, "CID", 3);
 	if (cid)
 	{
+		vbs_pack_lstr(&pk, "CID", 3);
 		vbs_pack_lstr(&pk, Z_STRVAL_P(cid), Z_STRLEN_P(cid));
 	}
-	else
+
+	zval* myrid = get_xic_rid();
+	if (myrid)
 	{
-		char buf[18];
-		int len = generate_xic_cid(buf);
+		char buf[24];
+		int len = generate_xic_rid(buf, Z_STRVAL_P(myrid), Z_STRLEN_P(myrid));
+		vbs_pack_lstr(&pk, "RID", 3);
 		vbs_pack_lstr(&pk, buf, len);
 	}
-	
+
 	zval* caller = get_xic_self();
 	if (caller)
 	{
@@ -193,6 +200,34 @@ int generate_xic_cid(char cid[18])
 	xbase57_encode(cid + 6, &r[1], 8);
 	cid[17] = 0;
 	return 17;
+}
+
+int generate_xic_rid(char buf[24], const char *myrid, int len)
+{
+	uint8_t r[8];
+	urandom_get_bytes(r, sizeof(r));
+	r[0] &= 0x7f;
+	xbase57_encode(buf, r, sizeof(r));
+
+	if (len > 0)
+	{
+		const char *p = (const char *)memchr(myrid, '-', len);
+		if (p)
+			len = p - myrid;
+		if (len > 11)
+			len = 11;
+	}
+
+	if (len <= 0)
+	{
+		buf[11] = 0;
+		return 11;
+	}
+
+	buf[11] = '-';
+	memcpy(buf + 12, myrid, len);
+	buf[12+len] = 0;
+	return 12 + len;
 }
 
 // Obselete

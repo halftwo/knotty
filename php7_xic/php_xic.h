@@ -5,11 +5,11 @@
 
 #define PHP_XIC_EDITION     181204
 #define PHP_XIC_REVISION    181204
-#define PHP_XIC_RELEASE     13
+#define PHP_XIC_RELEASE     23
 
 #define PHP_XIC_VERSION     XS_TOSTR(PHP_XIC_EDITION) "." XS_TOSTR(PHP_XIC_REVISION) "." XS_TOSTR(PHP_XIC_RELEASE)
 
-#define XIC_SO_VERSION		"2.5.0"
+#define XIC_SO_VERSION		"2.6.0"
 
 
 extern zend_module_entry xic_module_entry;
@@ -87,6 +87,16 @@ PHP_FUNCTION(xic_cid);
 PHP_FUNCTION(xic_set_cid);
 
 
+/* proto string xic_rid();
+ */
+PHP_FUNCTION(xic_rid);
+
+
+/* proto void xic_set_rid(string $rid);
+ */
+PHP_FUNCTION(xic_set_rid);
+
+
 /* proto v_Blob vbs_blob(string $str);
  */
 PHP_FUNCTION(vbs_blob);
@@ -148,6 +158,7 @@ ZEND_BEGIN_MODULE_GLOBALS(xic)
 	zval the_self;
 	zval the_self_id;
 	zval the_cid;
+	zval the_rid;
 ZEND_END_MODULE_GLOBALS(xic)
 
 

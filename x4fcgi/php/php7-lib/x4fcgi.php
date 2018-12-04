@@ -129,13 +129,19 @@ function x4fcgi_serve($callback)
 				}
 				catch (Throwable $ex)
 				{
-					xic_set_cid("");
 					error_log($ex->getMessage(), 4);
 				}
 			}
-			else
+			if (array_key_exists("RID", $quest->context))
 			{
-				xic_set_cid("");
+				$rid = $quest->context["RID"];
+				try {
+					xic_set_rid($rid);
+				}
+				catch (Throwable $ex)
+				{
+					error_log($ex->getMessage(), 4);
+				}
 			}
 		}
 		else
@@ -229,7 +235,7 @@ function x4fcgi_serve($callback)
 			throw new xic_ServantException($msg, 500);
 		}
 
-		$out_args['__x4fcgi_callee_id__'] = xic_self_id();
+		$out_args['__x4fcgi_rid__'] = xic_rid();
 		$out_vbs = vbs_pack(array(intval($txid), intval($status), $out_args));
 	}
 	catch (Throwable $ex)
@@ -262,7 +268,7 @@ function x4fcgi_serve($callback)
 		);
 
 		try {
-			$out_args['__x4fcgi_callee_id__'] = xic_self_id();
+			$out_args['__x4fcgi_rid__'] = xic_rid();
 			$out_vbs = vbs_pack(array(intval($txid), intval($status), $out_args));
 		}
 		catch (Throwable $ex)
@@ -278,7 +284,7 @@ function x4fcgi_serve($callback)
 					"line" => $ex->getLine(),
 				),
 			);
-			$out_args['__x4fcgi_callee_id__'] = xic_self_id();
+			$out_args['__x4fcgi_rid__'] = xic_rid();
 			$out_vbs = vbs_pack(array(intval($txid), intval($status), $simple_out_args));
 		}
 	}
