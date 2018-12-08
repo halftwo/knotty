@@ -4,7 +4,7 @@
 * A framework to provide xic service with php in fcgi.
 * @package x4fcgi 
 * @author jiagui
-* @version 181130.181130.20
+* @version 181208.181208.18
 * Following is an example program.
 *
 --------------- BEGIN OF EXAMPLE PROGRAM ------------
@@ -154,6 +154,7 @@ function x4fcgi_serve($callback)
 			}
 
 			xic_set_cid("");
+			xic_set_rid("");
 			$program = $argv[0];
 			$method = $argv[1];
 			$service = basename(dirname(realpath($program)));
@@ -234,8 +235,11 @@ function x4fcgi_serve($callback)
 			error_log($msg, 4);
 			throw new xic_ServantException($msg, 500);
 		}
+		else if (empty($out_args))
+		{
+			$out_args = vbs_dict();
+		}
 
-		$out_args['__x4fcgi_rid__'] = xic_rid();
 		$out_vbs = vbs_pack(array(intval($txid), intval($status), $out_args));
 	}
 	catch (Throwable $ex)
@@ -268,7 +272,6 @@ function x4fcgi_serve($callback)
 		);
 
 		try {
-			$out_args['__x4fcgi_rid__'] = xic_rid();
 			$out_vbs = vbs_pack(array(intval($txid), intval($status), $out_args));
 		}
 		catch (Throwable $ex)
@@ -284,7 +287,6 @@ function x4fcgi_serve($callback)
 					"line" => $ex->getLine(),
 				),
 			);
-			$out_args['__x4fcgi_rid__'] = xic_rid();
 			$out_vbs = vbs_pack(array(intval($txid), intval($status), $simple_out_args));
 		}
 	}
