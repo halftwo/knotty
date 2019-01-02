@@ -17,7 +17,7 @@
 #include <vector>
 
 #define X4FCGI_V_EDITION          181103
-#define X4FCGI_V_REVISION         181119
+#define X4FCGI_V_REVISION         190102
 #define X4FCGI_V_RELEASE          18
 
 #define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
@@ -62,7 +62,7 @@ X4fcgiServant::X4fcgiServant(const SettingPtr& setting)
  	// gracefully. We should set Fcgi.RequestMax to 1 exactly.
 	conf.reqmax = setting->getInt("Fcgi.RequestMax", 1);
 	conf.autoretry = setting->getBool("Fcgi.AutoRetry", false);
-	conf.entryfile = setting->getString("Fcgi.EntryFile", "run.php");
+	conf.entryfile = setting->getString("Fcgi.EntryFile", "X4Serve.php");
 
 	std::string rootdir = setting->wantPathname("Fcgi.RootDir");
 	char *buf = XS_ALLOC(char, rootdir.length() + 1);

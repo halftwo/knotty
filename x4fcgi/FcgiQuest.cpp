@@ -303,7 +303,7 @@ ssize_t FcgiAnswer::xic_answer_size()
 			const char *more_body = (_content.block_count > 1) ? " ... " : ""; 
 
 			xdlog(NULL, NULL, "STDOUT", _request_uri, "%.*s%s", XSTR_P(&body), more_body);
-			xdlog(NULL, NULL, "WARNING", _request_uri, "require_once(\"x4fcgi.php\") should be the first statement in the entry file run.php");
+			xdlog(NULL, NULL, "WARNING", _request_uri, "require_once(\"x4fcgi.php\") should be the first statement in the entry file \"X4Serve.php\"");
 		}
 	}
 	return _answer_size;

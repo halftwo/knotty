@@ -37,7 +37,7 @@
 * 客户端程序 testr.php 收到异常返回
 	Fcgi application return status(404)
   则表明 example 没有正确安装, 或者 conf.x4fcgi 中的 Fcgi.EntryFile 不是
-	run.php
+	X4Serve.php
 
 
 * 客户端程序 testr.php 收到异常返回
@@ -47,8 +47,8 @@
 
 * 客户端程序 testr.php 收到异常返回
 	Fcgi application return status(500)
-  则表明 example/run.php 程序运行出现错误。那么请在命令行下运行一下该程序
- 	php example/run.php
+  则表明 example/X4Serve.php 程序运行出现错误。那么请在命令行下运行一下该程序
+	php example/X4Serve.php
   看看有什么错误消息
 
 
