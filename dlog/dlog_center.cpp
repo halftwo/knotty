@@ -1078,29 +1078,26 @@ void *logger(void *arg)
 
 static int dw_callback(const dirwalk_item_t *item, void *ctx)
 {
-        if (item->level < 1)
-        {
-                if (item->isdir && strlen(item->name) == 7)
-                        return 1;
-        }
-        else if (item->level == 1)
-        {
-                const char *pathname = item->path;
-                const char *filename = item->name;
-                int prefix_len = sizeof(LOGFILE_PREFIX) - 1;
-                if (strncmp(filename, LOGFILE_PREFIX, prefix_len) == 0)
-                {
-			const char *current_time = (const char *)ctx;
-                        const char *dir_end = filename - 1;
-                        const char *dir_start = (char*)memrchr(pathname, '/', dir_end - pathname);
-                        if (dir_start && dir_end - dir_start == 8 
-				&& memcmp(dir_start + 1, &filename[prefix_len], 7) == 0
-				&& strcmp(&filename[prefix_len], current_time) < 0)
-                        {
-                                do_compress(item->path);
-                        }
-                }
-        }
+        if (item->isdir)
+	{
+		return item->level <= 2 ? 1 : 0;
+	}
+
+	const char *pathname = item->path;
+	const char *filename = item->name;
+	int prefix_len = sizeof(LOGFILE_PREFIX) - 1;
+	if (strncmp(filename, LOGFILE_PREFIX, prefix_len) == 0)
+	{
+		const char *current_time = (const char *)ctx;
+		const char *dir_end = filename - 1;
+		const char *dir_start = (char*)memrchr(pathname, '/', dir_end - pathname);
+		if (dir_start && dir_end - dir_start == 8 
+			&& memcmp(dir_start + 1, &filename[prefix_len], 7) == 0
+			&& strcmp(&filename[prefix_len], current_time) < 0)
+		{
+			do_compress(item->path);
+		}
+	}
 
 	return 0;
 }
