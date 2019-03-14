@@ -53,7 +53,7 @@ static int get_mode(xstr_t *xs)
 			}
 		}
 	}
-	return 0;
+	return 1; // default 1
 }
 
 MyCipher::CipherSuite MyCipher::get_cipher_id_from_name(const std::string& name)
