@@ -410,6 +410,8 @@ ssize_t vbs_vbuild_alloc(unsigned char **pbuf, const char *fmt, va_list ap)
 	va_copy(ap2, ap);
 	rc = vbs_vbuild_buf(buf, sizeof(buf), fmt, ap);
 	va_end(ap2);
+	if (rc <= 0)
+		return rc;
 
 	*pbuf = (unsigned char *)malloc(rc);
 	if (!*pbuf)
