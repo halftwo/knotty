@@ -25,9 +25,9 @@
  * The release number consist of:
  * 	2-digit hour 	start from 10
  */
-#define XIC_V_EDITION 	181104
-#define XIC_V_REVISION 	181109
-#define XIC_V_RELEASE 	23
+#define XIC_V_EDITION 	190314
+#define XIC_V_REVISION 	190314
+#define XIC_V_RELEASE 	20
 
 #define XIC_VERSION	XS_TOSTR(XIC_V_EDITION) "." XS_TOSTR(XIC_V_REVISION) "." XS_TOSTR(XIC_V_RELEASE)
 
