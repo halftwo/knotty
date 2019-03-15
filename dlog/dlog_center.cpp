@@ -1178,6 +1178,10 @@ int main(int argc, char **argv)
 	const char *user = NULL;
 	char errlog_file_buf[64];
 	const char *errlog_file = errlog_file_buf;
+	uid_t log_uid = 0;
+	gid_t log_gid = 0;
+	uid_t proc_uid = 0;
+	gid_t proc_gid = 0;
 
 	XError::how = 0;
 	strcpy(pathbuf, prog);
@@ -1224,10 +1228,48 @@ int main(int argc, char **argv)
 	strcpy(pathbuf, prog);
 	path_realpath(_program_dir, sizeof(_program_dir), NULL, dirname(pathbuf));
 
-	if (!path_realpath(_log_dir, sizeof(_log_dir), NULL, argv[optend]))
+	const char *orig_logdir = argv[optend];
+	if (!path_realpath(_log_dir, sizeof(_log_dir), NULL, orig_logdir))
 	{
-		fprintf(stderr, "can't get the real path of `%s`, errno=%d, %m\n", argv[optend], errno);
+		fprintf(stderr, "can't get the real path of \"%s\", errno=%d, %m\n", orig_logdir, errno);
 		goto error;
+	}
+
+	{
+		struct stat st;
+		if (stat(_log_dir, &st) == -1)
+		{
+			fprintf(stderr, "stat() failed, pathname=%s, errno=%d, %m\n", orig_logdir, errno);
+			goto error;
+		}
+		log_uid = st.st_uid;
+		log_gid = st.st_uid;
+
+		if (log_uid == 0 || log_gid == 0)
+		{
+			fprintf(stderr, "the user or group of logdir \"%s\" can't be root\n", orig_logdir);
+			goto error;
+		}
+	}
+
+	if (user && user[0])
+	{
+		if (unix_user2uid(user, &proc_uid, &proc_gid) < 0)
+		{
+			fprintf(stderr, "failed to get the uid or gid of user \"%s\"\n", user);
+			goto error;
+		}
+
+		if (proc_uid == 0 || proc_gid == 0)
+		{
+			fprintf(stderr, "the user or group of process \"%s\" can't be root\n", argv[0]);
+			goto error;
+		}
+	}
+	else
+	{
+		proc_uid = log_uid;
+		proc_gid = log_gid;
 	}
 
 	if (daemon && daemon_init() < 0)
@@ -1241,26 +1283,11 @@ int main(int argc, char **argv)
 	rlim.rlim_max = 65536;
 	setrlimit(RLIMIT_NOFILE, &rlim);
 
-	if (user && user[0])
+	setgid(proc_gid);
+	if (setuid(proc_uid) == -1)
 	{
-		if (unix_set_user_group(user, NULL) < 0)
-		{
-			fprintf(stderr, "unix_set_user_group() failed, user=%s\n", user);
-			return 1;
-		}
-	}
-	else
-	{
-		struct stat st;
-		if (stat(_log_dir, &st) == 0 && st.st_uid != 0)
-		{
-			setgid(st.st_gid);
-			setuid(st.st_uid);
-		}
-		else
-		{
-			unix_set_user_group("nobody", NULL);
-		}
+		fprintf(stderr, "setuid() failed, errno=%d, %m\n", errno);
+		goto error;
 	}
 
 	sock = xnet_tcp_listen(NULL, port, 256);
@@ -1287,7 +1314,12 @@ int main(int argc, char **argv)
 	_logfile_fp = _open_log_file(_log_dir, &_logfile_time);
 	if (!_logfile_fp)
 	{
-		fprintf(stderr, "_open_log_file() failed, pathname=%s, errno=%d, %m\n", _log_pathname, errno);
+		int saved_errno = errno;
+		char user0[64];
+		uid_t uid = getuid();
+		unix_uid2user(uid, user0, sizeof(user0));
+		errno = saved_errno;
+		fprintf(stderr, "_open_log_file() failed, user=%s(%d), pathname=%s, errno=%d, %m\n", user0, uid, _log_pathname, errno);
 		goto error;
 	}
 
