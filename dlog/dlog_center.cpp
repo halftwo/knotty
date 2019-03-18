@@ -1243,7 +1243,7 @@ int main(int argc, char **argv)
 			goto error;
 		}
 		log_uid = st.st_uid;
-		log_gid = st.st_uid;
+		log_gid = st.st_gid;
 
 		if (log_uid == 0 || log_gid == 0)
 		{
