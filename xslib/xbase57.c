@@ -322,6 +322,7 @@ ssize_t xbase57_to_uint64(const char *b57str, size_t len, uint64_t* n)
 #ifdef TEST_XBASE57
 
 #include "opt.h"
+#include "hex.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -329,7 +330,7 @@ ssize_t xbase57_to_uint64(const char *b57str, size_t len, uint64_t* n)
 
 void usage(const char *prog)
 {
-	fprintf(stderr, "usage: %s -e string\n", prog);
+	fprintf(stderr, "usage: %s -x -e string\n", prog);
 	fprintf(stderr, "       %s -x -d string\n", prog);
 	fprintf(stderr, "       %s -t\n", prog);
 	fprintf(stderr, "       %s -f file\n", prog);
@@ -373,7 +374,22 @@ int main(int argc, char **argv)
 	if (encode)
 	{
 		int len = strlen(str);
-		xbase57_encode(buf, str, len);
+		if (hex)
+		{
+			uint8_t *raw = (uint8_t *)malloc(len/2 + 1);
+			ssize_t n = unhexlify(raw, str, len);
+			if (n <= 0)
+			{
+				fprintf(stderr, "invalid hex string\n");
+				exit(1);
+			}
+			xbase57_encode(buf, raw, n);
+			free(raw);
+		}
+		else
+		{
+			xbase57_encode(buf, str, len);
+		}
 		printf("encoded: %s\n", buf);
 	}
 	else if (decode)
