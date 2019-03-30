@@ -182,7 +182,7 @@ static void print_it(std::ostream& oss, double uptime, const std::vector<proc_in
 	for (size_t i = 0; i < size; ++i)
 	{
 		proc_info_t *proc = procs[i];
-		iobuf_printf(&ob, "TOP%02zd=%s;%d~%s~%dth~%dfd~%.1f%%~%luM/%luM~%.2f-%.2f-%.2f;%s ",
+		iobuf_printf(&ob, "T%02zd=%s;%d~%s~%dth~%dfd~%.1f%%~%luM/%luM~%.2f-%.2f-%.2f;%s ",
 			i + 1, proc->name, proc->pid, proc->user, proc->threads, proc->fd_num,
 			proc->pcpu * 100.0, (proc->rss + 1023) / 1024, (proc->vsize + 1023) / 1024,
 			uptime - (double)proc->start_time / HZ, (double)proc->utime / HZ, (double)proc->stime / HZ,

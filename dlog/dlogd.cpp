@@ -1071,7 +1071,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		if (!top_cpu.empty())
 		{
 			rec = recpool_acquire();
-			dlog_make(rec, NULL, _program_name, "TOP_CPU", NULL, "v1 %s", top_cpu.c_str());
+			dlog_make(rec, NULL, _program_name, "TOP_CPU", NULL, "v2 %s", top_cpu.c_str());
 			log_sys(rec, false);
 		}
 
@@ -1079,7 +1079,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		if (!top_mem.empty())
 		{
 			rec = recpool_acquire();
-			dlog_make(rec, NULL, _program_name, "TOP_MEM", NULL, "v1 %s", top_mem.c_str());
+			dlog_make(rec, NULL, _program_name, "TOP_MEM", NULL, "v2 %s", top_mem.c_str());
 			log_sys(rec, false);
 		}
 
