@@ -44,6 +44,7 @@ class HashTableRef
 {
 	HashTable *_ht;
 public:
+#if PHP_VERSION_ID < 70300
 	HashTableRef(HashTable *ht)
 		: _ht(ht)
 	{
@@ -56,14 +57,31 @@ public:
 		if (_ht)
 			_ht->u.v.nApplyCount--;
 	}
-	
+#else
+	HashTableRef(HashTable *ht)
+		: _ht(ht)
+	{
+		if (_ht && !(GC_FLAGS(_ht) & GC_IMMUTABLE))
+			GC_PROTECT_RECURSION(_ht);
+	}
+
+	~HashTableRef()
+	{
+		if (_ht && !(GC_FLAGS(_ht) & GC_IMMUTABLE))
+			GC_UNPROTECT_RECURSION(_ht);
+	}
+#endif
 };
 
 static void v_encode_list_without_headtail(vbs_packer_t *job, zval *arr TSRMLS_DC)
 {
 	HashTable *ht = Z_ARRVAL_P(arr);
 
+#if PHP_VERSION_ID < 70300
 	if (ht->u.v.nApplyCount > 1)
+#else
+	if (!(GC_FLAGS(ht) & GC_IMMUTABLE) && GC_IS_RECURSIVE(ht))
+#endif
 	{
 		throw XERROR_MSG(EncodeError, "circular references is not supported");
 	}
@@ -82,9 +100,6 @@ static void v_encode_list_without_headtail(vbs_packer_t *job, zval *arr TSRMLS_D
 			if (!data)
 				break;
 
-			HashTable *tmp_ht = HASH_OF(data);
-			HashTableRef dummy(tmp_ht);
-
 			v_encode_r(job, data TSRMLS_CC);
 		}
 	}
@@ -101,7 +116,11 @@ static void v_encode_dict(vbs_packer_t *job, zval *arr TSRMLS_DC)
 {
 	HashTable *ht = HASH_OF(arr);
 
+#if PHP_VERSION_ID < 70300
 	if (ht && ht->u.v.nApplyCount > 1)
+#else
+	if (ht && !(GC_FLAGS(ht) & GC_IMMUTABLE) && GC_IS_RECURSIVE(ht))
+#endif
 	{
 		throw XERROR_MSG(EncodeError, "circular references is not supported");
 	}
@@ -126,9 +145,6 @@ static void v_encode_dict(vbs_packer_t *job, zval *arr TSRMLS_DC)
 			zval *data = zend_hash_get_current_data_ex(ht, &pos);
 			if (!data)
 				continue;
-
-			HashTable *tmp_ht = HASH_OF(data);
-			HashTableRef dummy(tmp_ht);
 
 			if (x == HASH_KEY_IS_STRING)
 			{
@@ -290,9 +306,6 @@ void v_encode_args_without_headtail(vbs_packer_t *job, zval *args TSRMLS_DC)
 			zval *data = zend_hash_get_current_data_ex(ht, &pos);
 			if (!data)
 				continue;
-
-			HashTable *tmp_ht = HASH_OF(data);
-			HashTableRef dummy(tmp_ht);
 
 			if (x == HASH_KEY_IS_STRING)
 			{
