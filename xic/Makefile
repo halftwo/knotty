@@ -1,14 +1,23 @@
 ##
 ##
 
+MACHINE = $(shell uname -m)
+
+ifeq "$(MACHINE)" "x86_64"
+LIBXIC_OBJS_ST = StEngineImp.o STimer.o
+EXES_ST = DemoClientSt
+endif
+
+
 LIBXIC_OBJS = XicMessage.o XicCheck.o XicException.o Context.o \
 	ServantI.o EngineImp.o VData.o VWriter.o \
-	PtEngineImp.o StEngineImp.o STimer.o \
-	IpMatcher.o SecretBox.o ShadowBox.o MyCipher.o
+	IpMatcher.o SecretBox.o ShadowBox.o MyCipher.o \
+	PtEngineImp.o $(LIBXIC_OBJS_ST)
 
 LIBXIC = libxic.a
 
-EXES = shadow_gen secret_check DemoServer DemoCallback DemoClient DemoClientSt 
+
+EXES = shadow_gen secret_check DemoServer DemoCallback DemoClient $(EXES_ST)
 
 
 CFLAGS = -g -Wall -O2

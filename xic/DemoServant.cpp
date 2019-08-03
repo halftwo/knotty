@@ -1,6 +1,5 @@
 #include "DemoServant.h"
 #include "EngineImp.h"
-#include "sthread.h"
 #include "dlog/dlog.h"
 #include "xslib/XThread.h"
 #include <time.h>
