@@ -155,7 +155,7 @@ static FILE *_open_log_file(const char *dir, time_t *fp_time)
 
 	time_t now = dispatcher->msecRealtime() / 1000;
 	get_time_str(now, true, time_str);
-	snprintf(subdir, sizeof(subdir), "%s/%.7s", dir, time_str);
+	snprintf(subdir, sizeof(subdir), "%s/%.6s", dir, time_str);
 	snprintf(_log_pathname, sizeof(_log_pathname), "%s/%s%s", subdir, LOGFILE_PREFIX, time_str);
 
 	if (mkdir(subdir, 0775) == -1 && errno != EEXIST)
@@ -1091,8 +1091,8 @@ static int dw_callback(const dirwalk_item_t *item, void *ctx)
 		const char *current_time = (const char *)ctx;
 		const char *dir_end = filename - 1;
 		const char *dir_start = (char*)memrchr(pathname, '/', dir_end - pathname);
-		if (dir_start && dir_end - dir_start == 8 
-			&& memcmp(dir_start + 1, &filename[prefix_len], 7) == 0
+		if (dir_start && dir_end - dir_start == 7 
+			&& memcmp(dir_start + 1, &filename[prefix_len], 6) == 0
 			&& strcmp(&filename[prefix_len], current_time) < 0)
 		{
 			do_compress(item->path);
