@@ -14,9 +14,9 @@ XXX: It seems this module is not working with gevent.
 """
 from __future__ import print_function
 
-XIC_V_EDITION  = 181115
-XIC_V_REVISION = 181115
-XIC_V_RELEASE  = 22
+XIC_V_EDITION  = 200226
+XIC_V_REVISION = 200226
+XIC_V_RELEASE  = 12
 
 __version__ = str(XIC_V_EDITION) + "." + str(XIC_V_REVISION) + "." + str(XIC_V_RELEASE)
 
@@ -1587,10 +1587,11 @@ class Engine(object):
             con._wait_for_closed()
 
     def __throb(self):
-        start_time = "start=" + self._start_time 
-        version = XIC_ENGINE_VERSION
+        debut = True
         while True:
-            dlog.xdlog("", "THROB", version, start_time, "id="+self._id, "listen="+self._listenAddress, self._logword)
+            tag = "DEBUT" if debut else "THROB"
+            debut = False
+            dlog.xdlog("", tag, XIC_ENGINE_VERSION, "id="+self._id, "start="+self._start_time, "listen="+self._listenAddress, self._logword)
             t = time.time()
             left = 60 - (t % 60)
             _sleep(left)
