@@ -129,7 +129,7 @@ ssize_t urandom_generate_base32id(char id[], size_t size)
 			n = 12;
 		xbase32_pad_from_uint64(id + k, n, x[i]);
 	}
-	id[0] = xbase32_alphabet[x[0] / (UINT64_MAX / 22 + 1)]; /* make the first character always letter instead of digit */
+	id[0] = xbase32_alphabet[10 + x[0] / (UINT64_MAX / 22 + 1)]; /* make the first character always letter instead of digit */
 	id[len] = 0;
 	return len;
 }
