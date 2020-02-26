@@ -28,6 +28,7 @@
 #include "xslib/obpool.h"
 #include "xslib/cstr.h"
 #include "xslib/iobuf.h"
+#include "xslib/urandom.h"
 #include <lz4.h>
 #include <libgen.h>
 #include <stdio.h>
@@ -50,6 +51,8 @@
 #include <errno.h>
 #include <map>
 #include <sstream>
+
+#define VER_LOCUS	"v4"
 
 #define STACK_SIZE	(256*1024)
 
@@ -88,6 +91,7 @@ static bool is_ipv6 = false;
 static char the_ip[40];
 static uint8_t the_ip64[16];
 
+static char instance_id[24];
 static char start_time_str[24];
 static bool run_logger = true;
 static bool dlog_on = true;
@@ -281,7 +285,7 @@ static void load_plugin()
 			plugin_error = 0;
 
 			struct dlog_record *rec = recpool_acquire();
-			dlog_make(rec, NULL, _program_name, "PLUGIN_NOFILE", NULL, "v1 %s", "");
+			dlog_make(rec, NULL, _program_name, "PLUGIN_NOFILE", VER_LOCUS, "%s", "");
 			log_sys(rec, false);
 		}
 	}
@@ -310,7 +314,7 @@ static void load_plugin()
 		}
 
 		struct dlog_record *rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "PLUGIN_RELOAD", NULL, "v1 status=%s", plugin ? "success" : "fail");
+		dlog_make(rec, NULL, _program_name, "PLUGIN_RELOAD", VER_LOCUS, "status=%s", plugin ? "success" : "fail");
 		log_sys(rec, false);
 	}
 }
@@ -643,6 +647,7 @@ private:
 	struct rusage _usage;
 	int64_t _last_mono_msec;
 	int64_t _ctotal;
+	bool _debut;
 	std::string _uname;
 	CpuStat _cstat;
 	std::map<std::string, NetStat> _nstat;
@@ -650,7 +655,7 @@ private:
 };
 
 MyTimer::MyTimer(const char *ip)
-	: _sec(0), _minute(0), _buf(NULL), _buf_size(0), _last_mono_msec(0)
+	: _sec(0), _minute(0), _buf(NULL), _buf_size(0), _last_mono_msec(0), _debut(true)
 {
 	_euid = geteuid();
 	_euser[0] = 0;
@@ -739,14 +744,16 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 
 		uint64_t freq = get_cpu_frequency(0);
 
+		const char *tag = _debut ? "DEBUT" : "THROB";
+		_debut = false;
 		rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "THROB", NULL, "v3 version=%s start=%s now=%s active=%s client=%d"
+		dlog_make(rec, NULL, _program_name, tag, VER_LOCUS, "id=%s start=%s version=%s now=%s active=%s client=%d"
 					" info=euser:%s,MHz:%.0f,cpu:%.1f%%"
 					" record=v:%d,bad:%ld,take:%llu,cooked:%llu,overflow:%ld,overflow_time:%s"
 					" block=v:%d,pool:%zd,send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
-				DLOG_VERSION,
-				start_time_str, current_ts, active_ts, xatomic_get(&num_client),
+				instance_id, start_time_str, DLOG_VERSION,
+				current_ts, active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
 				DLOG_RECORD_VERSION, xatomiclong_get(&num_record_bad), 
 				num_record_take, num_record_cooked,
@@ -1011,7 +1018,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		endutxent();
 
 		rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "STATS", NULL, "v1 up=%d-%02d:%02d user=%zd load=%s"
+		dlog_make(rec, NULL, _program_name, "STATS", VER_LOCUS, "up=%d-%02d:%02d user=%zd load=%s"
 					" cpu=%dcore:%s"
 					" mem=t:%ldM,u:%ldM,b:%ldM,c:%ldM,f:%ldM"
 					" swap=t:%ldM,u:%ldM,f:%ldM"
@@ -1030,7 +1037,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		if (user_count)
 		{
 			rec = recpool_acquire();
-			dlog_make(rec, NULL, _program_name, "WHO", NULL, "v1 count=%zd who=%s",
+			dlog_make(rec, NULL, _program_name, "WHO", VER_LOCUS, "count=%zd who=%s",
 				user_count, who_os.str().c_str());
 			log_sys(rec, false);
 		}
@@ -1039,7 +1046,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		std::ostringstream disk_os;
 		diskspace(disk_os);
 		rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "DISK", NULL, "v1 disk=%s",
+		dlog_make(rec, NULL, _program_name, "DISK", VER_LOCUS, "disk=%s",
 			disk_os.str().c_str());
 		log_sys(rec, false);
 
@@ -1054,7 +1061,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		if (naddr > 0)
 		{
 			rec = recpool_acquire();
-			dlog_make(rec, NULL, _program_name, "NET", NULL, "v2 interface=%s",
+			dlog_make(rec, NULL, _program_name, "NET", VER_LOCUS, "interface=%s",
 				address_os.str().c_str());
 			log_sys(rec, false);
 		}
@@ -1071,7 +1078,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		if (!top_cpu.empty())
 		{
 			rec = recpool_acquire();
-			dlog_make(rec, NULL, _program_name, "TOP_CPU", NULL, "v2 %s", top_cpu.c_str());
+			dlog_make(rec, NULL, _program_name, "TOP_CPU", VER_LOCUS, "%s", top_cpu.c_str());
 			log_sys(rec, false);
 		}
 
@@ -1079,7 +1086,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		if (!top_mem.empty())
 		{
 			rec = recpool_acquire();
-			dlog_make(rec, NULL, _program_name, "TOP_MEM", NULL, "v2 %s", top_mem.c_str());
+			dlog_make(rec, NULL, _program_name, "TOP_MEM", VER_LOCUS, "%s", top_mem.c_str());
 			log_sys(rec, false);
 		}
 
@@ -1088,7 +1095,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		if (strcmp(_saved_ip, the_ip) != 0)
 		{
 			rec = recpool_acquire();
-			dlog_make(rec, NULL, _program_name, "IP_CHANGE", NULL, "v1 old=%s new=%s", _saved_ip, the_ip);
+			dlog_make(rec, NULL, _program_name, "IP_CHANGE", VER_LOCUS, "old=%s new=%s", _saved_ip, the_ip);
 			log_sys(rec, false);
 			memcpy(_saved_ip, the_ip, sizeof(the_ip));
 		}
@@ -1219,7 +1226,7 @@ void DlogUdpWorker::do_read()
 		catch (std::exception& ex)
 		{
 			xatomiclong_inc(&num_record_bad);
-			dlog_make(_rec, NULL, _program_name, "CLIENT_ERROR", NULL, "v2 peer=udp+%d ex=%s", port, ex.what());
+			dlog_make(_rec, NULL, _program_name, "CLIENT_ERROR", VER_LOCUS, "peer=udp+%d ex=%s", port, ex.what());
 			_rec->port = 0;
 			log_alert(_rec, false);
 			_rec = NULL;
@@ -1388,7 +1395,7 @@ int DlogWorker::do_read()
 		xatomiclong_inc(&num_record_bad);
 
 		struct dlog_record *rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "CLIENT_ERROR", NULL, "v2 peer=tcp+%d ex=%s", _port, ex.what());
+		dlog_make(rec, NULL, _program_name, "CLIENT_ERROR", VER_LOCUS, "peer=tcp+%d ex=%s", _port, ex.what());
 		log_alert(rec, false);
 	}
 
@@ -1592,11 +1599,12 @@ int main(int argc, char **argv)
 	if (daemon)
 		daemon_redirect_stderr(errlog_file);
 
+        urandom_generate_base57id(instance_id, sizeof(instance_id));
 	get_time_str(time(NULL), true, start_time_str);
 
 	{
 		struct dlog_record *rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "IPV6", NULL, "v1 udp=%savailable tcp=%savailable",
+		dlog_make(rec, NULL, _program_name, "IPV6", VER_LOCUS, "udp=%savailable tcp=%savailable",
 				udp6 < 0 ? "un" : "",
 				tcp6 < 0 ? "un" : "");
 		log_sys(rec, false);

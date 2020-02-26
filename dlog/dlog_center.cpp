@@ -24,6 +24,7 @@
 #include "xslib/daemon.h"
 #include "xslib/dirwalk.h"
 #include "xslib/mlzo.h"
+#include "xslib/urandom.h"
 #include <lz4.h>
 #include <pthread.h>
 #include <sys/types.h>
@@ -43,6 +44,8 @@
 #include <time.h>
 #include <stdbool.h>
 #include <errno.h>
+
+#define VER_LOCUS		"v4"
 
 #define STACK_SIZE		(256*1024)
 
@@ -114,6 +117,7 @@ static struct rusage _usage;
 
 static unsigned short port = DLOG_CENTER_PORT;
 static unsigned long long total_size;
+static char instance_id[24];
 static time_t active_time;
 static char start_time_str[24];
 static xatomic_t num_client;
@@ -451,7 +455,7 @@ Worker::Worker(int sock)
 
 	_port = xnet_get_peer_ip_port(_event_fd, _ip);
 	xatomic_inc(&num_client);
-	xdlog(NULL, _program_name, "NODE_CONNECT", NULL, "v2 peer=%s+%u", _ip, _port);
+	xdlog(NULL, _program_name, "NODE_CONNECT", VER_LOCUS, "peer=%s+%u", _ip, _port);
 }
 
 Worker::~Worker()
@@ -484,7 +488,7 @@ void Worker::event_on_fd(const XEvent::DispatcherPtr& dispatcher, int events)
 	}
 	else
 	{
-		xdlog(NULL, _program_name, "NODE_DISCONNECT", NULL, "v2 peer=%s+%u", _ip, _port);
+		xdlog(NULL, _program_name, "NODE_DISCONNECT", VER_LOCUS, "peer=%s+%u", _ip, _port);
 		dispatcher->removeFd(this);
 		dispatcher->removeTask(this);
 	}
@@ -492,7 +496,7 @@ void Worker::event_on_fd(const XEvent::DispatcherPtr& dispatcher, int events)
 
 void Worker::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 {
-	xdlog(NULL, _program_name, "NODE_TIMEOUT", NULL, "v2 peer=%s+%u", _ip, _port);
+	xdlog(NULL, _program_name, "NODE_TIMEOUT", VER_LOCUS, "peer=%s+%u", _ip, _port);
 	dispatcher->removeFd(this);
 }
 
@@ -786,6 +790,7 @@ void log_cooked(struct dlog_record *rec)
 
 void *logger(void *arg)
 {
+	static bool _debut = true;
 	const struct timespec ms10 = { 0, 1000*1000*10 };
 	const struct timespec ms500 = { 0, 1000*1000*500 };
 	struct block_queue *queue = NULL;
@@ -1010,13 +1015,15 @@ void *logger(void *arg)
 
 			uint64_t freq = get_cpu_frequency(0);
 
-			xdlog(NULL, _program_name, "THROB", NULL, "v3 version=%s start=%s active=%s client=%d"
+			const char *tag = _debut ? "DEBUT" : "THROB";
+			_debut = false;
+			xdlog(NULL, _program_name, tag, VER_LOCUS, "id=%s start=%s version=%s active=%s client=%d"
 					" info=euser:%s,MHz:%.0f,cpu:%.1f%%"
 					" record=v:%d,get:%llu,error:%llu"
 					" block=v:%d,pool:%lu,get:%ld,error:%ld,zip:%ld,unzip_error:%ld"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
-				DLOG_VERSION,
-				start_time_str, active_ts, xatomic_get(&num_client),
+				instance_id, start_time_str, DLOG_VERSION,
+				active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
 				DLOG_RECORD_VERSION, num_record, num_record_error,
 				DLOG_PACKET_VERSION, _block_pool.num_limit,
@@ -1362,6 +1369,7 @@ int main(int argc, char **argv)
 	if (daemon)
 		daemon_redirect_stderr(errlog_file);
 
+        urandom_generate_base57id(instance_id, sizeof(instance_id));
 	get_time_str(time(NULL), true, start_time_str);
 
 	dispatcher->setThreadPool(4, 32, STACK_SIZE);

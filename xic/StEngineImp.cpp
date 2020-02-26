@@ -1467,12 +1467,13 @@ struct StEngine::StThrob: public STimerTask
 	std::string _listen;
 	std::string _logword;
 	bool _enable;
+	bool _debut;
 	int _minute;
 	struct timeval _utv;
 	struct rusage _usage;
 
 	StThrob(time_t start, const std::string& id)
-		: _euid(-1), _id(id), _enable(true), _minute(0)
+		: _euid(-1), _id(id), _enable(true), _debut(true), _minute(0)
 	{
 		dlog_local_time_str(start, _start_time);
 		gettimeofday(&_utv, NULL);
@@ -1561,9 +1562,11 @@ struct StEngine::StThrob: public STimerTask
 				else
 					strcpy(shadow, "-");
 
-				xdlog(NULL, NULL, "THROB", ST_ENGINE_VERSION,
-					"start=%s id=%s info=euser:%s,MHz:%.0f,cpu:%.1f%%,xlog:%d,shadow:%s,cipher:%s listen=%s %s",
-					_start_time, _id.c_str(),
+				const char *tag = _debut ? "DEBUT" : "THROB";
+				_debut = false;
+				xdlog(NULL, NULL, tag, ST_ENGINE_VERSION,
+					"id=%s start=%s info=euser:%s,MHz:%.0f,cpu:%.1f%%,xlog:%d,shadow:%s,cipher:%s listen=%s %s",
+					_id.c_str(), _start_time,
 					_euser, (freq / 1000000.0), cpu, xlog_level, shadow,
 					MyCipher::get_cipher_name_from_id(xic_cipher),
 					_listen.c_str(), _logword.c_str());
