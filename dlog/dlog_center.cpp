@@ -974,7 +974,7 @@ void *logger(void *arg)
 			}
 		}
 
-		if (minute_expire)
+		if (minute_expire || _debut)
 		{
 			minute_expire = false;
 
