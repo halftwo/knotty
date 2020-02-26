@@ -1308,16 +1308,6 @@ int main(int argc, char **argv)
 
 	dispatcher = XEvent::Dispatcher::create(NULL);
 
-	pthread_attr_t thr_attr;
-	pthread_attr_init(&thr_attr);
-	pthread_attr_setstacksize(&thr_attr, STACK_SIZE);
-
-	if (pthread_create(&thr, &thr_attr, logger, NULL) != 0)
-	{
-		fprintf(stderr, "pthread_create() failed\n");
-		goto error;
-	}
-
 	_logfile_fp = _open_log_file(_log_dir, &_logfile_time);
 	if (!_logfile_fp)
 	{
@@ -1333,6 +1323,15 @@ int main(int argc, char **argv)
 	get_ip(the_ip, false);
 	dlog_set(_program_name, 0);
 	dlog_set_callback(_dlog_callback, NULL);
+
+	pthread_attr_t thr_attr;
+	pthread_attr_init(&thr_attr);
+	pthread_attr_setstacksize(&thr_attr, STACK_SIZE);
+	if (pthread_create(&thr, &thr_attr, logger, NULL) != 0)
+	{
+		fprintf(stderr, "pthread_create() failed\n");
+		goto error;
+	}
 
 	atexit(cleanup);
 
