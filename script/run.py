@@ -10,7 +10,6 @@ import time
 import subprocess
 import traceback
 
-# XXX You may want to change this
 RUN_DIR = "/xio/run"
 
 interval = 3
@@ -19,6 +18,10 @@ def usage(myself):
     print("Usage: %s [options] <program>" % myself, file=sys.stderr)
     print("   -t interval", file=sys.stderr)
     sys.exit(1)
+
+def timestamp():
+    t = time.localtime()
+    return "%02d%02d%02d%c%02d%02d%02d" % (t.tm_year-2000, t.tm_mon, t.tm_mday, "mtwrfsu"[t.tm_wday], t.tm_hour, t.tm_min, t.tm_sec)
 
 if len(sys.argv) < 2:
 	usage(sys.argv[0])
@@ -84,7 +87,7 @@ signal.signal(signal.SIGINT, sig_handler)
 signal.signal(signal.SIGPIPE, sig_handler)
 
 while True:
-    print("Try running", " ".join(prog_argv), file=logfp)
+    print(timestamp(), "Try running", " ".join(prog_argv), file=logfp)
     sp = subprocess.Popen(prog_argv, cwd=prog_dir, close_fds=True, stdout=logfp, stderr=subprocess.STDOUT)
     child_pid = sp.pid
     sp.wait()
