@@ -3,6 +3,7 @@
 
 import sys
 import os
+import getopt
 import signal
 import fcntl
 import time
@@ -12,17 +13,34 @@ import traceback
 # XXX You may want to change this
 RUN_DIR = "/xio/run"
 
-if len(sys.argv) < 2:
-    print("Usage: %s <program>" % sys.argv[0], file=sys.stderr)
+interval = 3
+
+def usage(myself):
+    print("Usage: %s [options] <program>" % myself, file=sys.stderr)
+    print("   -t interval", file=sys.stderr)
     sys.exit(1)
 
-prog_name = os.path.basename(sys.argv[1])
-prog_dir = os.path.dirname(sys.argv[1])
-prog_argv = sys.argv[1:]
+if len(sys.argv) < 2:
+	usage(sys.argv[0])
+
+opts, args = getopt.getopt(sys.argv[1:], "t:")
+
+for k, v in opts:
+	if k == '-t':
+		interval = int(v, 0)
+		if interval < 1:
+			interval = 1
+
+if len(args) == 0:
+	usage(sys.argv[0])
+
+prog_name = os.path.basename(args[0])
+prog_dir = os.path.dirname(args[0])
+prog_argv = args
 
 suffix = prog_name
-if len(sys.argv) > 2:
-    suffix += '+' + '+'.join(sys.argv[2:]).replace('/', '^')
+if len(args) >= 2:
+    suffix += '+' + '+'.join(args[1:]).replace('/', '^')
 
 lockfilename = RUN_DIR + "/lock." + suffix
 try:
@@ -70,5 +88,5 @@ while True:
     sp = subprocess.Popen(prog_argv, cwd=prog_dir, close_fds=True, stdout=logfp, stderr=subprocess.STDOUT)
     child_pid = sp.pid
     sp.wait()
-    time.sleep(3)
+    time.sleep(interval)
 
