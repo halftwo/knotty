@@ -29,8 +29,9 @@ void xlog_default_writer(int level, const char *locus, const char *buf, size_t s
 		gettimeofday(&tv, NULL);
 		localtime_r(&tv.tv_sec, &tm);
 
-		len = xfmt_snprintf(NULL, prefix, sizeof(prefix), "%02d%02d%02d-%02d%02d%02d.%03d %d %s",
+		len = xfmt_snprintf(NULL, prefix, sizeof(prefix), "%02d%02d%02d%c%02d%02d%02d.%03d %d %s",
 			tm.tm_year - 100, tm.tm_mon + 1, tm.tm_mday,
+			"umtwrfsu"[tm.tm_wday],
 			tm.tm_hour, tm.tm_min, tm.tm_sec, (int)tv.tv_usec / 1000,
 			level, locus);
 	}
