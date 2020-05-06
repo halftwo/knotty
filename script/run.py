@@ -45,7 +45,7 @@ suffix = prog_name
 if len(args) >= 2:
     suffix += '+' + '+'.join(args[1:]).replace('/', '^')
 
-lockfilename = RUN_DIR + "/lock." + suffix
+lockfilename = RUN_DIR + "/lk." + suffix
 try:
     lockfd = os.open(lockfilename, os.O_WRONLY | os.O_CREAT, 0o666)
     fcntl.flock(lockfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
