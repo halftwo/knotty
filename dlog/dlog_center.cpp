@@ -716,7 +716,7 @@ private:
 MyTimer::MyTimer()
 {
 	struct tm tm;
-	_last_load = time(NULL);
+	_last_load = _current_time;
 	localtime_r(&_last_load, &tm);
 	_min = _last_load / 60;
 	_hour = tm.tm_hour;
@@ -1047,7 +1047,7 @@ void *logger(void *arg)
 					{
 						char time_str[32];
 						++p;
-						get_time_str(time(NULL), true, time_str);
+						get_time_str(_current_time, true, time_str);
 						time_str[6] = 0;
 						if (memcmp(p, time_str, 6))
 							_switch_log_file();
@@ -1114,7 +1114,7 @@ void *handle_old_logs_thread(void *)
 	pthread_detach(pthread_self());
 
 	char time_str[32];
-	get_time_str(time(NULL), true, time_str);
+	get_time_str(_current_time, true, time_str);
 	dirwalk_run(_log_dir, dw_callback, time_str);
 	return NULL;
 }
@@ -1304,6 +1304,7 @@ int main(int argc, char **argv)
 		goto error;
 	}
 
+	_current_time = time(NULL);
 	pthread_create(&thr, NULL, handle_old_logs_thread, NULL);
 
 	dispatcher = XEvent::Dispatcher::create(NULL);
@@ -1369,7 +1370,7 @@ int main(int argc, char **argv)
 		daemon_redirect_stderr(errlog_file);
 
         urandom_generate_base57id(instance_id, sizeof(instance_id));
-	get_time_str(time(NULL), true, start_time_str);
+	get_time_str(_current_time, true, start_time_str);
 
 	dispatcher->setThreadPool(4, 32, STACK_SIZE);
 	dispatcher->start();
