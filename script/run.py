@@ -41,11 +41,11 @@ prog_name = os.path.basename(args[0])
 prog_dir = os.path.dirname(args[0])
 prog_argv = args
 
-suffix = prog_name
+prefix = prog_name
 if len(args) >= 2:
-    suffix += '+' + '+'.join(args[1:]).replace('/', '^')
+    prefix += '+' + '+'.join(args[1:]).replace('/', '^')
 
-lockfilename = RUN_DIR + "/lk." + suffix
+lockfilename = RUN_DIR + "/" + prefix + ".lck"
 try:
     lockfd = os.open(lockfilename, os.O_WRONLY | os.O_CREAT, 0o666)
     fcntl.flock(lockfd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -55,7 +55,7 @@ except Exception as ex:
     traceback.print_exc(file=sys.stderr)
     sys.exit(1)
 
-logfilename = RUN_DIR + "/log." + suffix
+logfilename = RUN_DIR + "/" + prefix + ".log"
 logfp = open(logfilename, "a")
 
 
@@ -87,7 +87,8 @@ signal.signal(signal.SIGINT, sig_handler)
 signal.signal(signal.SIGPIPE, sig_handler)
 
 while True:
-    print(timestamp(), "Try running", " ".join(prog_argv), file=logfp)
+    print('\n=======================', timestamp(), "Try running", " ".join(prog_argv), file=logfp)
+    logfp.flush()
     sp = subprocess.Popen(prog_argv, cwd=prog_dir, close_fds=True, stdout=logfp, stderr=subprocess.STDOUT)
     child_pid = sp.pid
     sp.wait()
