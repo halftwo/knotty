@@ -1007,8 +1007,8 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 			int idle_sec = -1;
 			struct stat st;
 			int n = sizeof(path) - 1 - plen;
-			if (n > __UT_LINESIZE)
-				n = __UT_LINESIZE;
+			if (n > (int)sizeof(ut->ut_line))
+				n = sizeof(ut->ut_line);
 			strncpy(path + plen, ut->ut_line, n);
 			path[plen+n] = 0;
 			if (stat(path, &st) == 0)
