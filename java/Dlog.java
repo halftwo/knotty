@@ -17,20 +17,20 @@ public class Dlog
 	private static String _charset = "UTF8";
 	private static int _option = 0;
 	private static String _identity = "-";
-	private static short _pid = 0;
+	private static int _pid = 0;
 	private static OutputStream _out = null;
 
 	private static final String DLOGD_IP = "127.0.0.1";
 	private static final int DLOGD_PORT = 6109;
 
-	private static final int RECORD_VERSION = 4;
+	private static final int RECORD_VERSION = 6;
 	private static final int TYPE_RAW = 0;
 
 	private static final int IDENT_MAX = 63;
 	private static final int TAG_MAX = 63;
 	private static final int LOCUS_MAX = 127;
 	private static final int RECORD_MAX_SIZE = 4000;
-	private static final int RECORD_HEAD_SIZE = 16;
+	private static final int RECORD_HEAD_SIZE = 18;
 
 	public static void dlog_set(String ident, int option)
 	{
@@ -41,7 +41,7 @@ public class Dlog
 		else
 			_identity = ident;
 		_option = option;
-		_pid = (short)_getpid();
+		_pid = _getpid();
 	}
 
 	public static void setCharset(String charset)
@@ -136,14 +136,14 @@ public class Dlog
 				System.err.printf("%s %s\n", timestr, str);
 			}
 
-			rec[0] = (byte)((len>>8)&0xff);
+			rec[0] = (byte)((len>>8) & 0xff);
 			rec[1] = (byte)(len & 0xff);
 			/* truncated:1, type:3, bigendian:1, version:3 */
 			rec[2] = (byte)(truncated | (TYPE_RAW << 4) | 0x08 | RECORD_VERSION);
 			rec[3] = (byte)(i_len + t_len + l_len + 2);
-			rec[4] = (byte)0;
-			rec[5] = (byte)0;
-			rec[6] = (byte)((_pid>>>8)&0xff);
+			rec[4] = (byte)((_pid>>>24) & 0xff);
+			rec[5] = (byte)((_pid>>>16) & 0xff);
+			rec[6] = (byte)((_pid>>>8) & 0xff);
 			rec[7] = (byte)(_pid & 0xff);
 
 
@@ -191,7 +191,7 @@ public class Dlog
 
 	private static int _getpid()
 	{
-		return 0;
+		return (int)ProcessHandle.current().pid();
 	}
 
 	private static OutputStream _connect_daemon()
