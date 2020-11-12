@@ -52,7 +52,7 @@
 #include <map>
 #include <sstream>
 
-#define VER_LOCUS	"v4"
+#define VER_LOCUS	"v" XS_TOSTR(DLOG_PACKET_VERSION)
 
 #define STACK_SIZE	(256*1024)
 
@@ -91,6 +91,7 @@ static bool is_ipv6 = false;
 static char the_ip[40];
 static uint8_t the_ip64[16];
 
+static char machine_id[33];
 static char instance_id[24];
 static char start_time_str[24];
 static bool run_logger = true;
@@ -1021,11 +1022,12 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		endutxent();
 
 		rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, "STATS", VER_LOCUS, "up=%d-%02d:%02d user=%zd load=%s"
+		dlog_make(rec, NULL, _program_name, "STATS", VER_LOCUS, "host=%s up=%d-%02d:%02d user=%zd load=%s"
 					" cpu=%dcore:%s"
 					" mem=t:%ldM,u:%ldM,b:%ldM,c:%ldM,f:%ldM"
 					" swap=t:%ldM,u:%ldM,f:%ldM"
 					" net=%s io=%s os=%s",
+				machine_id,
 				up_day, up_hour, up_min, user_count, loadavg,
 				_core_count, cpu_os.str().c_str(),
 				memTotal, (memTotal - memFree - memBuffer - memCache),
@@ -1623,6 +1625,22 @@ int main(int argc, char **argv)
 
 	if (daemon)
 		daemon_redirect_stderr(errlog_file);
+
+	uint8_t *buf = NULL;
+	size_t buf_size = 0;
+	int n = unixfs_get_content("/etc/machine-id", &buf, &buf_size);
+	if (n > 0)
+	{
+		if (n > (int)sizeof(machine_id) - 1)
+			n = sizeof(machine_id) - 1;
+		memcpy(machine_id, buf, n);
+	}
+	else
+	{
+		uint32_t hostid = gethostid();
+		snprintf(machine_id, sizeof(machine_id), "%08x", hostid);
+	}
+	free(buf);
 
         urandom_generate_base57id(instance_id, sizeof(instance_id));
 	get_time_str(time(NULL), true, start_time_str);

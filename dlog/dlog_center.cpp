@@ -45,7 +45,7 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#define VER_LOCUS		"v4"
+#define VER_LOCUS		"v" XS_TOSTR(DLOG_PACKET_VERSION)
 
 #define STACK_SIZE		(256*1024)
 
