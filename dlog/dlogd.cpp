@@ -226,8 +226,7 @@ static void do_log(struct dlog_record *rec)
 
 		_b->pkt.size = DLOG_PACKET_HEAD_SIZE;
 		_b->pkt.flag = 0;
-		_b->pkt._reserved1 = 0;
-		_b->pkt._reserved2 = 0;
+		_b->pkt._reserved = 0;
 	}
 
 	p = (char *)&_b->pkt + _b->pkt.size;
@@ -1007,7 +1006,11 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 			int login_sec = sec - ut->ut_tv.tv_sec;
 			int idle_sec = -1;
 			struct stat st;
-			strcpy(path + plen, ut->ut_line);
+			int n = sizeof(path) - 1 - plen;
+			if (n > __UT_LINESIZE)
+				n = __UT_LINESIZE;
+			strncpy(path + plen, ut->ut_line, n);
+			path[plen+n] = 0;
 			if (stat(path, &st) == 0)
 				idle_sec = sec - st.st_atime;
 
@@ -1109,21 +1112,17 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 
 #undef FP
 
-static void check_and_adjust_record_header(struct dlog_record *rec)
+static void check_record_header(struct dlog_record *rec)
 {
-	if (rec->version >= 3 && rec->version < DLOG_RECORD_VERSION)
+	if (rec->version < 3 || rec->version > DLOG_RECORD_VERSION)
 	{
-		rec->version = DLOG_RECORD_VERSION;
-	}
-
-	if (rec->version != DLOG_RECORD_VERSION)
 		throw XERROR_FMT(XError, "Unknown record version (%d)", rec->version);
+	}
 
 	if (rec->bigendian)
 	{
-		rec->bigendian = 0;
+		// Change it to local endian (maybe big, maybe little)
 		xnet_msb16(&rec->size);
-		xnet_msb16(&rec->pid);
 	}
 
 	if (rec->type != DLOG_TYPE_RAW)
@@ -1136,12 +1135,40 @@ static void check_and_adjust_record_header(struct dlog_record *rec)
 		throw XERROR_FMT(XError, "Invalid record size (%d), locus_end=%d", rec->size, rec->locus_end);
 }
 
-static void check_record_whole(struct dlog_record *rec)
+static void check_record_whole(struct dlog_record *rec, uint16_t port)
 {
 	if (((char *)rec)[rec->size - 1] != '\0')
 	{
 		throw XERROR_FMT(XError, "Record is not terminated with nil byte '\\0'");
 	}
+
+	if (rec->version == DLOG_RECORD_VERSION)
+	{
+		if (rec->bigendian)
+			xnet_msb32(&rec->pid);
+	}
+	else
+	{
+		struct dlog_record_v5 *r5 = (struct dlog_record_v5 *)rec;
+
+		uint32_t pid = (rec->bigendian) ? xnet_m16(r5->pid) : r5->pid;
+		rec->pid = pid;
+
+		int delta = DLOG_RECORD_HEAD_SIZE - offsetof(struct dlog_record_v5, str);
+		rec->size += delta;
+		if (rec->size > DLOG_RECORD_MAX_SIZE)
+		{
+			rec->size = DLOG_RECORD_MAX_SIZE;
+			rec->truncated = 1;
+		}
+		unsigned int n = rec->size - DLOG_RECORD_HEAD_SIZE;
+		memmove(rec->str, r5->str, n);
+		((char *)rec)[rec->size - 1] = 0;
+	}
+
+	rec->bigendian = 0;	// endian is local (maybe big, maybe little)
+	rec->version = DLOG_RECORD_VERSION;
+	rec->port = port;
 }
 
 class DlogUdpWorker: public XEvent::FdHandler
@@ -1199,7 +1226,7 @@ void DlogUdpWorker::do_read()
 			if (len < (ssize_t)DLOG_RECORD_HEAD_SIZE)
 				throw XERROR_FMT(XError, "Size of recvfrom()ed data too small (%zd)", len);
 
-			check_and_adjust_record_header(_rec);
+			check_record_header(_rec);
 
 			if (len < DLOG_RECORD_MAX_SIZE)
 			{
@@ -1218,8 +1245,7 @@ void DlogUdpWorker::do_read()
 				((char *)_rec)[_rec->size - 1] = '\0';
 			}
 
-			check_record_whole(_rec);
-			_rec->port = port;
+			check_record_whole(_rec, port);
 			log_it(_rec, false);
 			_rec = NULL;
 		}
@@ -1352,7 +1378,7 @@ int DlogWorker::do_read()
 					LOC_PAUSE(0);
 			}
 
-			check_and_adjust_record_header(_rec);
+			check_record_header(_rec);
 
 			LOC_ANCHOR
 			{
@@ -1381,8 +1407,7 @@ int DlogWorker::do_read()
 				((char *)_rec)[_rec->size - 1] = '\0';
 			}
 
-			_rec->port = _port;
-			check_record_whole(_rec);
+			check_record_whole(_rec, _port);
 			log_it(_rec, false);
 			_rec = NULL;
 		}
