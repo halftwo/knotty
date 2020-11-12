@@ -664,7 +664,7 @@ PHP_FUNCTION(dlog)
 	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ssz",
 			&identity, &ilen, &tag, &tlen, &content) == FAILURE)
 	{
-		// Do nothing
+		zend_error(E_ERROR, "Wrong parameters for void dlog(string $identity, string $tag, mixed $content)");
 	}
 
 	xstr_t tag_xs = XSTR_INIT((unsigned char *)tag, tlen);
