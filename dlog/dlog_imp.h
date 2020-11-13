@@ -13,8 +13,8 @@ extern "C" {
 
 
 #define DLOG_V_EDITION 		201112
-#define DLOG_V_REVISION 	201112
-#define DLOG_V_RELEASE 		20
+#define DLOG_V_REVISION 	201113
+#define DLOG_V_RELEASE 		19
 
 #define DLOG_VERSION		XS_TOSTR(DLOG_V_EDITION) "." XS_TOSTR(DLOG_V_REVISION) "." XS_TOSTR(DLOG_V_RELEASE)
 
@@ -43,7 +43,17 @@ extern "C" {
 #define DLOG_RECORD_HEAD_SIZE		offsetof(struct dlog_record, str)
 #define DLOG_PACKET_HEAD_SIZE		offsetof(struct dlog_packet, buf)
 
-#define DLOG_RECORD_MAX_SIZE		(4000)
+
+/* The string length of the whole log line should be less than 4096.
+   The first 3 items of the log line
+		@datetime ' ' ex_ip6/in_ip6 ' ' pid+port ' '
+   have a total length of 112 (1+13+1+39+1+39+1+10+1+5+1).
+   The length of the log line trailing ("\a ...\r\n") may be as great as 7.
+   And the DLOG_RECORD_HEAD_SIZE is 18.
+  
+   So the DLOG_RECORD_MAX_SIZE should be less than 4096 - (112 + 7 - 18) = 3995
+ */
+#define DLOG_RECORD_MAX_SIZE		3992
 #define DLOG_PACKET_MAX_SIZE		(65536-256)
 
 

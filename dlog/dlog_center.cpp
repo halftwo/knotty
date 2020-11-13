@@ -57,8 +57,8 @@
 #define ZIPFILE_SUFFIX		".lz4"
 
 #define LOGFILE_RESERVE 	(DLOG_RECORD_MAX_SIZE + 128)
-#define LOGFILE_SWITCH_MIN	(1024*1024*1 - LOGFILE_RESERVE)
-#define LOGFILE_SWITCH_DFT	(1024*1024*1024 - LOGFILE_RESERVE)
+#define LOGFILE_SWITCH_MIN	(1000*1000*1 - LOGFILE_RESERVE)
+#define LOGFILE_SWITCH_DFT	(1000*1000*1000 - LOGFILE_RESERVE)
 
 #define BLOCK_SIZE	(DLOG_PACKET_MAX_SIZE + offsetof(struct packet_block, pkt))
 
@@ -1187,7 +1187,7 @@ int main(int argc, char **argv)
 		user = OPT_EARG(usage(prog));
 		break;
 	case 's':
-		_logfile_switch = atoi(OPT_EARG(usage(prog))) * 1024 * 1024 - LOGFILE_RESERVE;
+		_logfile_switch = atoi(OPT_EARG(usage(prog))) * 1000 * 1000 - LOGFILE_RESERVE;
 		if (_logfile_switch < LOGFILE_SWITCH_MIN)
 			_logfile_switch = LOGFILE_SWITCH_MIN;
 		break;
