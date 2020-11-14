@@ -13,8 +13,8 @@ extern "C" {
 
 
 #define DLOG_V_EDITION 		201112
-#define DLOG_V_REVISION 	201113
-#define DLOG_V_RELEASE 		19
+#define DLOG_V_REVISION 	201114
+#define DLOG_V_RELEASE 		15
 
 #define DLOG_VERSION		XS_TOSTR(DLOG_V_EDITION) "." XS_TOSTR(DLOG_V_REVISION) "." XS_TOSTR(DLOG_V_RELEASE)
 
@@ -53,6 +53,7 @@ extern "C" {
   
    So the DLOG_RECORD_MAX_SIZE should be less than 4096 - (112 + 7 - 18) = 3995
  */
+#define DLOG_LOGLINE_MAX_SIZE		4096
 #define DLOG_RECORD_MAX_SIZE		3992
 #define DLOG_PACKET_MAX_SIZE		(65536-256)
 
