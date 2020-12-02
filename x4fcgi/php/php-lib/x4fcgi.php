@@ -121,17 +121,6 @@ function x4fcgi_serve($callback)
 			$input_bytes = stream_get_contents($input_fp);
 			fclose($input_fp);
 			$quest = xic_Quest::withInputBytes($input_bytes);
-			if (array_key_exists("CID", $quest->context))
-			{
-				$cid = $quest->context["CID"];
-				try {
-					xic_set_cid($cid);
-				}
-				catch (Throwable $ex)
-				{
-					error_log($ex->getMessage(), 4);
-				}
-			}
 			if (array_key_exists("RID", $quest->context))
 			{
 				$rid = $quest->context["RID"];
@@ -153,7 +142,6 @@ function x4fcgi_serve($callback)
 				exit(1);
 			}
 
-			xic_set_cid("");
 			xic_set_rid("");
 			$program = $argv[0];
 			$method = $argv[1];
