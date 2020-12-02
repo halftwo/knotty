@@ -9,6 +9,19 @@
 #include <stdarg.h>
 #include <string>
 
+#if PHP_VERSION_ID >= 80000
+#define TSRMLS_CC
+#define TSRMLS_C
+#define TSRMLS_DC
+#define TSRMLS_D
+#endif
+
+#if PHP_VERSION_ID >= 80000
+#define MY_Z_OBJ_P(Z)	Z_OBJ_P(Z)
+#else
+#define MY_Z_OBJ_P(Z)	(Z)
+#endif
+
 
 #define VALID_OBJECT(ZV, CE) 				\
 	(Z_TYPE_P((ZV)) == IS_OBJECT && Z_OBJCE_P((ZV)) == (CE))

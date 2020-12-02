@@ -40,7 +40,7 @@ PHP_METHOD(vbs_Decimal, __toString)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval *zv = zend_read_property(classEntry_Decimal, getThis(), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+	zval *zv = zend_read_property(classEntry_Decimal, MY_Z_OBJ_P(getThis()), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 	RETURN_ZVAL(zv, 1, 0);
 }
 
@@ -48,15 +48,21 @@ PHP_METHOD(vbs_Decimal, toString)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval *zv = zend_read_property(classEntry_Decimal, getThis(), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+	zval *zv = zend_read_property(classEntry_Decimal, MY_Z_OBJ_P(getThis()), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 	RETURN_ZVAL(zv, 1, 0);
 }
 
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_toString, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry _methods[] = {
-	PHP_ME(vbs_Decimal, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(vbs_Decimal, __toString, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(vbs_Decimal, toString, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Decimal, __construct, arginfo_construct, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Decimal, __toString, arginfo_toString, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Decimal, toString, arginfo_toString, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 
@@ -83,7 +89,7 @@ void create_DecimalNoCheck(zval* obj, zval* zv TSRMLS_DC)
 {
 	assert(Z_TYPE_P(zv) == IS_STRING);
 	object_init_ex(obj, classEntry_Decimal);
-	zend_update_property(classEntry_Decimal, obj, "s", sizeof("s") - 1, zv TSRMLS_CC);
+	zend_update_property(classEntry_Decimal, MY_Z_OBJ_P(obj), "s", sizeof("s") - 1, zv TSRMLS_CC);
 }
 
 bool create_Decimal(zval* obj, zval* zv TSRMLS_DC)
@@ -120,7 +126,7 @@ bool create_Decimal(zval* obj, zval* zv TSRMLS_DC)
 	zval z;
 	ZVAL_UNDEF(&z);
 	ZVAL_STRINGL(&z, buf, len);
-	zend_update_property(classEntry_Decimal, obj, "s", sizeof("s") - 1, &z TSRMLS_CC);
+	zend_update_property(classEntry_Decimal, MY_Z_OBJ_P(obj), "s", sizeof("s") - 1, &z TSRMLS_CC);
 	Z_DELREF_P(&z);
 	return true;
 }

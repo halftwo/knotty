@@ -34,6 +34,44 @@ static int le_xic;
 */
 static char phpxic_version[] = "$phpxic: " XIC_SO_VERSION "-" PHP_XIC_VERSION " module_api=" XS_TOSTR(ZEND_MODULE_API_NO) " " __DATE__ " " __TIME__ " $";
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_build_info, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_engine, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_self_id, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_self, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_cid, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_set_cid, 0, 0, 1)
+	ZEND_ARG_INFO(0, cid)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_rid, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_set_rid, 0, 0, 1)
+	ZEND_ARG_INFO(0, rid)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_blob, 0, 0, 1)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_dict, 0, 0, 1)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_decimal, 0, 0, 1)
+	ZEND_ARG_INFO(0, value)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_data, 0, 0, 1)
 	ZEND_ARG_INFO(0, data)
 	ZEND_ARG_INFO(0, descriptor)
@@ -43,7 +81,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_encode, 0, 0, 1)
 	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_encode_write, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_encode_write, 0, 0, 2)
 	ZEND_ARG_INFO(0, handle)
 	ZEND_ARG_INFO(0, value)
 ZEND_END_ARG_INFO()
@@ -57,14 +95,14 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_pack, 0, 0, 1)
 	ZEND_ARG_INFO(0, values)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_unpack, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_vbs_unpack, 0, 0, 3)
 	ZEND_ARG_INFO(0, vbs)
 	ZEND_ARG_INFO(0, offset)
 	ZEND_ARG_INFO(0, num)
 	ZEND_ARG_INFO(1, used)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_dlog, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_dlog, 0, 0, 3)
 	ZEND_ARG_INFO(0, identity)
 	ZEND_ARG_INFO(0, tag)
 	ZEND_ARG_INFO(0, content)
@@ -75,17 +113,17 @@ ZEND_END_ARG_INFO()
  * Every user visible function must have an entry in xic_functions[].
  */
 zend_function_entry xic_functions[] = {
-	PHP_FE(xic_build_info, NULL)
-	PHP_FE(xic_engine, NULL)
-	PHP_FE(xic_self_id, NULL)
-	PHP_FE(xic_self, NULL)
-	PHP_FE(xic_cid, NULL)
-	PHP_FE(xic_set_cid, NULL)
-	PHP_FE(xic_rid, NULL)
-	PHP_FE(xic_set_rid, NULL)
-	PHP_FE(vbs_blob, NULL)
-	PHP_FE(vbs_dict, NULL)
-	PHP_FE(vbs_decimal, NULL)
+	PHP_FE(xic_build_info, arginfo_xic_build_info)
+	PHP_FE(xic_engine, arginfo_xic_engine)
+	PHP_FE(xic_self_id, arginfo_xic_self_id)
+	PHP_FE(xic_self, arginfo_xic_self)
+	PHP_FE(xic_cid, arginfo_xic_cid)
+	PHP_FE(xic_set_cid, arginfo_xic_set_cid)
+	PHP_FE(xic_rid, arginfo_xic_rid)
+	PHP_FE(xic_set_rid, arginfo_xic_set_rid)
+	PHP_FE(vbs_blob, arginfo_vbs_blob)
+	PHP_FE(vbs_dict, arginfo_vbs_dict)
+	PHP_FE(vbs_decimal, arginfo_vbs_decimal)
 	PHP_FE(vbs_data, arginfo_vbs_data)
 	PHP_FE(vbs_encode, arginfo_vbs_encode)
 	PHP_FE(vbs_decode, arginfo_vbs_decode)
@@ -357,7 +395,7 @@ PHP_FUNCTION(vbs_blob)
 	{
 		zval rv;
 		ZVAL_UNDEF(&rv);
-		z = zend_read_property(vbs::classEntry_Blob, z, "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+		z = zend_read_property(vbs::classEntry_Blob, MY_Z_OBJ_P(z), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 		vbs::create_Blob(return_value, z TSRMLS_CC);
 	}
 	else
@@ -383,7 +421,7 @@ PHP_FUNCTION(vbs_dict)
 		{
 			zval rv;
 			ZVAL_UNDEF(&rv);
-			z = zend_read_property(vbs::classEntry_Dict, z, "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
+			z = zend_read_property(vbs::classEntry_Dict, MY_Z_OBJ_P(z), "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
 			vbs::create_Dict(return_value, z TSRMLS_CC);
 		}
 		else
@@ -417,7 +455,7 @@ PHP_FUNCTION(vbs_decimal)
 		{
 			zval rv;
 			ZVAL_UNDEF(&rv);
-			z = zend_read_property(vbs::classEntry_Decimal, z, "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+			z = zend_read_property(vbs::classEntry_Decimal, MY_Z_OBJ_P(z), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 			vbs::create_Decimal(return_value, z TSRMLS_CC);
 		}
 		else
@@ -531,7 +569,7 @@ PHP_FUNCTION(vbs_decode)
 	{
 		zval rv;
 		ZVAL_UNDEF(&rv);
-		z = zend_read_property(vbs::classEntry_Blob, z, "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+		z = zend_read_property(vbs::classEntry_Blob, MY_Z_OBJ_P(z), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 		str = Z_STRVAL_P(z);
 		slen = Z_STRLEN_P(z);
 	}
@@ -607,7 +645,7 @@ PHP_FUNCTION(vbs_unpack)
 	{
 		zval rv;
 		ZVAL_UNDEF(&rv);
-		z = zend_read_property(vbs::classEntry_Blob, z, "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+		z = zend_read_property(vbs::classEntry_Blob, MY_Z_OBJ_P(z), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 		str = Z_STRVAL_P(z);
 		slen = Z_STRLEN_P(z);
 	}

@@ -209,14 +209,42 @@ PHP_METHOD(xic_Proxy, invokeOneway)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_toString, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_service, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_setContext, 0, 0, 1)
+	ZEND_ARG_INFO(0, ctx)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getContext, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_invoke, 0, 0, 2)
+	ZEND_ARG_INFO(0, method)
+	ZEND_ARG_INFO(0, args)
+	ZEND_ARG_INFO(0, ctx)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_invokeOneway, 0, 0, 2)
+	ZEND_ARG_INFO(0, method)
+	ZEND_ARG_INFO(0, args)
+	ZEND_ARG_INFO(0, ctx)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry _methods[] = {
-	PHP_ME(xic_Proxy, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Proxy, __toString, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Proxy, service, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Proxy, setContext, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Proxy, getContext, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Proxy, invoke, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Proxy, invokeOneway, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Proxy, __construct, arginfo_construct, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Proxy, __toString, arginfo_toString, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Proxy, service, arginfo_service, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Proxy, setContext, arginfo_setContext, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Proxy, getContext, arginfo_getContext, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Proxy, invoke, arginfo_invoke, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Proxy, invokeOneway, arginfo_invokeOneway, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 

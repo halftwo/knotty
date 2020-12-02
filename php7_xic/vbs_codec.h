@@ -8,6 +8,7 @@
 #include "xslib/xsdef.h"
 #include "xslib/vbs_pack.h"
 #include "xslib/XError.h"
+#include "util.h"
 
 namespace vbs
 {

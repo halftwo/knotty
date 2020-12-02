@@ -40,7 +40,7 @@ PHP_METHOD(vbs_Data, getData)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval *zv = zend_read_property(classEntry_Data, getThis(), "d", sizeof("d") - 1, 0, &rv TSRMLS_CC);
+	zval *zv = zend_read_property(classEntry_Data, MY_Z_OBJ_P(getThis()), "d", sizeof("d") - 1, 0, &rv TSRMLS_CC);
 	RETURN_ZVAL(zv, 1, 0);
 }
 
@@ -48,14 +48,24 @@ PHP_METHOD(vbs_Data, getDescriptor)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval *zv = zend_read_property(classEntry_Data, getThis(), "r", sizeof("r") - 1, 0, &rv TSRMLS_CC);
+	zval *zv = zend_read_property(classEntry_Data, MY_Z_OBJ_P(getThis()), "r", sizeof("r") - 1, 0, &rv TSRMLS_CC);
 	RETURN_ZVAL(zv, 1, 0);
 }
 
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getData, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getDescriptor, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry _methods[] = {
-	PHP_ME(vbs_Data, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(vbs_Data, getData, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(vbs_Data, getDescriptor, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Data, __construct, arginfo_construct, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Data, getData, arginfo_getData, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Data, getDescriptor, arginfo_getDescriptor, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 
@@ -85,7 +95,7 @@ bool create_Data(zval* obj, zval* dat, int descriptor TSRMLS_DC)
 	object_init_ex(obj, classEntry_Data);
 
 	add_property_zval(obj, "d", dat);
-	zend_update_property_long(classEntry_Data, obj, "r", sizeof("r") - 1, descriptor);
+	zend_update_property_long(classEntry_Data, MY_Z_OBJ_P(obj), "r", sizeof("r") - 1, descriptor);
 	return true;
 }
 

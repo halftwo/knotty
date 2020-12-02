@@ -3,7 +3,7 @@
  * xic functions that implemented using PHP (instead of C language).
  * @package xic
  * @author jiagui
- * @version 181204.181204.13
+ * @version 201202.201202.15
  */
 #
 # xic.so extension includes following constants:

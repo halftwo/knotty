@@ -100,12 +100,29 @@ PHP_METHOD(xic_Engine, getSecret)
 }
 
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_toString, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_stringToProxy, 0, 0, 1)
+	ZEND_ARG_INFO(0, str)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_setSecret, 0, 0, 1)
+	ZEND_ARG_INFO(0, secret)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getSecret, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry _methods[] = {
-	PHP_ME(xic_Engine, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Engine, __toString, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Engine, stringToProxy, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Engine, setSecret, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Engine, getSecret, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Engine, __construct, arginfo_construct, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Engine, __toString, arginfo_toString, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Engine, stringToProxy, arginfo_stringToProxy, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Engine, setSecret, arginfo_setSecret, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Engine, getSecret, arginfo_getSecret, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 

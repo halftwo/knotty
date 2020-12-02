@@ -213,7 +213,7 @@ void v_encode_r(vbs_packer_t *job, zval *val TSRMLS_DC)
 		{
 			zval rv;
 			ZVAL_UNDEF(&rv);
-			zval *zv = zend_read_property(vbs::classEntry_Blob, val, "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+			zval *zv = zend_read_property(vbs::classEntry_Blob, MY_Z_OBJ_P(val), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 			vbs_pack_blob(job, Z_STRVAL_P(zv), Z_STRLEN_P(zv));
 			break;
 		}
@@ -221,7 +221,7 @@ void v_encode_r(vbs_packer_t *job, zval *val TSRMLS_DC)
 		{
 			zval rv;
 			ZVAL_UNDEF(&rv);
-			zval *zv = zend_read_property(vbs::classEntry_Dict, val, "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
+			zval *zv = zend_read_property(vbs::classEntry_Dict, MY_Z_OBJ_P(val), "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
 			v_encode_dict(job, zv TSRMLS_CC);
 			break;
 		}
@@ -229,7 +229,7 @@ void v_encode_r(vbs_packer_t *job, zval *val TSRMLS_DC)
 		{
 			zval rv;
 			ZVAL_UNDEF(&rv);
-			zval *zv = zend_read_property(vbs::classEntry_Decimal, val, "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+			zval *zv = zend_read_property(vbs::classEntry_Decimal, MY_Z_OBJ_P(val), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 			decimal64_t dec;
 			decimal64_from_cstr(&dec, Z_STRVAL_P(zv), NULL);
 			vbs_pack_decimal64(job, dec);
@@ -239,11 +239,11 @@ void v_encode_r(vbs_packer_t *job, zval *val TSRMLS_DC)
 		{
 			zval rv1, rv2;
 
-			zval *r = zend_read_property(vbs::classEntry_Data, val, "r", sizeof("r") - 1, 0, &rv1 TSRMLS_CC);
+			zval *r = zend_read_property(vbs::classEntry_Data, MY_Z_OBJ_P(val), "r", sizeof("r") - 1, 0, &rv1 TSRMLS_CC);
 			int descriptor = Z_LVAL_P(r);
 			vbs_pack_descriptor(job, descriptor);
 
-			zval *d = zend_read_property(vbs::classEntry_Data, val, "d", sizeof("d") - 1, 0, &rv2 TSRMLS_CC);
+			zval *d = zend_read_property(vbs::classEntry_Data, MY_Z_OBJ_P(val), "d", sizeof("d") - 1, 0, &rv2 TSRMLS_CC);
 			v_encode_r(job, d);
 			break;
 		}
@@ -277,7 +277,7 @@ void v_encode_args_without_headtail(vbs_packer_t *job, zval *args TSRMLS_DC)
 	{
 		zval rv;
 		ZVAL_UNDEF(&rv);
-		zval *zv = zend_read_property(vbs::classEntry_Dict, args, "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
+		zval *zv = zend_read_property(vbs::classEntry_Dict, MY_Z_OBJ_P(args), "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
 		args = zv;
 	}
 	else if (Z_TYPE_P(args) != IS_ARRAY)

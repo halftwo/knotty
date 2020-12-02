@@ -33,18 +33,18 @@ PHP_METHOD(xic_Exception, __construct)
 	obj = getThis();
 
 	if (msg && msg_len > 0)
-		zend_update_property_stringl(default_except_ce, obj, "message", sizeof("message") - 1, msg, msg_len TSRMLS_CC);
+		zend_update_property_stringl(default_except_ce, MY_Z_OBJ_P(obj), "message", sizeof("message") - 1, msg, msg_len TSRMLS_CC);
 
 	if (code)
-		zend_update_property_long(default_except_ce, obj, "code", sizeof("code") - 1, code TSRMLS_CC);
+		zend_update_property_long(default_except_ce, MY_Z_OBJ_P(obj), "code", sizeof("code") - 1, code TSRMLS_CC);
 
 	if (prev)
-		zend_update_property(default_except_ce, obj, "previous", sizeof("previous") - 1, prev TSRMLS_CC);
+		zend_update_property(default_except_ce, MY_Z_OBJ_P(obj), "previous", sizeof("previous") - 1, prev TSRMLS_CC);
 
 	if (tag && tag_len > 0)
-		zend_update_property_stringl(xs::classEntry_XError, obj, "tag", sizeof("tag") - 1, tag, tag_len TSRMLS_CC);
+		zend_update_property_stringl(xs::classEntry_XError, MY_Z_OBJ_P(obj), "tag", sizeof("tag") - 1, tag, tag_len TSRMLS_CC);
 
-	zend_update_property_bool(classEntry_Exception, obj, "_local", sizeof("_local") - 1, true TSRMLS_CC);
+	zend_update_property_bool(classEntry_Exception, MY_Z_OBJ_P(obj), "_local", sizeof("_local") - 1, true TSRMLS_CC);
 
 	return;
 }
@@ -53,7 +53,7 @@ PHP_METHOD(xic_Exception, isLocal)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval* z = zend_read_property(classEntry_Exception, getThis(), "_local", sizeof("_local") - 1, 1, &rv TSRMLS_CC);
+	zval* z = zend_read_property(classEntry_Exception, MY_Z_OBJ_P(getThis()), "_local", sizeof("_local") - 1, 1, &rv TSRMLS_CC);
 	if (z)
 	{
 		RETURN_ZVAL(z, 1, 0);
@@ -68,7 +68,7 @@ PHP_METHOD(xic_Exception, getProxyString)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval* z = zend_read_property(classEntry_Exception, getThis(), "proxy", sizeof("proxy") - 1, 1, &rv TSRMLS_CC);
+	zval* z = zend_read_property(classEntry_Exception, MY_Z_OBJ_P(getThis()), "proxy", sizeof("proxy") - 1, 1, &rv TSRMLS_CC);
 	if (z)
 	{
 		RETURN_ZVAL(z, 1, 0);
@@ -84,7 +84,7 @@ PHP_METHOD(xic_Exception, getExname)
 	zval* obj = getThis();
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval* z = zend_read_property(classEntry_Exception, obj, "exname", sizeof("exname") - 1, 1, &rv TSRMLS_CC);
+	zval* z = zend_read_property(classEntry_Exception, MY_Z_OBJ_P(obj), "exname", sizeof("exname") - 1, 1, &rv TSRMLS_CC);
 	if (z && Z_TYPE_P(z) == IS_STRING && Z_STRLEN_P(z) > 0)
 	{
 		RETURN_ZVAL(z, 1, 0);
@@ -107,7 +107,7 @@ PHP_METHOD(xic_Exception, getRaiser)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval* z = zend_read_property(classEntry_Exception, getThis(), "raiser", sizeof("raiser") - 1, 1, &rv TSRMLS_CC);
+	zval* z = zend_read_property(classEntry_Exception, MY_Z_OBJ_P(getThis()), "raiser", sizeof("raiser") - 1, 1, &rv TSRMLS_CC);
 	if (z)
 	{
 		RETURN_ZVAL(z, 1, 0);
@@ -122,18 +122,40 @@ PHP_METHOD(xic_Exception, getDetail)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval* z = zend_read_property(classEntry_Exception, getThis(), "detail", sizeof("detail") - 1, 1, &rv TSRMLS_CC);
+	zval* z = zend_read_property(classEntry_Exception, MY_Z_OBJ_P(getThis()), "detail", sizeof("detail") - 1, 1, &rv TSRMLS_CC);
 	// What if z == NULL
 	RETURN_ZVAL(z, 1, 0);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, msg)
+	ZEND_ARG_INFO(0, code)
+	ZEND_ARG_INFO(0, tag)
+	ZEND_ARG_INFO(0, prev)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_isLocal, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getProxyString, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getExname, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getRaiser, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getDetail, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry _methods[] = {
-	PHP_ME(xic_Exception, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Exception, isLocal, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Exception, getProxyString, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Exception, getExname, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Exception, getRaiser, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xic_Exception, getDetail, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Exception, __construct, arginfo_construct, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Exception, isLocal, arginfo_isLocal, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Exception, getProxyString, arginfo_getProxyString, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Exception, getExname, arginfo_getExname, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Exception, getRaiser, arginfo_getRaiser, ZEND_ACC_PUBLIC)
+	PHP_ME(xic_Exception, getDetail, arginfo_getDetail, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 
@@ -163,24 +185,24 @@ void raise_LocalException(const std::string& proxy, const std::exception& ex TSR
 	ZVAL_UNDEF(&zv);
 	object_init_ex(&zv, classEntry_Exception);
 
-	zend_update_property_stringl(classEntry_Exception, &zv, "proxy", sizeof("proxy") - 1, (char *)proxy.data(), proxy.length() TSRMLS_CC);
-	zend_update_property_bool(classEntry_Exception, &zv, "_local", sizeof("_local") - 1, true TSRMLS_CC);
+	zend_update_property_stringl(classEntry_Exception, MY_Z_OBJ_P(&zv), "proxy", sizeof("proxy") - 1, (char *)proxy.data(), proxy.length() TSRMLS_CC);
+	zend_update_property_bool(classEntry_Exception, MY_Z_OBJ_P(&zv), "_local", sizeof("_local") - 1, true TSRMLS_CC);
 
 	const XError *e = dynamic_cast<const XError*>(&ex);
 	std::string exname = e ? e->exname() : demangle_cxxname(typeid(ex).name());
 
-	zend_update_property_stringl(classEntry_Exception, &zv, "exname", sizeof("exname") - 1, (char *)exname.data(), exname.length() TSRMLS_CC);
-	zend_update_property_string(classEntry_Exception, &zv, "message", sizeof("message") - 1, (char *)ex.what() TSRMLS_CC);
+	zend_update_property_stringl(classEntry_Exception, MY_Z_OBJ_P(&zv), "exname", sizeof("exname") - 1, (char *)exname.data(), exname.length() TSRMLS_CC);
+	zend_update_property_string(classEntry_Exception, MY_Z_OBJ_P(&zv), "message", sizeof("message") - 1, (char *)ex.what() TSRMLS_CC);
 
 	if (e)
 	{
 		if (e->code())
-			zend_update_property_long(classEntry_Exception, &zv, "code", sizeof("code") - 1, e->code() TSRMLS_CC);
-		zend_update_property_stringl(classEntry_Exception, &zv, "tag", sizeof("tag") - 1, (char *)e->tag().data(), e->tag().length() TSRMLS_CC);
+			zend_update_property_long(classEntry_Exception, MY_Z_OBJ_P(&zv), "code", sizeof("code") - 1, e->code() TSRMLS_CC);
+		zend_update_property_stringl(classEntry_Exception, MY_Z_OBJ_P(&zv), "tag", sizeof("tag") - 1, (char *)e->tag().data(), e->tag().length() TSRMLS_CC);
 	}
 	else
 	{
-		zend_update_property_string(classEntry_Exception, &zv, "tag", sizeof("tag") - 1, "" TSRMLS_CC);
+		zend_update_property_string(classEntry_Exception, MY_Z_OBJ_P(&zv), "tag", sizeof("tag") - 1, "" TSRMLS_CC);
 	}
 
 	zval detail;
@@ -193,7 +215,7 @@ void raise_LocalException(const std::string& proxy, const std::exception& ex TSR
 		add_assoc_long_ex(&detail, "line", sizeof("line") - 1, e->line());
 		add_assoc_stringl_ex(&detail, "calltrace", sizeof("calltrace") - 1, (char *)e->calltrace().data(), e->calltrace().length());
 	}
-	zend_update_property(classEntry_Exception, &zv, "detail", sizeof("detail") - 1, &detail TSRMLS_CC);
+	zend_update_property(classEntry_Exception, MY_Z_OBJ_P(&zv), "detail", sizeof("detail") - 1, &detail TSRMLS_CC);
 
 	zend_throw_exception_object(&zv TSRMLS_CC);
 }
@@ -204,7 +226,7 @@ void raise_RemoteException(const std::string& proxy, zval* info TSRMLS_DC)
 	ZVAL_UNDEF(&zv);
 	object_init_ex(&zv, classEntry_Exception);
 
-	zend_update_property_stringl(classEntry_Exception, &zv, "proxy", sizeof("proxy") - 1, (char *)proxy.data(), proxy.length() TSRMLS_CC);
+	zend_update_property_stringl(classEntry_Exception, MY_Z_OBJ_P(&zv), "proxy", sizeof("proxy") - 1, (char *)proxy.data(), proxy.length() TSRMLS_CC);
 
 	HashTable *ht = HASH_OF(info);
 	long code = 0;
@@ -222,7 +244,7 @@ void raise_RemoteException(const std::string& proxy, zval* info TSRMLS_DC)
 		{
 			exname = Z_STRVAL_P(tmp);
 			if (exname[0])
-				zend_update_property_string(classEntry_Exception, &zv, "exname", sizeof("exname") - 1, exname TSRMLS_CC);
+				zend_update_property_string(classEntry_Exception, MY_Z_OBJ_P(&zv), "exname", sizeof("exname") - 1, exname TSRMLS_CC);
 		}
 
 		tmp = zend_symtable_str_find(ht, "raiser", sizeof("raiser") - 1);
@@ -230,7 +252,7 @@ void raise_RemoteException(const std::string& proxy, zval* info TSRMLS_DC)
 		{
 			raiser = Z_STRVAL_P(tmp);
 			if (raiser[0])
-				zend_update_property_string(classEntry_Exception, &zv, "raiser", sizeof("raiser") - 1, raiser TSRMLS_CC);
+				zend_update_property_string(classEntry_Exception, MY_Z_OBJ_P(&zv), "raiser", sizeof("raiser") - 1, raiser TSRMLS_CC);
 		}
 
 		tmp = zend_symtable_str_find(ht, "code", sizeof("code") - 1);
@@ -238,7 +260,7 @@ void raise_RemoteException(const std::string& proxy, zval* info TSRMLS_DC)
 		{
 			code = Z_LVAL_P(tmp);
 			if (code)
-				zend_update_property_long(classEntry_Exception, &zv, "code", sizeof("code") - 1, code TSRMLS_CC);
+				zend_update_property_long(classEntry_Exception, MY_Z_OBJ_P(&zv), "code", sizeof("code") - 1, code TSRMLS_CC);
 		}
 
 		tmp = zend_symtable_str_find(ht, "tag", sizeof("tag") - 1);
@@ -246,7 +268,7 @@ void raise_RemoteException(const std::string& proxy, zval* info TSRMLS_DC)
 		{
 			tag = Z_STRVAL_P(tmp);
 			if (tag[0])
-				zend_update_property_string(classEntry_Exception, &zv, "tag", sizeof("tag") - 1, tag TSRMLS_CC);
+				zend_update_property_string(classEntry_Exception, MY_Z_OBJ_P(&zv), "tag", sizeof("tag") - 1, tag TSRMLS_CC);
 		}
 
 		tmp = zend_symtable_str_find(ht, "message", sizeof("message") - 1);
@@ -275,16 +297,16 @@ void raise_RemoteException(const std::string& proxy, zval* info TSRMLS_DC)
 	if (len >= sizeof(buf))
 		len = sizeof(buf) - 1;
 
-	zend_update_property_stringl(classEntry_Exception, &zv, "message", sizeof("message") - 1, buf, len TSRMLS_CC);
+	zend_update_property_stringl(classEntry_Exception, MY_Z_OBJ_P(&zv), "message", sizeof("message") - 1, buf, len TSRMLS_CC);
 
 	if (!Z_ISUNDEF(detail))
 	{
-		zend_update_property(classEntry_Exception, &zv, "detail", sizeof("detail") - 1, &detail TSRMLS_CC);
+		zend_update_property(classEntry_Exception, MY_Z_OBJ_P(&zv), "detail", sizeof("detail") - 1, &detail TSRMLS_CC);
 	}
 	else
 	{
 		array_init(&detail);
-		zend_update_property(classEntry_Exception, &zv, "detail", sizeof("detail") - 1, &detail TSRMLS_CC);
+		zend_update_property(classEntry_Exception, MY_Z_OBJ_P(&zv), "detail", sizeof("detail") - 1, &detail TSRMLS_CC);
 	}
 
 	zend_throw_exception_object(&zv TSRMLS_CC);

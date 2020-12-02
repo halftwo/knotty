@@ -39,7 +39,7 @@ PHP_METHOD(vbs_Dict, __toString)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval *zv = zend_read_property(classEntry_Dict, getThis(), "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
+	zval *zv = zend_read_property(classEntry_Dict, MY_Z_OBJ_P(getThis()), "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
 	int num = 0;
 	if (zv && Z_TYPE_P(zv) == IS_ARRAY)
 	{
@@ -57,7 +57,7 @@ PHP_METHOD(vbs_Dict, toArray)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval *zv = zend_read_property(classEntry_Dict, getThis(), "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
+	zval *zv = zend_read_property(classEntry_Dict, MY_Z_OBJ_P(getThis()), "a", sizeof("a") - 1, 0, &rv TSRMLS_CC);
 	if (zv && Z_TYPE_P(zv) == IS_ARRAY)
 	{
 		RETURN_ZVAL(zv, 1, 0);
@@ -69,10 +69,19 @@ PHP_METHOD(vbs_Dict, toArray)
 }
 
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_toString, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_toArray, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry _methods[] = {
-	PHP_ME(vbs_Dict, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(vbs_Dict, __toString, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(vbs_Dict, toArray, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Dict, __construct, arginfo_construct, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Dict, __toString, arginfo_toString, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Dict, toArray, arginfo_toArray, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 
@@ -98,7 +107,7 @@ bool init_Dict(TSRMLS_D)
 bool create_Dict(zval* zv, zval* arr TSRMLS_DC)
 {
 	object_init_ex(zv, classEntry_Dict);
-	zend_update_property(classEntry_Dict, zv, "a", sizeof("a") - 1, arr TSRMLS_CC);
+	zend_update_property(classEntry_Dict, MY_Z_OBJ_P(zv), "a", sizeof("a") - 1, arr TSRMLS_CC);
 	return true;
 }
 

@@ -36,16 +36,16 @@ PHP_METHOD(xs_XError, __construct)
 	obj = getThis();
 
 	if (msg && msg_len > 0)
-		zend_update_property_stringl(default_except_ce, obj, "message", sizeof("message") - 1, msg, msg_len TSRMLS_CC);
+		zend_update_property_stringl(default_except_ce, MY_Z_OBJ_P(obj), "message", sizeof("message") - 1, msg, msg_len TSRMLS_CC);
 
 	if (code)
-		zend_update_property_long(default_except_ce, obj, "code", sizeof("code") - 1, code TSRMLS_CC);
+		zend_update_property_long(default_except_ce, MY_Z_OBJ_P(obj), "code", sizeof("code") - 1, code TSRMLS_CC);
 
 	if (prev)
-		zend_update_property(default_except_ce, obj, "previous", sizeof("previous") - 1, prev TSRMLS_CC);
+		zend_update_property(default_except_ce, MY_Z_OBJ_P(obj), "previous", sizeof("previous") - 1, prev TSRMLS_CC);
 
 	if (tag && tag_len > 0)
-		zend_update_property_stringl(classEntry_XError, obj, "tag", sizeof("tag") - 1, tag, tag_len TSRMLS_CC);
+		zend_update_property_stringl(classEntry_XError, MY_Z_OBJ_P(obj), "tag", sizeof("tag") - 1, tag, tag_len TSRMLS_CC);
 
 	return;
 }
@@ -54,7 +54,7 @@ PHP_METHOD(xs_XError, getTag)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval* z = zend_read_property(classEntry_XError, getThis(), "tag", sizeof("tag") - 1, 1, &rv TSRMLS_CC);
+	zval* z = zend_read_property(classEntry_XError, MY_Z_OBJ_P(getThis()), "tag", sizeof("tag") - 1, 1, &rv TSRMLS_CC);
 	if (z)
 	{
 		RETURN_ZVAL(z, 1, 0);
@@ -79,10 +79,23 @@ PHP_METHOD(xs_XError, getExname)
 	}
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+	ZEND_ARG_INFO(0, msg)
+	ZEND_ARG_INFO(0, code)
+	ZEND_ARG_INFO(0, tag)
+	ZEND_ARG_INFO(0, prev)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getTag, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_getExname, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry _methods[] = {
-	PHP_ME(xs_XError, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xs_XError, getTag, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(xs_XError, getExname, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(xs_XError, __construct, arginfo_construct, ZEND_ACC_PUBLIC)
+	PHP_ME(xs_XError, getTag, arginfo_getTag, ZEND_ACC_PUBLIC)
+	PHP_ME(xs_XError, getExname, arginfo_getExname, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 

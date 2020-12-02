@@ -39,7 +39,7 @@ PHP_METHOD(vbs_Blob, __toString)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval *zv = zend_read_property(classEntry_Blob, getThis(), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+	zval *zv = zend_read_property(classEntry_Blob, MY_Z_OBJ_P(getThis()), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 	RETURN_ZVAL(zv, 1, 0);
 }
 
@@ -47,15 +47,21 @@ PHP_METHOD(vbs_Blob, toString)
 {
 	zval rv;
 	ZVAL_UNDEF(&rv);
-	zval *zv = zend_read_property(classEntry_Blob, getThis(), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
+	zval *zv = zend_read_property(classEntry_Blob, MY_Z_OBJ_P(getThis()), "s", sizeof("s") - 1, 0, &rv TSRMLS_CC);
 	RETURN_ZVAL(zv, 1, 0);
 }
 
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_construct, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_toString, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 static zend_function_entry _methods[] = {
-	PHP_ME(vbs_Blob, __construct, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(vbs_Blob, __toString, NULL, ZEND_ACC_PUBLIC)
-	PHP_ME(vbs_Blob, toString, NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Blob, __construct, arginfo_construct, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Blob, __toString, arginfo_toString, ZEND_ACC_PUBLIC)
+	PHP_ME(vbs_Blob, toString, arginfo_toString, ZEND_ACC_PUBLIC)
 	{ NULL, NULL, NULL }
 };
 
@@ -81,7 +87,7 @@ bool init_Blob(TSRMLS_D)
 bool create_Blob(zval* zv, zval* str TSRMLS_DC)
 {
 	object_init_ex(zv, classEntry_Blob);
-	zend_update_property(classEntry_Blob, zv, "s", sizeof("s") - 1, str TSRMLS_CC);
+	zend_update_property(classEntry_Blob, MY_Z_OBJ_P(zv), "s", sizeof("s") - 1, str TSRMLS_CC);
 	return true;
 }
 
