@@ -197,9 +197,8 @@ zval *get_xic_self()
 	zval* self = &XIC_G(the_self);
 	if (Z_ISUNDEF(*self))
 	{
-//		zval* id = get_xic_self_id();
-//		std::string s = get_self_process(Z_STRVAL_P(id));
-		std::string s = get_self_process(NULL);
+		zval* rid = get_xic_rid();
+		std::string s = get_self_process(Z_STRVAL_P(rid));
 		ZVAL_STRINGL(self, (char *)s.data(), s.length());
 	}
 	return self;
@@ -826,7 +825,6 @@ PHP_MINFO_FUNCTION(xic)
  */
 PHP_RINIT_FUNCTION(xic)
 {
-	get_xic_self();
 	return SUCCESS;
 }
 /* }}} */

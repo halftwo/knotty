@@ -16,9 +16,9 @@
 #include <errno.h>
 #include <vector>
 
-#define X4FCGI_V_EDITION          181103
-#define X4FCGI_V_REVISION         190102
-#define X4FCGI_V_RELEASE          18
+#define X4FCGI_V_EDITION          201202
+#define X4FCGI_V_REVISION         201202
+#define X4FCGI_V_RELEASE          17
 
 #define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
 
