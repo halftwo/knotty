@@ -299,7 +299,7 @@ function x4fcgi_serve($callback)
 	if (!$iscli)
 	{
 		$ver = intval($_SERVER['XIC4FCGI_VERSION']);
-		$ver = ($ver < 1) ? 1 : ($ver > 2) ? 2 : $ver;
+		$ver = ($ver < 1) ? 1 : (($ver > 2) ? 2 : $ver);
 		header("XIC4FCGI_VERSION: ".$ver);
 		header("Content-Type: application/octet-stream");
 
