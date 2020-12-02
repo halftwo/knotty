@@ -825,7 +825,6 @@ PHP_MINFO_FUNCTION(xic)
  */
 PHP_RINIT_FUNCTION(xic)
 {
-	get_xic_self();
 	return SUCCESS;
 }
 /* }}} */
