@@ -20,7 +20,7 @@
 3. 启动 x4fcgi 进程
 	./x4fcgi --xic.conf=conf.x4fcgi &
 
-4. 将 php/php7-lib/x4fcgi.php 文件拷贝到 php 的 include_path。
+4. 将 php/php-lib/x4fcgi.php 文件拷贝到 php 的 include_path。
    php 的 include_path 可以通过以下命令获知:
 	php -i |grep include_path
 
