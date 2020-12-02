@@ -15,12 +15,12 @@
 
 static xatomic_t _last_request_id;
 
-static void format_base32id(char buf[10], uint32_t rid)
+static void format_base32id(char buf[12], uint32_t rid)
 {
-	static uint16_t pid = getpid();
-	xbase32_pad_from_uint64(buf, 3, pid);
-	xbase32_pad_from_uint64(buf+3, 6, rid);
-	buf[9] = 0;
+	static uint32_t pid = getpid() & 0x1FFFFFF;
+	xbase32_pad_from_uint64(buf, 5, pid);
+	xbase32_pad_from_uint64(buf+5, 6, rid);
+	buf[11] = 0;
 }
 
 FcgiQuest::FcgiQuest(ostk_t *ostk, const FcgiClientPtr& client, const FcgiCallbackPtr& callback,
@@ -32,7 +32,7 @@ FcgiQuest::FcgiQuest(ostk_t *ostk, const FcgiClientPtr& client, const FcgiCallba
 	_params_len = 0;
 	_endpoint = endpoint;
 
-	char b32id[10];
+	char b32id[12];
 	format_base32id(b32id, _rid);
 
 	const FcgiConfig& conf = _client->conf();
