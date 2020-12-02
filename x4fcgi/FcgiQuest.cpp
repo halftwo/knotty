@@ -203,7 +203,7 @@ struct iovec* FcgiQuest::get_iovec(int* count)
 	const FcgiConfig& conf = _client->conf();
 
 	_params_add(REQUEST_METHOD_XS, POST_XS);
-	_params_add(SERVER_NAME_XS, XS_SNL("-X-"));
+	_params_add(SERVER_NAME_XS, XS_SNL("-x4-"));
 	_params_add(REQUEST_URI_XS, _request_uri);
 	_params_add(SCRIPT_FILENAME_XS, _script_filename);
 	_params_add(DOCUMENT_ROOT_XS, conf.rootdir.data(), conf.rootdir.length());
