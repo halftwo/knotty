@@ -13,11 +13,10 @@
 # xic.so extension includes following functions:
 #	xic_Engine xic_engine();
 #
-#	string xic_self_id();
+#	void xic_set_rid(string $rid);
+#	string xic_rid();
+
 #	string xic_self();
-#
-#	string xic_cid();
-#	void xic_set_cid(string $cid);
 #
 #	v_Blob vbs_blob(string $s);
 #	v_Dict vbs_dict(array $a);

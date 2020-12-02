@@ -60,19 +60,6 @@ void raise_Exception(long code TSRMLS_DC, const char *format, ...)
 	zend_object *ex = zend_throw_exception(zend_exception_get_default(TSRMLS_C), buf, code);
 }
 
-ssize_t get_self_process_id(char *id, size_t size)
-{
-	assert((ssize_t)size >= 8);
-
-	int len = size - 4;
-	int half = len / 2;
-	urandom_generate_base57id(id, len + 1);
-	memmove(id + half + 3, id + half, len - half);
-	xbase57_pad_from_uint64(id + half, 3, getpid());
-	len += 3;
-	id[len] = 0;
-	return len;
-}
 
 std::string get_self_process(const char *self_id/*NULL*/)
 {
@@ -157,13 +144,6 @@ std::string pack_ctx(zval *ctx)
 
 	vbs_pack_head_of_dict0(&pk);
 
-	zval* cid = get_xic_cid();
-	if (cid)
-	{
-		vbs_pack_lstr(&pk, "CID", 3);
-		vbs_pack_lstr(&pk, Z_STRVAL_P(cid), Z_STRLEN_P(cid));
-	}
-
 	zval* myrid = get_xic_rid();
 	if (myrid)
 	{
@@ -192,15 +172,6 @@ std::string pack_ctx(zval *ctx)
 	return os.str();
 }
 
-int generate_xic_cid(char cid[18])
-{
-	uint32_t r[3];
-	urandom_get_bytes(&r, sizeof(r));
-	xbase57_pad_from_uint64(cid, 6, r[0]);
-	xbase57_encode(cid + 6, &r[1], 8);
-	cid[17] = 0;
-	return 17;
-}
 
 int generate_xic_rid(char buf[24], const char *myrid, int len)
 {
@@ -241,31 +212,6 @@ static void update_ctx_caller(zval *ctx)
 		{
 			Z_ADDREF_P(caller);
 			zend_hash_str_update(ht, "CALLER", sizeof("CALLER") - 1, caller);
-		}
-	}
-}
-
-// Obselete
-static void update_ctx_cid(zval *ctx)
-{
-	HashTable *ht = HASH_OF(ctx);
-	if (ht)
-	{
-		zval* cid = get_xic_cid();
-		if (cid)
-		{
-			Z_ADDREF_P(cid);
-			zend_hash_str_update(ht, "CID", sizeof("CID") - 1, cid);
-		}
-		else
-		{
-			char buf[18];
-			int len = generate_xic_cid(buf);
-
-			zval zv;
-			ZVAL_UNDEF(&zv);
-			ZVAL_STRINGL(&zv, buf, len);
-			zend_hash_str_update(ht, "CID", sizeof("CID") - 1, &zv);
 		}
 	}
 }

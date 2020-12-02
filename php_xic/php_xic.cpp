@@ -40,17 +40,7 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_engine, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_self_id, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
 ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_self, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_cid, 0, 0, 0)
-ZEND_END_ARG_INFO()
-
-ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_set_cid, 0, 0, 1)
-	ZEND_ARG_INFO(0, cid)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_xic_rid, 0, 0, 0)
@@ -115,10 +105,7 @@ ZEND_END_ARG_INFO()
 zend_function_entry xic_functions[] = {
 	PHP_FE(xic_build_info, arginfo_xic_build_info)
 	PHP_FE(xic_engine, arginfo_xic_engine)
-	PHP_FE(xic_self_id, arginfo_xic_self_id)
 	PHP_FE(xic_self, arginfo_xic_self)
-	PHP_FE(xic_cid, arginfo_xic_cid)
-	PHP_FE(xic_set_cid, arginfo_xic_set_cid)
 	PHP_FE(xic_rid, arginfo_xic_rid)
 	PHP_FE(xic_set_rid, arginfo_xic_set_rid)
 	PHP_FE(vbs_blob, arginfo_vbs_blob)
@@ -180,18 +167,6 @@ PHP_FUNCTION(xic_build_info)
 	RETURN_STRING(phpxic_version);
 }
 
-zval *get_xic_self_id()
-{
-	zval* self_id = &XIC_G(the_self_id);
-	if (Z_ISUNDEF(*self_id))
-	{
-		char id[20];
-		int len = get_self_process_id(id, sizeof(id));
-		ZVAL_STRINGL(self_id, id, len);
-	}
-	return self_id;
-}
-
 zval *get_xic_self()
 {
 	zval* self = &XIC_G(the_self);
@@ -202,18 +177,6 @@ zval *get_xic_self()
 		ZVAL_STRINGL(self, (char *)s.data(), s.length());
 	}
 	return self;
-}
-
-zval *get_xic_cid()
-{
-	zval* cid = &XIC_G(the_cid);
-	if (Z_ISUNDEF(*cid))
-	{
-		char buf[18];
-		int len = generate_xic_cid(buf);
-		ZVAL_STRINGL(cid, buf, len);
-	}
-	return cid;
 }
 
 zval *get_xic_rid()
@@ -245,67 +208,12 @@ PHP_FUNCTION(xic_engine)
 }
 
 
-/* proto string xic_self_id()
-*/
-PHP_FUNCTION(xic_self_id)
-{
-	zval* zv = get_xic_self_id();
-	RETURN_ZVAL(zv, 1, 0);
-}
-
-
 /* proto string xic_self()
 */
 PHP_FUNCTION(xic_self)
 {
 	zval* zv = get_xic_self();
 	RETURN_ZVAL(zv, 1, 0);
-}
-
-
-/* proto string xic_cid();
- */
-PHP_FUNCTION(xic_cid)
-{
-	zval* cid = &XIC_G(the_cid);
-	if (!Z_ISUNDEF(*cid))
-		RETURN_ZVAL(cid, 1, 0);
-
-	RETVAL_STRINGL(NULL, 0);
-}
-
-
-/* proto void xic_set_cid(string $cid);
- */
-PHP_FUNCTION(xic_set_cid)
-{
-	char *cid = NULL;
-	size_t len = 0;
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s/", &cid, &len) != SUCCESS)
-	{
-		raise_Exception(0 TSRMLS_CC, "Wrong parameters for xic_set_cid(string $cid)");
-	}
-
-	if (len > 0 && (len != 17 || strspn(cid, xbase57_alphabet) < len 
-		|| (strchr(xbase57_alphabet, cid[0]) - xbase57_alphabet >= 49)))
-	{
-		raise_Exception(0 TSRMLS_CC, "Invalid cid for xic_set_cid(string $cid)");
-	}
-
-	char buf[18];
-	if (len <= 0)
-	{
-		cid = buf;
-		len = generate_xic_cid(buf);
-	}
-
-	zval* zv = &XIC_G(the_cid);
-	if (!Z_ISUNDEF(*zv))
-	{
-		zval_ptr_dtor(zv);
-	}
-
-	ZVAL_STRINGL(zv, cid, len);
 }
 
 
@@ -775,7 +683,6 @@ static void php_xic_init_globals(zend_xic_globals *xic_globals TSRMLS_DC)
 {
 	ZVAL_UNDEF(&xic_globals->the_engine);
 	ZVAL_UNDEF(&xic_globals->the_self);
-	ZVAL_UNDEF(&xic_globals->the_self_id);
 }
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -845,20 +752,6 @@ PHP_RSHUTDOWN_FUNCTION(xic)
 	if (!Z_ISUNDEF(XIC_G(the_self)))
 	{
 		zval* zv = &XIC_G(the_self);
-		zval_ptr_dtor(zv);
-		ZVAL_UNDEF(zv);
-	}
-
-	if (!Z_ISUNDEF(XIC_G(the_self_id)))
-	{
-		zval* zv = &XIC_G(the_self_id);
-		zval_ptr_dtor(zv);
-		ZVAL_UNDEF(zv);
-	}
-
-	if (!Z_ISUNDEF(XIC_G(the_cid)))
-	{
-		zval* zv = &XIC_G(the_cid);
 		zval_ptr_dtor(zv);
 		ZVAL_UNDEF(zv);
 	}

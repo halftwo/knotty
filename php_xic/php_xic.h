@@ -67,24 +67,9 @@ PHP_RSHUTDOWN_FUNCTION(xic);
 PHP_FUNCTION(xic_engine);
 
 
-/* proto string xic_self_id();
- */
-PHP_FUNCTION(xic_self_id);
-
-
 /* proto string xic_self();
  */
 PHP_FUNCTION(xic_self);
-
-
-/* proto string xic_cid();
- */
-PHP_FUNCTION(xic_cid);
-
-
-/* proto void xic_set_cid(string $cid);
- */
-PHP_FUNCTION(xic_set_cid);
 
 
 /* proto string xic_rid();
@@ -156,8 +141,6 @@ PHP_FUNCTION(dlog);
 ZEND_BEGIN_MODULE_GLOBALS(xic)
 	zval the_engine;
 	zval the_self;
-	zval the_self_id;
-	zval the_cid;
 	zval the_rid;
 ZEND_END_MODULE_GLOBALS(xic)
 

@@ -31,9 +31,6 @@ ssize_t get_self_process_id(char *id, size_t size);
 std::string get_self_process(const char *id/*NULL*/);
 std::string get_default_ctx();
 
-zval *get_xic_cid();
-int generate_xic_cid(char cid[18]);
-
 zval *get_xic_rid();
 int generate_xic_rid(char buf[24], const char *myrid, int len);
 
