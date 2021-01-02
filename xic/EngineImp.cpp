@@ -1554,6 +1554,7 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			CheckWriter cw("SRP6a4");
 			cw.paramBlob("M2", M2);
 			cw.param("CIPHER", MyCipher::get_cipher_name_from_id(xic_cipher));
+			cw.param("MODE", 1);
 			send_kmsg(cw.take());
 			send_kmsg(HelloMessage::create());
 
