@@ -17,5 +17,5 @@ xic.sample.client = 1
 
 xic.passport.shadow = shadow.example
 xic.passport.secret = secret.example
-xic.cipher = AES256-EAX-1
+xic.cipher = AES256-EAX
 
