@@ -79,17 +79,11 @@ MyCipher::MyCipher(MyCipher::CipherSuite suite, const void *keyInfo, size_t keyI
 	if (keyInfoSize > key_len)
 	{
 		memcpy(key, keyInfo, key_len);
-		size_t n = keyInfoSize - key_len;
-		if (n > sizeof(this->salt))
-			n = sizeof(this->salt);
-		memcpy(this->salt, (const uint8_t *)keyInfo + key_len, n);
-		this->salt_size = n;
 	}
 	else
 	{
 		memset(key, 0, sizeof(key));
 		memcpy(key, keyInfo, keyInfoSize);
-		this->salt_size = 0;
 	}
 
 	if (!rijndael_setup_encrypt(&this->aes, key, key_len))
@@ -112,7 +106,6 @@ MyCipher::MyCipher(MyCipher::CipherSuite suite, const void *keyInfo, size_t keyI
 MyCipher::~MyCipher()
 {
 	rijndael_clear_context(&this->aes);
-	memset(this->salt, 0, sizeof(this->salt));
 }
 
 

@@ -13,20 +13,9 @@ class MyCipher: public XRefCount
 	uint8_t oNonce[20];	// encrypt
 	uint8_t iNonce[20];	// decrypt
 
-	/* nonce = salt + IV */
-	uint8_t salt[16];
-	size_t salt_size;
-
 public:
 	uint8_t oMAC[16];	// encrypt
 	uint8_t iMAC[16];	// decrypt
-
-	// mode0
-	uint8_t oSeq[8];
-	uint8_t oIV[16];	// encrypt
-
-	uint8_t iSeq[8];
-	uint8_t iIV[16];	// decrypt
 
 	enum CipherSuite
 	{
