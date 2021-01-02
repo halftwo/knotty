@@ -84,7 +84,6 @@ IpMatcherPtr xic::xic_allow_ips;
 SecretBoxPtr xic::xic_passport_secret;
 ShadowBoxPtr xic::xic_passport_shadow;
 MyCipher::CipherSuite xic::xic_cipher = MyCipher::AES128_EAX;
-int xic::xic_cipher_mode = 0;
 
 EnginePtr xic::xic_engine;
 
@@ -144,16 +143,8 @@ struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count, const MyC
 
 	if (cipher)
 	{
-		if (cipher->mode0())
-		{
-			hdr->flags |= XIC_FLAG_CIPHER_MODE0;
-			hdr->bodySize += cipher->extraSizeMode0();
-		}
-		else
-		{
-			hdr->flags |= XIC_FLAG_CIPHER_MODE1;
-			hdr->bodySize += cipher->extraSize();
-		}
+		hdr->flags |= XIC_FLAG_CIPHER_MODE1;
+		hdr->bodySize += cipher->extraSize();
 	}
 	xnet_msb32(&hdr->bodySize);
 
@@ -164,15 +155,7 @@ struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count, const MyC
 	{
 		uint8_t *secure = OSTK_ALLOC(ostk, uint8_t, msg->bodySize());
 		size_t secure_len = 0;
-		if (cipher->mode0())
-		{
-			cipher->oSeqIncreaseMode0();
-			cipher->encryptStartMode0(hdr, sizeof(*hdr));
-		}
-		else
-		{
-			cipher->encryptStart(hdr, sizeof(*hdr));
-		}
+		cipher->encryptStart(hdr, sizeof(*hdr));
 
 		for (int i = 0; i < iov_count; ++i)
 		{
@@ -182,24 +165,11 @@ struct iovec *xic::get_msg_iovec(const XicMessagePtr& msg, int *count, const MyC
 		assert(secure_len == msg->bodySize());
 		cipher->encryptFinish();
 
-		if (cipher->mode0())
-		{
-			iov[1].iov_base = cipher->oIV;
-			iov[1].iov_len = sizeof(cipher->oIV);
-			iov[2].iov_base = secure;
-			iov[2].iov_len = secure_len;
-			iov[3].iov_base = cipher->oMAC;
-			iov[3].iov_len = sizeof(cipher->oMAC);
-			*count = 4;
-		}
-		else
-		{
-			iov[1].iov_base = secure;
-			iov[1].iov_len = secure_len;
-			iov[2].iov_base = cipher->oMAC;
-			iov[2].iov_len = sizeof(cipher->oMAC);
-			*count = 3;
-		}
+		iov[1].iov_base = secure;
+		iov[1].iov_len = secure_len;
+		iov[2].iov_base = cipher->oMAC;
+		iov[2].iov_len = sizeof(cipher->oMAC);
+		*count = 3;
 	}
 	else
 	{
@@ -362,11 +332,6 @@ void xic::prepareEngine(const SettingPtr& setting)
 			if (cipher < 0)
 				throw XERROR_FMT(XError, "Unknown xic.cipher value \"%s\"", s.c_str());
 			xic_cipher = cipher;
-
-			int mode = MyCipher::get_cipher_mode_from_name(s);
-			if (mode < 0)
-				throw XERROR_FMT(XError, "Invalid xic.cipher value \"%s\"", s.c_str());
-			xic_cipher_mode = mode;
 		}
 
 		xic_acm_server = setting->getInt("xic.acm.server", DEFAULT_ACM_SERVER);
@@ -1529,11 +1494,6 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			{
 				xstr_t K = srp6aClient->compute_K();
 				_cipher = new MyCipher(suite, K.data, K.len, false);
-				int mode = args.getInt("MODE", 0);
-				if (mode == 0)
-				{
-					_cipher->setMode0(true);
-				}
 			}
 
 			_ck_state = CK_FINISH;
@@ -1588,15 +1548,12 @@ void ConnectionI::handle_check(const CheckPtr& check)
 			{
 				xstr_t K = srp6aServer->compute_K();
 				_cipher = new MyCipher(xic_cipher, K.data, K.len, true);
-				if (xic_cipher_mode == 0)
-					_cipher->setMode0(true);
 			}
 
 			xstr_t M2 = srp6aServer->compute_M2();
 			CheckWriter cw("SRP6a4");
 			cw.paramBlob("M2", M2);
 			cw.param("CIPHER", MyCipher::get_cipher_name_from_id(xic_cipher));
-			cw.param("MODE", xic_cipher_mode);
 			send_kmsg(cw.take());
 			send_kmsg(HelloMessage::create());
 

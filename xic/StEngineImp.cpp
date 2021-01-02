@@ -592,6 +592,10 @@ int StConnection::recv_msg(XicMessagePtr& msg)
 	{
 		throw XERROR_FMT(ProtocolException, "%s CIPHER flag mode0 and mode1 both set", _info.c_str());
 	}
+	else if (flagCipher == XIC_FLAG_CIPHER_MODE0)
+	{
+		throw XERROR_FMT(ProtocolException, "%s CIPHER mode0 not supported", _info.c_str());
+	}
 
 	uint32_t bodySize = xnet_m32(hdr.bodySize);
 	if (bodySize > xic_message_size)
@@ -629,32 +633,11 @@ int StConnection::recv_msg(XicMessagePtr& msg)
 
 	if (flagCipher)
 	{
-		if (flagCipher & XIC_FLAG_CIPHER_MODE0)
-		{
-			if (bodySize <= _cipher->extraSizeMode0())
-				throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
-						_info.c_str(), (unsigned long)bodySize);
+		if (bodySize <= _cipher->extraSize())
+			throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
+					_info.c_str(), (unsigned long)bodySize);
 
-			bodySize -= _cipher->extraSizeMode0();
-
-			n = st_read_fully(_sf, _cipher->iIV, sizeof(_cipher->iIV), -1);
-			if (n < (int)sizeof(_cipher->iIV))
-			{
-				return _check_io_result(n, _state, _info);
-			}
-
-			_cipher->iSeqIncreaseMode0();
-			if (!_cipher->decryptCheckSequenceMode0())
-				throw XERROR_FMT(ProtocolException, "%s Unmatched sequence number", _info.c_str());
-		}
-		else
-		{
-			if (bodySize <= _cipher->extraSize())
-				throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
-						_info.c_str(), (unsigned long)bodySize);
-
-			bodySize -= _cipher->extraSize();
-		}
+		bodySize -= _cipher->extraSize();
 	}
 
 	msg = XicMessage::create(hdr.msgType, bodySize);
@@ -675,11 +658,7 @@ int StConnection::recv_msg(XicMessagePtr& msg)
 			return _check_io_result(n, _state, _info);
 		}
 
-		if (flagCipher & XIC_FLAG_CIPHER_MODE0)
-			_cipher->decryptStartMode0(&hdr, sizeof(hdr));
-		else
-			_cipher->decryptStart(&hdr, sizeof(hdr));
-
+		_cipher->decryptStart(&hdr, sizeof(hdr));
 		_cipher->decryptUpdate(body.data, body.data, body.len);
 		bool ok = _cipher->decryptFinish();
 		if (!ok)

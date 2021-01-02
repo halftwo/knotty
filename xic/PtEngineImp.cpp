@@ -600,6 +600,10 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 			{
 				throw XERROR_FMT(ProtocolException, "%s CIPHER flag mode0 and mode1 both set", _info.c_str());
 			}
+			else if (_flagCipher == XIC_FLAG_CIPHER_MODE0)
+			{
+				throw XERROR_FMT(ProtocolException, "%s CIPHER mode0 not supported", _info.c_str());
+			}
 
 			bodySize = xnet_m32(_iHeader.bodySize);
 			if (bodySize > xic_message_size)
@@ -635,46 +639,10 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 				goto done;
 			}
 
-			if (_flagCipher & XIC_FLAG_CIPHER_MODE0)
-			{
-				if (bodySize <= _cipher->extraSizeMode0())
-					throw XERROR_FMT(MessageSizeException, "%s Invalid packet bodySize %lu", 
-							_info.c_str(), (unsigned long)bodySize);
-
-				LOC_ANCHOR
-				{
-					ssize_t rc = iobuf_peek(&_ib, sizeof(_cipher->iIV), &p);
-					if (rc < 0)
-					{
-						if (rc == -2)
-						{
-							if (_state >= ST_CLOSING)
-								return -1;
-							throw XERROR_MSG(ConnectionLostException, _info);
-						}
-						throw XERROR_FMT(SocketException, "%s errno=%d", _info.c_str(), errno);
-					}
-
-					_recent_active = true;
-					if (rc < (ssize_t)sizeof(_cipher->iIV))
-						LOC_PAUSE(0);
-				}
-
-				memcpy(_cipher->iIV, p, sizeof(_cipher->iIV));
-				iobuf_skip(&_ib, sizeof(_cipher->iIV));
-
-				_cipher->iSeqIncreaseMode0();
-				if (!_cipher->decryptCheckSequenceMode0())
-					throw XERROR_FMT(ProtocolException, "%s Unmatched sequence number", _info.c_str());
-			}
-
 			bodySize = xnet_m32(_iHeader.bodySize);
 			if (_flagCipher)
 			{
-				if (_flagCipher & XIC_FLAG_CIPHER_MODE0)
-					bodySize -= _cipher->extraSizeMode0();
-				else
-					bodySize -= _cipher->extraSize();
+				bodySize -= _cipher->extraSize();
 			}
 			_rMsg = XicMessage::create(_iHeader.msgType, bodySize);
 			_ipos = 0;
@@ -725,11 +693,7 @@ int PtConnection::recv_msg(XicMessagePtr& msg)
 				iobuf_skip(&_ib, sizeof(_cipher->iMAC));
 
 				xstr_t body = _rMsg->body();
-				if (_flagCipher & XIC_FLAG_CIPHER_MODE0)
-					_cipher->decryptStartMode0(&_iHeader, sizeof(_iHeader));
-				else
-					_cipher->decryptStart(&_iHeader, sizeof(_iHeader));
-
+				_cipher->decryptStart(&_iHeader, sizeof(_iHeader));
 				_cipher->decryptUpdate(body.data, body.data, body.len);
 				bool ok = _cipher->decryptFinish();
 				if (!ok)
