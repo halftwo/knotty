@@ -424,11 +424,18 @@ bool v_decode_r(vbs_unpacker_t *job, zval *zz TSRMLS_DC)
 	}
 	else if (dat.kind == VBS_BLOB)
 	{
-		zval zv;
-		ZVAL_UNDEF(&zv);
-		ZVAL_STRINGL(&zv, (char *)dat.d_blob.data, dat.d_blob.len);
-		vbs::create_Blob(zz, &zv TSRMLS_CC);
-		Z_DELREF_P(&zv);
+		if (job->flags & FLAG_BLOB2STRING)
+		{
+			ZVAL_STRINGL(zz, (char *)dat.d_blob.data, dat.d_blob.len);
+		}
+		else
+		{
+			zval zv;
+			ZVAL_UNDEF(&zv);
+			ZVAL_STRINGL(&zv, (char *)dat.d_blob.data, dat.d_blob.len);
+			vbs::create_Blob(zz, &zv TSRMLS_CC);
+			Z_DELREF_P(&zv);
+		}
 	}
 	else if (dat.kind == VBS_BOOL)
 	{

@@ -201,19 +201,3 @@ int generate_xic_rid(char buf[24], const char *myrid, int len)
 	return 12 + len;
 }
 
-// Obselete
-static void update_ctx_caller(zval *ctx)
-{
-	zval* caller = get_xic_self();
-	if (caller)
-	{
-		HashTable *ht = HASH_OF(ctx);
-		if (ht)
-		{
-			Z_ADDREF_P(caller);
-			zend_hash_str_update(ht, "CALLER", sizeof("CALLER") - 1, caller);
-		}
-	}
-}
-
-

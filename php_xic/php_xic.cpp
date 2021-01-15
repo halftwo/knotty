@@ -486,6 +486,13 @@ PHP_FUNCTION(vbs_decode)
 	}
 
 	vbs_unpacker_init(&uk, (unsigned char *)str, slen, -1);
+
+	// If the value of used == -1, decode blob as string
+	if (used && Z_TYPE_P(used) == IS_LONG && Z_LVAL_P(used) == -1)
+	{
+		uk.flags |= FLAG_BLOB2STRING;
+	}
+
 	zval rv;
 	ZVAL_UNDEF(&rv);
 	if (!vbs::v_decode_r(&uk, &rv TSRMLS_CC))

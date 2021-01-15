@@ -104,6 +104,27 @@ PHP_METHOD(xic_Proxy, getContext)
 	}
 }
 
+static bool ctx_has_blob2str(zval *ctx)
+{
+	HashTable *myht = ctx ? HASH_OF(ctx) : NULL;
+	if (!myht)
+		return false;
+
+	zval *b2s = zend_hash_str_find(myht, "BLOB2STR", 8);
+	if (!b2s)
+		return false;
+
+	switch(Z_TYPE_P(b2s))
+	{
+	case IS_LONG:
+		if (Z_LVAL_P(b2s) != 0)
+			return true;
+	case IS_TRUE:
+		return true;
+	}
+	return false;
+}
+
 /* proto array xic_Proxy::invoke(string $method, array $args [, array $ctx])
  */
 PHP_METHOD(xic_Proxy, invoke)
@@ -132,6 +153,9 @@ PHP_METHOD(xic_Proxy, invoke)
 		xstr_t res = prx->invoke(method, args_rope, ctx_string);
 		ON_BLOCK_EXIT(free, res.data);
 		vbs_unpacker_t uk = VBS_UNPACKER_INIT(res.data, res.len, 100);
+		if (ctx && ctx_has_blob2str(ctx))
+			uk.flags |= FLAG_BLOB2STRING;
+
 		int64_t txid;
 		if (vbs_unpack_int64(&uk, &txid) < 0 || txid == 0)
 		{

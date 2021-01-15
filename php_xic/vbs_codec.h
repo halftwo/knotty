@@ -10,6 +10,8 @@
 #include "xslib/XError.h"
 #include "util.h"
 
+#define FLAG_BLOB2STRING	0x8000
+
 namespace vbs
 {
 

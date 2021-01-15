@@ -15,7 +15,7 @@
 #
 #	void xic_set_rid(string $rid);
 #	string xic_rid();
-
+#
 #	string xic_self();
 #
 #	v_Blob vbs_blob(string $s);
@@ -24,6 +24,8 @@
 #	v_Data vbs_data(mixed $d, int descriptor);
 #
 #	string vbs_encode(mixed $value);
+#
+#	// If the value of used == -1, decode blob as string
 #	mixed vbs_decode(string $vbs [, int &$used]);
 #	void vbs_encode_write(resource handle, mixed $value);
 #
@@ -44,6 +46,7 @@
 #
 #
 # Object of class xic_Proxy has folloing methods:
+#	// If $ctx has key "BLOB2STR" with TRUE or non-zero integer value, the blobs in answer are decoded as string
 #	array xic_Proxy::invoke(string $method, array $args [, array $ctx]);
 #	void xic_Proxy::invokeOneway(string $method, array $args [, array $ctx]);
 #	string xic_Proxy::service();
