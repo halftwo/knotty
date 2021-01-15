@@ -408,6 +408,7 @@ typedef struct
 	int16_t max_depth;
 	int16_t depth;
 	int16_t error;
+	uint16_t flags;		/* Not used yet. May be used by callers of vbs_pack_xxx functions */
 } vbs_packer_t;
 
 #define VBS_PACKER_INIT(WRITE, COOKIE, MAX_DEPTH)	{ (WRITE), (COOKIE), (MAX_DEPTH) }
@@ -420,6 +421,7 @@ static inline void vbs_packer_init(vbs_packer_t *job, ssize_t (*write)(void *, c
 	job->max_depth = max_depth;
 	job->depth = 0;
 	job->error = 0;
+	job->flags = 0;
 }
 
 
@@ -468,6 +470,7 @@ typedef struct
 	int16_t depth;
 	uint16_t descriptor;
 	int16_t error;
+	uint16_t flags;		/* Not used yet. May be used by callers of vbs_unpack_xxx functions */
 } vbs_unpacker_t;
 
 #define VBS_UNPACKER_INIT(BUF, SIZE, MAX_DEPTH)		{ (BUF), (BUF), (BUF)+(SIZE), (MAX_DEPTH), }
@@ -481,6 +484,7 @@ static inline void vbs_unpacker_init(vbs_unpacker_t *job, const void *buf, size_
 	job->depth = 0;
 	job->descriptor = 0;
 	job->error = 0;
+	job->flags = 0;
 }
 
 
