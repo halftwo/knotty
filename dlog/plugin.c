@@ -14,7 +14,7 @@ struct plugin_t
 {
 	lua_State *L;
 	int chunk;
-	int filter;
+	int filterout;
 	int finish;
 	int meta;
 };
@@ -211,12 +211,12 @@ plugin_t *plugin_load(const char *filename)
 			goto error;
 	}
 
-	lua_getglobal(L, "filter");
-	pg->filter = lua_gettop(L);
-	if (!lua_isfunction(L, pg->filter))
+	lua_getglobal(L, "filterout");
+	pg->filterout = lua_gettop(L);
+	if (!lua_isfunction(L, pg->filterout))
 	{
 		lua_pop(L, 1);
-		pg->filter = 0;
+		pg->filterout = 0;
 	}
 
 	lua_getglobal(L, "finish");
@@ -260,9 +260,9 @@ void plugin_close(plugin_t *pg)
 	}
 }
 
-int plugin_filter(plugin_t *pg, const char *time_str, const char *ip, struct dlog_record *rec, const char *rstr)
+int plugin_filterout(plugin_t *pg, const char *time_str, const char *ip, struct dlog_record *rec, const char *rstr)
 {
-	if (!pg->filter)
+	if (!pg->filterout)
 		return 0;
 
 	int res = 0;
@@ -270,7 +270,7 @@ int plugin_filter(plugin_t *pg, const char *time_str, const char *ip, struct dlo
 	lua_State *L = pg->L;
 
 	int top = lua_gettop(L);
-	lua_pushvalue(L, pg->filter);
+	lua_pushvalue(L, pg->filterout);
 
 	struct udata *ud = lua_newuserdata(L, sizeof(struct udata) + 1);
 	if (!rstr)

@@ -11,7 +11,7 @@ function finish()
 end
 
 
-function filter(lg)
+function filterout(lg)
 --	local time = lg.time
 --	local ip = lg.ip
 --	local pid = lg.pid

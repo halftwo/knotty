@@ -886,7 +886,7 @@ void *logger(void *arg)
 
 				if (plugin && rec->type != DLOG_TYPE_COOKED)
 				{
-					int rc = plugin_filter(plugin, last_record_time_str, block->pkt_ip, rec, recstr);
+					int rc = plugin_filterout(plugin, last_record_time_str, block->pkt_ip, rec, recstr);
 					plugin_run++;
 					if (rc > 0)
 					{

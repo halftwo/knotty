@@ -194,7 +194,7 @@ static void do_log(struct dlog_record *rec)
 	}
 	else if (plugin && rec->version == DLOG_RECORD_VERSION && rec->type == DLOG_TYPE_RAW)
 	{
-		int rc = plugin_filter(plugin, NULL, the_ip, rec, NULL);
+		int rc = plugin_filterout(plugin, NULL, the_ip, rec, NULL);
 		plugin_run++;
 
 		if (rc > 0)
