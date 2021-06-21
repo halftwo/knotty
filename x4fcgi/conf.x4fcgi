@@ -16,7 +16,7 @@ Fcgi.ConnectionMax = 2
 
 #
 # The SCRIPT_FILENAME that get to run is 
-#	${Fcgi.RootDir}/SERVICE/${Fcgi.Entry}
+#	${Fcgi.RootDir}/SERVICE/${Fcgi.EntryFile}
 #
 
 Fcgi.RootDir = /var/x4fcgi
