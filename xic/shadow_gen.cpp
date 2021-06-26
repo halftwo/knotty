@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"181102.22"
+#define SHADOW_GEN_VERSION	"210626.19"
 
 void display_version(const char *program)
 {
@@ -221,12 +221,12 @@ try
 
 	if (random_id || random_pass)
 	{
-		fprintf(stderr, "\n%s\n", "## DONT COPY FOLLOWING LINES TO THE SHADOW FILE");
-		if (random_id)
-			fprintf(stderr, "## ID = %s\n", identity);
-		if (random_pass)
-			fprintf(stderr, "## PS = %s\n", passbuf);
-		fputc('\n', stderr);
+		fputs("#\n", stderr);
+		fputs("# THE FOLLOWING LINES ARE OUTPUTED TO THE STDERR\n", stderr);
+		fputs("# DON'T COPY THEM TO THE SHADOW FILE\n", stderr);
+		fputs("#\tID : PASS =\n", stderr);
+		fprintf(stderr, "### %s : %s\n", identity, passbuf);
+		fputs("#\n", stderr);
 	}
 
 	return 0;
