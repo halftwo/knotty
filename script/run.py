@@ -52,7 +52,7 @@ try:
     os.ftruncate(lockfd, 0)
     os.write(lockfd, bytes(str(os.getpid()), 'utf8'))
 except Exception as ex:
-    traceback.print_exc(file=sys.stderr)
+    #traceback.print_exc(file=sys.stderr)
     sys.exit(1)
 
 logfilename = RUN_DIR + "/" + prefix + ".log"
