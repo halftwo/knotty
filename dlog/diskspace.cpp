@@ -23,13 +23,11 @@ void diskspace(std::ostream& oss)
         {
                 const char *path = me->mnt_dir;
 		const char *type = me->mnt_type;
-		if (type == NULL)
+		if (type == NULL || !strcmp(type, "tmpfs") || !strcmp(type, "squashfs") || !strcmp(type, "devtmpfs"))
 			continue;
 		if (cstr_start_with(path, "/proc") && (path[5] == 0 || path[5] == '/'))
 			continue;
-		if (strcmp(path, "/sys") == 0)
-			continue;
-		if (cstr_start_with(path, "/dev/") && strcmp(&path[5], "shm") != 0)
+		if (cstr_start_with(path, "/sys") && (path[4] == 0 || path[4] == '/'))
 			continue;
 
 		struct statfs fs;
