@@ -5,11 +5,11 @@ INSTALL_DIR=/usr/local
 TOP_DIR=..
 
 
-all: lua st lz4
+all: lua lz4 st
 
 install: st-install
 
-clean: lua-clean st-clean lz4-clean
+clean: lua-clean lz4-clean st-clean
 
 
 lua:
