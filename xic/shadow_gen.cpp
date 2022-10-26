@@ -3,11 +3,12 @@
 #include "xslib/opt.h"
 #include "xslib/xbase64.h"
 #include "xslib/urandom.h"
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"221026.18"
+#define SHADOW_GEN_VERSION	"221026.20"
 
 #define ID_LEN_MAX		79
 #define RANDID_LEN		23
@@ -160,7 +161,7 @@ try
 		int rlen = RANDID_LEN - used;
 		if (rlen < RANDID_RANDOM_MIN)
 			rlen = RANDID_RANDOM_MIN;
-		urandom_generate_base32id(p, rlen + 1);
+		base32id_from_entropy(p, rlen + 1, getentropy);
 		identity = idbuf;
 	}
 
@@ -169,7 +170,7 @@ try
 	if (!password)
 	{
 		random_pass = true;
-		urandom_generate_base57id(passbuf, RANDPS_LEN+1);
+		base57id_from_entropy(passbuf, RANDPS_LEN+1, getentropy);
 		password = passbuf;
 	}
 	else if (strcmp(password, "-") == 0)
