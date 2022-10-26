@@ -7,7 +7,15 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"210626.19"
+#define SHADOW_GEN_VERSION	"221026.18"
+
+#define ID_LEN_MAX		79
+#define RANDID_LEN		23
+#define RANDID_RANDOM_MIN	20
+
+#define PS_LEN_MAX		79
+#define RANDPS_LEN		39
+
 
 void display_version(const char *program)
 {
@@ -31,12 +39,12 @@ void usage(const char *program)
 "\n"
 "hashId can only be SHA256 or SHA1. If not specified, it will be SHA256.\n"
 "\n"
-"If identity ends with %%, the %% will be removed and replaced with a\n"
-"random string.\n"
+"If identity ends with %%, the %% will be replaced with a random string.\n"
 "\n"
-"If password is -, it will be read (at most 79 chars) from stdin.\n"
-"\n"
-		);
+"If password is -, it will be read (at most %d alphanumeric characters)\n"
+"from stdin.\n"
+"\n",
+	PS_LEN_MAX);
 	exit(1);
 }
 
@@ -137,35 +145,36 @@ try
 		}
 	}
 
-	char idbuf[80];
+	char idbuf[ID_LEN_MAX+1];
 	if (random_id)
 	{
 		char *p = stpncpy(idbuf, identity, sizeof(idbuf) - 1);
 		--p;	// skip the trailing %
 		int used = p - idbuf;
-		int left = sizeof(idbuf) - 1 - used;
-		if (left < 16)
+		if ((unsigned int)used + RANDID_RANDOM_MIN >= sizeof(idbuf))
 		{
-			fprintf(stderr, "ERROR: identity prefix too long, must be less than %zd\n", sizeof(idbuf) - 1 - 16);
+			fprintf(stderr, "ERROR: identity prefix too long, must be less than %zd\n", sizeof(idbuf) - 1 - RANDID_RANDOM_MIN);
 			exit(1);
 		}
 
-		left = (used < 8) ? 24 - used : 16;
-		urandom_generate_base32id(p, left + 1);
+		int rlen = RANDID_LEN - used;
+		if (rlen < RANDID_RANDOM_MIN)
+			rlen = RANDID_RANDOM_MIN;
+		urandom_generate_base32id(p, rlen + 1);
 		identity = idbuf;
 	}
 
 	bool random_pass = false;
-	char passbuf[80];
+	char passbuf[PS_LEN_MAX+1];
 	if (!password)
 	{
 		random_pass = true;
-		urandom_generate_base57id(passbuf, 41);
+		urandom_generate_base57id(passbuf, RANDPS_LEN+1);
 		password = passbuf;
 	}
 	else if (strcmp(password, "-") == 0)
 	{
-		char line[80];
+		char line[PS_LEN_MAX+1];
 		char *s = fgets(line, sizeof(line), stdin);
 		if (!s)
 		{
