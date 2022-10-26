@@ -7,7 +7,7 @@ OBJS_C = xsver.o strbuf.o bit.o xnet.o \
 	xlog.o rdtsc.o hseq.o xbuf.o vbs_build.o rbtree.o \
 	daemon.o strhash.o hdict.o rijndael.o setting.o xutf8.o \
 	wdict.o path.o ratcliff.o cmdpipe.o binary_prefix.o urlparse.o \
-	cirqueue.o minilzo.o mlzo.o cstr.o hmap.o calltrace.o mp.o \
+	cirqueue.o cstr.o hmap.o calltrace.o mp.o \
 	hex.o ostk.o hashint.o zlog.o unixfs.o xio.o xmem.o dirwalk.o \
 	xmalloc.o xformat.o xstr.o bset.o msec.o xatomic.o \
 	vbs_pack.o vbs_stream.o vbs.o vbs_json.o carp.o iconv_convert.o \
