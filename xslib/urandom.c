@@ -45,8 +45,9 @@ bool urandom_has_device()
 /*
  * Generate a series of random bytes.  Use /dev/urandom if possible,
  * and if not, use srandom/random.
+ * Always return 0.
  */
-void urandom_get_bytes(void *buf, size_t nbytes)
+int urandom_get_bytes(void *buf, size_t nbytes)
 {
 	ssize_t k, n = nbytes;
 	int fd = get_random_fd();
@@ -86,6 +87,7 @@ void urandom_get_bytes(void *buf, size_t nbytes)
 	 */
 	for (cp = (unsigned char *)buf, k = 0; k < (ssize_t)nbytes; k++)
 		*cp++ ^= (random() >> 7) & 0xFF;
+	return 0;
 }
 
 int urandom_get_int(int a, int b)
@@ -103,7 +105,7 @@ int urandom_get_int(int a, int b)
 	}
 }
 
-ssize_t urandom_generate_base32id(char id[], size_t size)
+ssize_t base32id_from_entropy(char id[], size_t size, entropy_fun entropy)
 {
 	uint64_t *x = 0;
 	ssize_t i, num, k;
@@ -112,15 +114,14 @@ ssize_t urandom_generate_base32id(char id[], size_t size)
 	if (len < 0)
 		return -1;
 
+	id[0] = 0;
 	if (len == 0)
-	{
-		id[0] = 0;
 		return 0;
-	}
 
 	num = (len + 11) / 12;
 	x = alloca(sizeof(x[0]) * num);
-	urandom_get_bytes(x, sizeof(x[0]) * num);
+	if (entropy(x, sizeof(x[0]) * num) == -1)
+		return -1;
 
 	for (k = 0, i = 0; k < len; k += 12, i++)
 	{
@@ -134,7 +135,7 @@ ssize_t urandom_generate_base32id(char id[], size_t size)
 	return len;
 }
 
-ssize_t urandom_generate_base57id(char id[], size_t size)
+ssize_t base57id_from_entropy(char id[], size_t size, entropy_fun entropy)
 {
 	uint64_t *x = 0;
 	ssize_t i, num, k;
@@ -143,15 +144,14 @@ ssize_t urandom_generate_base57id(char id[], size_t size)
 	if (len < 0)
 		return -1;
 
+	id[0] = 0;
 	if (len == 0)
-	{
-		id[0] = 0;
 		return 0;
-	}
 
 	num = (len + 9) / 10;
 	x = alloca(sizeof(x[0]) * num);
-	urandom_get_bytes(x, sizeof(x[0]) * num);
+	if (entropy(x, sizeof(x[0]) * num) == -1)
+		return -1;
 
 	for (k = 0, i = 0; k < len; k += 10, i++)
 	{
@@ -163,5 +163,15 @@ ssize_t urandom_generate_base57id(char id[], size_t size)
 	id[0] = xbase57_alphabet[x[0] / (UINT64_MAX / 49 + 1)]; /* make the first character always letter instead of digit */
 	id[len] = 0;
 	return len;
+}
+
+ssize_t urandom_generate_base32id(char id[], size_t size)
+{
+	return base32id_from_entropy(id, size, urandom_get_bytes);
+}
+
+ssize_t urandom_generate_base57id(char id[], size_t size)
+{
+	return base32id_from_entropy(id, size, urandom_get_bytes);
 }
 
