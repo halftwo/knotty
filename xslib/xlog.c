@@ -2,7 +2,7 @@
    Author: XIONG Jiagui
    Date: 2005-09-16
  */
-#define _BSD_SOURCE /* or _SVID_SOURCE or _GNU_SOURCE */
+#define _DEFAULT_SOURCE
 #include "xlog.h"
 #include "xformat.h"
 #include <stdarg.h>
