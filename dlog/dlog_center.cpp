@@ -23,7 +23,6 @@
 #include "xslib/XEvent.h"
 #include "xslib/daemon.h"
 #include "xslib/dirwalk.h"
-#include "xslib/mlzo.h"
 #include "xslib/urandom.h"
 #include <lz4.h>
 #include <pthread.h>
@@ -511,8 +510,8 @@ static bool _decompress(struct packet_block *dst, struct packet_block *src)
 	}
 	else if (src->pkt.flag & DLOG_PACKET_FLAG_LZO)
 	{
-		raw_len = mlzo_decompress_safe((unsigned char *)src->pkt.buf, zip_len,
-				(unsigned char *)dst->pkt.buf, DLOG_PACKET_MAX_SIZE - DLOG_PACKET_HEAD_SIZE);
+		/* Deprecated */
+		return false;
 	}
 	else
 	{
