@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"221027.15"
+#define SHADOW_GEN_VERSION	"221027.21"
 
 #define ID_LEN_MAX		79
 #define RANDID_LEN_MIN		23
@@ -42,7 +42,8 @@ void usage(const char *program)
 "hashId can only be SHA256 or SHA1. If not specified, it will be SHA256.\n"
 "\n"
 "If identity ends with '%%', the '%%' will be replaced with a random string.\n"
-"If it embeds one '^', the '^' will be replaced by a 5-char date-hour string.\n"
+"If it embeds one '^', the '^' will be replaced by a 6-char datetime string.\n"
+"The 6-char datetime is in UTC time, and has a resolution of 2 minutes.\n"
 "\n"
 "If password is omitted, it will be a randomly generated string.\n"
 "If it is '-', it will be read (at most %d printable character except ':'\n"
@@ -52,15 +53,16 @@ void usage(const char *program)
 	exit(1);
 }
 
-static ssize_t _gen_datehour(char *buf, time_t t)
+static ssize_t _gm_datetime(char *buf, time_t t)
 {
 	struct tm tm;
-	localtime_r(&t, &tm);
-	return sprintf(buf, "%02d%c%c%c",
-		tm.tm_year - 100,
-		xbase32_alphabet[tm.tm_mon + 1],
+	gmtime_r(&t, &tm);
+	return sprintf(buf, "%02d%c%c%c%c",
+		(tm.tm_year - 100)%100,
+		xbase32_alphabet[tm.tm_mon+1],
 		xbase32_alphabet[tm.tm_mday],
-		xbase32_alphabet[tm.tm_hour]);
+		xbase32_alphabet[tm.tm_hour],
+		xbase32_alphabet[tm.tm_min/2]);
 }
 
 static bool generate_id(char *buf, size_t buflen, const char *identity)
@@ -99,10 +101,16 @@ static bool generate_id(char *buf, size_t buflen, const char *identity)
 		return false;
 
 	size_t resultlen = xs.len;
-	if (k > 0)
-		resultlen += 5 - 1;
 	if (j > 0)
+	{
 		resultlen += RANDID_R_LEN - 1;
+		if (k > 0)
+			resultlen--;
+	}
+	else if (k > 0)
+	{
+		resultlen += 6 - 1;	// length of datetime string minus length of '^'
+	}
 
 	if (resultlen >= buflen)
 	{
@@ -115,7 +123,7 @@ static bool generate_id(char *buf, size_t buflen, const char *identity)
 	{
 		memcpy(buf + pos, identity, k);
 		pos += k;
-		pos += _gen_datehour(buf + pos, time(NULL));
+		pos += _gm_datetime(buf + pos, time(NULL));
 	}
 
 	if (j > 0)
@@ -128,7 +136,11 @@ static bool generate_id(char *buf, size_t buflen, const char *identity)
 			pos += n;
 		}
 
-		int rlen = (pos < RANDID_LEN_MIN - RANDID_R_LEN) ? RANDID_LEN_MIN - pos : RANDID_R_LEN;
+		int rlen = RANDID_R_LEN;
+		if (k > 0)
+			rlen -= 6;
+		if (rlen < RANDID_LEN_MIN - pos)
+			rlen = RANDID_LEN_MIN - pos;
 		base32id_from_entropy(buf + pos, rlen + 1, getentropy);
 	}
 	return true;
