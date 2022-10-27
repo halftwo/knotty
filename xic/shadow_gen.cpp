@@ -2,17 +2,18 @@
 #include "xslib/Srp6a.h"
 #include "xslib/opt.h"
 #include "xslib/xbase64.h"
+#include "xslib/xbase32.h"
 #include "xslib/urandom.h"
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"221026.20"
+#define SHADOW_GEN_VERSION	"221027.15"
 
 #define ID_LEN_MAX		79
-#define RANDID_LEN		23
-#define RANDID_RANDOM_MIN	20
+#define RANDID_LEN_MIN		23
+#define RANDID_R_LEN		16
 
 #define PS_LEN_MAX		79
 #define RANDPS_LEN		39
@@ -40,20 +41,139 @@ void usage(const char *program)
 "\n"
 "hashId can only be SHA256 or SHA1. If not specified, it will be SHA256.\n"
 "\n"
-"If identity ends with %%, the %% will be replaced with a random string.\n"
+"If identity ends with '%%', the '%%' will be replaced with a random string.\n"
+"If it embeds one '^', the '^' will be replaced by a 5-char date-hour string.\n"
 "\n"
-"If password is -, it will be read (at most %d alphanumeric characters)\n"
-"from stdin.\n"
+"If password is omitted, it will be a randomly generated string.\n"
+"If it is '-', it will be read (at most %d printable character except ':'\n"
+"and space) from stdin.\n"
 "\n",
 	PS_LEN_MAX);
 	exit(1);
 }
 
+static ssize_t _gen_datehour(char *buf, time_t t)
+{
+	struct tm tm;
+	localtime_r(&t, &tm);
+	return sprintf(buf, "%02d%c%c%c",
+		tm.tm_year - 100,
+		xbase32_alphabet[tm.tm_mon + 1],
+		xbase32_alphabet[tm.tm_mday],
+		xbase32_alphabet[tm.tm_hour]);
+}
+
+static bool generate_id(char *buf, size_t buflen, const char *identity)
+{
+	static bset_t id_bset = make_bset_by_add_cstr(&alnum_bset, "@._-^%");
+
+	xstr_t xs = XSTR_C(identity);
+	if (!isalpha(xs.data[0]))
+	{
+		fprintf(stderr, "ERROR: the first char of identity must be a letter\n");
+		exit(1);
+	}
+
+	ssize_t rc;
+	if ((rc = xstr_find_not_in_bset(&xs, 0, &id_bset)) >= 0)
+	{
+		fprintf(stderr, "ERROR: invalid char '%c' in identity, which can only contain letters, digits and those in \"@._-\"\n", xs.data[rc]);
+		exit(1);
+	}
+
+	ssize_t k = xstr_find_char(&xs, 1, '^');
+	if (k > 0 && xstr_find_char(&xs, k + 1, '^') > 0)
+	{
+		fprintf(stderr, "ERROR: char '^' can only occurr once in identity\n");
+		exit(1);
+	}
+
+	ssize_t j = xstr_find_char(&xs, 1, '%');
+	if (j > 0 && j != xs.len - 1)
+	{
+		fprintf(stderr, "ERROR: char '%%' can only be the last char of identity\n");
+		exit(1);
+	}
+
+	if (k < 0 && j < 0)
+		return false;
+
+	size_t resultlen = xs.len;
+	if (k > 0)
+		resultlen += 5 - 1;
+	if (j > 0)
+		resultlen += RANDID_R_LEN - 1;
+
+	if (resultlen >= buflen)
+	{
+		fprintf(stderr, "ERROR: identity too long, total length must be no more than %zd after finishing substitutes\n", buflen - 1);
+		exit(1);
+	}
+
+	int pos = 0;
+	if (k > 0)
+	{
+		memcpy(buf + pos, identity, k);
+		pos += k;
+		pos += _gen_datehour(buf + pos, time(NULL));
+	}
+
+	if (j > 0)
+	{
+		int k1 = k + 1;
+		int n = j - k1;
+		if (n > 0)
+		{
+			memcpy(buf + pos, identity + k1, n);
+			pos += n;
+		}
+
+		int rlen = (pos < RANDID_LEN_MIN - RANDID_R_LEN) ? RANDID_LEN_MIN - pos : RANDID_R_LEN;
+		base32id_from_entropy(buf + pos, rlen + 1, getentropy);
+	}
+	return true;
+}
+
+static bool generate_pass(char *buf, size_t buflen, const char *password)
+{
+	static bset_t pass_bset = make_bset_by_del_cstr(&graph_bset, ":");
+
+	if (!password)
+	{
+		base57id_from_entropy(buf, RANDPS_LEN + 1, getentropy);
+		return true;
+	}
+
+	bool changed = false;
+	xstr_t xs = XSTR_C(password);
+	char line[PS_LEN_MAX+1];
+	if (strcmp(password, "-") == 0)
+	{
+		char *s = fgets(line, sizeof(line), stdin);
+		if (!s)
+		{
+			fprintf(stderr, "ERROR: no password inputed from stdin\n");
+			exit(1);
+		}
+		xs = XSTR_C(s);
+		xstr_trim(&xs);
+		xstr_copy_cstr(&xs, buf, buflen);
+		changed = true;
+	}
+
+	int rc = xstr_find_not_in_bset(&xs, 0, &pass_bset);
+	if (rc >= 0)
+	{
+		fprintf(stderr, "ERROR: the password contains invalid char '%c'\n", xs.data[rc]);
+		exit(1);
+	}
+	return changed;
+}
+
+
 int main(int argc, char **argv)
 try 
 {
-	static bset_t id_bset = make_bset_by_add_cstr(&alnum_bset, "@._-");
-	static bset_t pass_bset = make_bset_by_del_cstr(&graph_bset, ":");
 	const char *prog = argv[0];
 	const char *identity, *password;
 	const char *filename = NULL;
@@ -117,92 +237,15 @@ try
 		exit(1);
 	}
 
-	int rc;
-	bool random_id = false;
-	xstr_t xs = XSTR_C(identity);
-
-	if (xstr_equal_cstr(&xs, "%"))
-	{
-		random_id = true;
-	}
-	else if ((rc = xstr_find_in_bset(&xs, 0, &alpha_bset)) != 0)
-	{
-		fprintf(stderr, "ERROR: the first char of identity must be a letter\n");
-		exit(1);
-	}
-	else if ((rc = xstr_find_not_in_bset(&xs, 0, &id_bset)) >= 0)
-	{
-		if (xs.data[rc] == '%' && rc == xs.len - 1)
-		{
-			random_id = true;
-		}
-		else
-		{
-			if (xs.data[rc] == '%')
-				fprintf(stderr, "ERROR: char '%c' can only be the last char of identity\n", xs.data[rc]);
-			else
-				fprintf(stderr, "ERROR: invalid char '%c' in identity, which can only contain letters, digits and ones of \"@._-\"\n", xs.data[rc]);
-			exit(1);
-		}
-	}
-
 	char idbuf[ID_LEN_MAX+1];
-	if (random_id)
-	{
-		char *p = stpncpy(idbuf, identity, sizeof(idbuf) - 1);
-		--p;	// skip the trailing %
-		int used = p - idbuf;
-		if ((unsigned int)used + RANDID_RANDOM_MIN >= sizeof(idbuf))
-		{
-			fprintf(stderr, "ERROR: identity prefix too long, must be less than %zd\n", sizeof(idbuf) - 1 - RANDID_RANDOM_MIN);
-			exit(1);
-		}
-
-		int rlen = RANDID_LEN - used;
-		if (rlen < RANDID_RANDOM_MIN)
-			rlen = RANDID_RANDOM_MIN;
-		base32id_from_entropy(p, rlen + 1, getentropy);
+	bool id_changed = generate_id(idbuf, sizeof(idbuf), identity);
+	if (id_changed)
 		identity = idbuf;
-	}
 
-	bool random_pass = false;
 	char passbuf[PS_LEN_MAX+1];
-	if (!password)
-	{
-		random_pass = true;
-		base57id_from_entropy(passbuf, RANDPS_LEN+1, getentropy);
+	bool ps_changed = generate_pass(passbuf, sizeof(passbuf), password);
+	if (ps_changed)
 		password = passbuf;
-	}
-	else if (strcmp(password, "-") == 0)
-	{
-		char line[PS_LEN_MAX+1];
-		char *s = fgets(line, sizeof(line), stdin);
-		if (!s)
-		{
-			fprintf(stderr, "ERROR: no password inputed from stdin\n");
-			exit(1);
-		}
-		xstr_t xs = XSTR_C(s);
-		xstr_trim(&xs);
-		int rc = xstr_find_not_in_bset(&xs, 0, &pass_bset);
-		if (rc >= 0)
-		{
-			fprintf(stderr, "ERROR: the password contains invalid char '%c'\n", xs.data[rc]);
-			exit(1);
-		}
-		xstr_copy_cstr(&xs, passbuf, sizeof(passbuf));
-		password = passbuf;
-	}
-	else
-	{
-		xstr_t xs = XSTR_C(password);
-		int rc = xstr_find_not_in_bset(&xs, 0, &pass_bset);
-		if (rc >= 0)
-		{
-			fprintf(stderr, "ERROR: the password contains invalid char '%c'\n", xs.data[rc]);
-			exit(1);
-		}
-	}
 
 	Srp6aClientPtr srp6a = new Srp6aClient(g, N, bits, hashId);
 	srp6a->set_identity(identity, password);
@@ -229,13 +272,13 @@ try
 	}
 	fputc('\n', stdout);
 
-	if (random_id || random_pass)
+	if (id_changed || ps_changed)
 	{
 		fputs("#\n", stderr);
 		fputs("# THE FOLLOWING LINES ARE OUTPUTED TO THE STDERR\n", stderr);
 		fputs("# DON'T COPY THEM TO THE SHADOW FILE\n", stderr);
 		fputs("#\tID : PASS =\n", stderr);
-		fprintf(stderr, "### %s : %s\n", identity, passbuf);
+		fprintf(stderr, "### %s : %s\n", identity, password);
 		fputs("#\n", stderr);
 	}
 
