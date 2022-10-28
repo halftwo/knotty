@@ -7,9 +7,9 @@ LIBRARY= libdlog.a
 
 EXES= dlogd dlog_center dlog_write dstsd
 
-CFLAGS= -g -Wall -fPIC #-O2
+CFLAGS= -g -Wall -fPIC -O2
 
-CXXFLAGS = -g -Wall -fPIC #-O2
+CXXFLAGS = -g -Wall -fPIC -O2
 
 CPPFLAGS= -DXSLIB_RCSID -I. -I.. -I../3rd_party/lua/src -I../3rd_party/lz4/lib
 
