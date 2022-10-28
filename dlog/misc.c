@@ -18,3 +18,31 @@ char *get_time_str(time_t t, bool local, char buf[])
 	return buf;
 }
 
+char *get_timezone(char buf[])
+{
+	if (timezone == 0)
+	{
+		buf[0] = '0';
+		buf[1] = '0';
+		buf[2] = 0;
+	}
+	else
+	{
+		long t = timezone > 0 ? timezone : -timezone;
+		int sec = t % 60;
+		t /= 60;
+		int min = t % 60;
+		t /= 60;
+
+		// positive timezone value is west, negative is east
+		int n = sprintf(buf, "%c%02ld", timezone<0?'+':'-', t);
+		if (min || sec)
+		{
+			n += sprintf(buf + n, "%02d", min);
+			if (sec)
+				n += sprintf(buf + n, "%02d", sec);
+		}
+	}
+	return buf;
+}
+

@@ -12,6 +12,12 @@ extern "C" {
 char *get_time_str(time_t t, bool local, char buf[]);
 
 
+/* 
+ * [+|-]hh[:mm[:ss]]
+ */
+char *get_timezone(char buf[]);
+
+
 #ifdef __cplusplus
 }
 #endif
