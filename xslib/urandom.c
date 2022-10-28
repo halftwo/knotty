@@ -172,6 +172,6 @@ ssize_t urandom_generate_base32id(char id[], size_t size)
 
 ssize_t urandom_generate_base57id(char id[], size_t size)
 {
-	return base32id_from_entropy(id, size, urandom_get_bytes);
+	return base57id_from_entropy(id, size, urandom_get_bytes);
 }
 
