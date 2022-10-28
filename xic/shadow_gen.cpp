@@ -59,13 +59,14 @@ static ssize_t _gm_datetime(char *buf, struct timespec *ts)
 {
 	struct tm tm;
 	gmtime_r(&ts->tv_sec, &tm);
+	// NB: beware of the leap second, tm.tm_sec in the range [0, 60]
 	return sprintf(buf, "%02d%c%c%c%c%c%c",
 		tm.tm_year%100,
 		xbase32_alphabet[tm.tm_mon+1],
 		xbase32_alphabet[tm.tm_mday],
 		xbase32_alphabet[tm.tm_hour],
 		xbase32_alphabet[tm.tm_min/2],
-		xbase32_alphabet[15 * (tm.tm_min&0x1) + tm.tm_sec/4],
+		xbase32_alphabet[16 * (tm.tm_min&0x1) + tm.tm_sec/4],
 		xbase32_alphabet[8 * (tm.tm_sec&0x3) + ts->tv_nsec/125000000]);
 }
 
