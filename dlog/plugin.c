@@ -1,6 +1,6 @@
 #include "plugin.h"
+#include "dlog.h"
 #include "luadlog.h"
-#include "misc.h"
 #include <lua.h>
 #include <lualib.h>
 #include <lauxlib.h>
@@ -21,7 +21,7 @@ struct plugin_t
 
 struct udata
 {
-	char time_str[16];
+	char time_str[24];
 	const char *time;
 	const char *ip;
 	const char *rstr;
@@ -40,7 +40,7 @@ struct udata
 static inline void _make_time(struct udata *ud)
 {
 	ud->time = ud->time_str;
-	get_time_str(ud->rec.msec/1000, true, ud->time_str);
+	dlog_local_time_str(ud->time_str, ud->rec.msec/1000, true);
 }
 
 static inline void _make_identity(struct udata *ud)

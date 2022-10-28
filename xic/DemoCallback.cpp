@@ -3,7 +3,7 @@
 #include "xslib/XThread.h"
 #include <unistd.h>
 
-#define DEMOCALLBACK_VERSION	"170629.18"
+#define DEMOCALLBACK_VERSION	"22102819"
 
 static char build_info[] = "$build: democallback-" DEMOCALLBACK_VERSION " " __DATE__ " " __TIME__ " $";
 
@@ -95,10 +95,9 @@ XIC_METHOD(CallbackServant, cb_time)
         char buf[32];
         xic::AnswerWriter aw;
 	aw.param("con", current.con->info());
-        aw.param("start", dlog_local_time_str(_start_time, buf));
+        aw.param("start", dlog_local_time_str(buf, _start_time, true));
         aw.param("time", t);
-        aw.param("utc", dlog_utc_time_str(t, buf));
-        aw.param("local", dlog_local_time_str(t, buf));
+        aw.param("local", dlog_local_time_str(buf, t, true));
         return aw;
 }
 

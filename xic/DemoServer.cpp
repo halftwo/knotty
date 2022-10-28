@@ -1,7 +1,7 @@
 #include "DemoServant.h"
 #include "xslib/xlog.h"
 
-#define DEMO_PT_VERSION	"170629.18"
+#define DEMO_PT_VERSION	"22102819"
 
 static char build_info[] = "$build: demo_pt-" DEMO_PT_VERSION " " __DATE__ " " __TIME__ " $";
 

@@ -1,8 +1,8 @@
 #include "dlog_imp.h"
+#include "dlog.h"
 #include "plugin.h"
 #include "luadlog.h"
 #include "recpool.h"
-#include "misc.h"
 #include "netaddr.h"
 #include "top.h"
 #include "diskspace.h"
@@ -157,7 +157,7 @@ static void make_time_str(time_t t, char buf[])
 {
 	if (t)
 	{
-		get_time_str(t, true, buf);
+		dlog_local_time_str(buf, t, true);
 	}
 	else
 	{
@@ -710,10 +710,10 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		_minute = m;
 
 		struct dlog_record *rec;
-		char current_ts[32];
-		char active_ts[32], plugin_ts[32], block_overflow_ts[32], record_overflow_ts[32];
+		char current_ts[24];
+		char active_ts[24], plugin_ts[24], block_overflow_ts[24], record_overflow_ts[24];
 
-		get_time_str(sec, true, current_ts);
+		make_time_str(sec, current_ts);
 		make_time_str(last_record_time, active_ts);
 		make_time_str(plugin_mtime, plugin_ts);
 		make_time_str(block_overflow_time, block_overflow_ts);
@@ -753,7 +753,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 					" record=v:%d,bad:%ld,take:%llu,cooked:%llu,overflow:%ld,overflow_time:%s"
 					" block=v:%d,pool:%zd,send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
-				instance_id, get_timezone(timezone_str), start_time_str, DLOG_VERSION,
+				instance_id, dlog_timezone_str(timezone_str), start_time_str, DLOG_VERSION,
 				current_ts, active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
 				DLOG_RECORD_VERSION, xatomiclong_get(&num_record_bad), 
@@ -1644,7 +1644,7 @@ int main(int argc, char **argv)
 	free(buf);
 
         urandom_generate_base57id(instance_id, sizeof(instance_id));
-	get_time_str(time(NULL), true, start_time_str);
+	make_time_str(time(NULL), start_time_str);
 
 	{
 		struct dlog_record *rec = recpool_acquire();

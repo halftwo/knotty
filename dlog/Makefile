@@ -1,15 +1,15 @@
 ##
 ## 
-OBJS= misc.o dlog.o dlog_imp.o plugin.o luadlog.o recpool.o \
+OBJS= dlog.o dlog_imp.o plugin.o luadlog.o recpool.o \
 	cabin.o banlist.o eth_speed.o diskspace.o netaddr.o top.o
 
 LIBRARY= libdlog.a
 
 EXES= dlogd dlog_center dlog_write dstsd
 
-CFLAGS= -g -Wall -fPIC -O2
+CFLAGS= -g -Wall -fPIC #-O2
 
-CXXFLAGS = -g -Wall -fPIC -O2
+CXXFLAGS = -g -Wall -fPIC #-O2
 
 CPPFLAGS= -DXSLIB_RCSID -I. -I.. -I../3rd_party/lua/src -I../3rd_party/lz4/lib
 
@@ -25,10 +25,10 @@ rebuild:
 	$(MAKE) clean
 	$(MAKE) all
 
-libdlog.a: dlog.o dlog_imp.o misc.o
+libdlog.a: dlog.o dlog_imp.o
 	$(AR) rcs $@ $?
 
-libdlog.so: dlog.o dlog_imp.o misc.o
+libdlog.so: dlog.o dlog_imp.o
 	g++ -shared -o $@ $?
 
 python: _dlog.so

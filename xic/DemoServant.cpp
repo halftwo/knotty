@@ -71,11 +71,11 @@ XIC_METHOD(DemoServant, time)
 	// descriptor is 9, nonsense, just for fun
 	xic::VDictWriter dw = aw.paramVDictKind("strftime", 127, 9);
 
-        char buf[32];
-	dlog_utc_time_str(t, buf);
-        dw.kv("utc", buf, 8); // descriptor is 8, nonsense, just for fun
+        char buf[64];
+	ctime_r(&t, buf);
+        dw.kv("ctime", buf, 8); // descriptor is 8, nonsense, just for fun
 
-	dlog_local_time_str(t, buf);
+	dlog_local_time_str(buf, t, true);
         dw.kv("local", buf, VBS_SPECIAL_DESCRIPTOR | 7);
 
         return aw;

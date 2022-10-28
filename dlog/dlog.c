@@ -3,7 +3,6 @@
 #endif
 #include "dlog.h"
 #include "dlog_imp.h"
-#include "misc.h"
 #include <pthread.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -47,6 +46,7 @@ static void _gen_rec_head(struct rec_head *head)
 {
 	static int the_pid;
 	struct tm tm;
+	char tzbuf[8];
 
 	head->done = true;
 	time(&head->time);
@@ -55,8 +55,9 @@ static void _gen_rec_head(struct rec_head *head)
 	if (!the_pid)
 		the_pid = getpid();
 
-	head->len = sprintf(head->buf, "%02d%02d%02d-%02d%02d%02d %s %d+%d",
-		tm.tm_year - 100, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, "::", the_pid, 0);
+	head->len = sprintf(head->buf, "%02d%02d%02d-%02d%02d%02d%s %s %d+%d",
+		tm.tm_year - 100, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec, dlog_timezone_str(tzbuf),
+		"::", the_pid, 0);
 }
 
 static int _connect_daemon()
@@ -304,13 +305,44 @@ void xdlog(xfmt_callback_function xfmt, const char *identity,
 	va_end(ap);
 }
 
-char *dlog_local_time_str(time_t t, char buf[])
+char *dlog_timezone_str(char buf[])
 {
-	return get_time_str(t, true, buf);
+	static char saved_buf[8] = "+00";
+	static long saved_tz;
+
+	if (saved_tz != timezone)
+	{
+		saved_tz = timezone;
+		long t = timezone >= 0 ? timezone : -timezone;
+		t /= 60;
+		int min = t % 60;
+		t /= 60;
+
+		// positive timezone value is west, negative is east
+		int n = sprintf(buf, "%c%02ld", timezone<0?'+':'-', t);
+		if (min)
+		{
+			sprintf(buf + n, "%02d", min);
+		}
+		strcpy(saved_buf, buf);
+	}
+	strcpy(buf, saved_buf);
+	return buf;
 }
 
-char *dlog_utc_time_str(time_t t, char buf[])
+char *dlog_local_time_str(char buf[], time_t t, bool tz)
 {
-	return get_time_str(t, false, buf);
+	struct tm tm;
+
+	localtime_r(&t, &tm);
+
+	int n = sprintf(buf, "%02d%02d%02d%c%02d%02d%02d",
+		tm.tm_year < 100 ? tm.tm_year : tm.tm_year - 100, tm.tm_mon + 1, tm.tm_mday,
+		"umtwrfsu"[tm.tm_wday], tm.tm_hour, tm.tm_min, tm.tm_sec);
+
+	if (tz)
+		dlog_timezone_str(buf + n);
+	return buf;
 }
+
 

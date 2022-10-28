@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <set>
 
-#define SECRET_CHECK_VERSION	"170614.18"
+#define SECRET_CHECK_VERSION	"17061418"
 
 void display_version(const char *program)
 {

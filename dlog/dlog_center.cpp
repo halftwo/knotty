@@ -5,7 +5,6 @@
 #include "recpool.h"
 #include "cabin.h"
 #include "banlist.h"
-#include "misc.h"
 #include "xslib/cstr.h"
 #include "xslib/path.h"
 #include "xslib/ScopeGuard.h"
@@ -150,14 +149,19 @@ static int64_t usec_diff(const struct timeval* t1, const struct timeval* t2)
 	return x1 - x2;
 }
 
+static void _timestamp_of_logfilename(char *buf, time_t t)
+{
+	dlog_local_time_str(buf, t, false);
+}
+
 static FILE *_open_log_file(const char *dir, time_t *fp_time)
 {
-	char time_str[32];
+	char time_str[24];
 	char subdir[PATH_SIZE-64];
 	FILE *fp = NULL;
 
 	time_t now = dispatcher->msecRealtime() / 1000;
-	get_time_str(now, true, time_str);
+	_timestamp_of_logfilename(time_str, now);
 	snprintf(subdir, sizeof(subdir), "%s/%.6s", dir, time_str);
 	snprintf(_log_pathname, sizeof(_log_pathname), "%s/%s%s", subdir, LOGFILE_PREFIX, time_str);
 
@@ -872,7 +876,7 @@ void *logger(void *arg)
 				if (rec_time != last_time)
 				{
 					last_time = rec_time;
-					get_time_str(last_time, true, last_record_time_str);
+					dlog_local_time_str(last_record_time_str, last_time, true);
 				}
 
 				if (banlist)
@@ -951,15 +955,15 @@ void *logger(void *arg)
 		{
 			minute_expire = false;
 
-			char active_ts[32], plugin_ts[32];
+			char active_ts[24], plugin_ts[24];
 
 			if (active_time)
-				get_time_str(active_time, true, active_ts);
+				dlog_local_time_str(active_ts, active_time, true);
 			else
 				strcpy(active_ts, "-");
 
 			if (plugin_mtime)
-				get_time_str(plugin_mtime, true, plugin_ts);
+				dlog_local_time_str(plugin_ts, plugin_mtime, true);
 			else
 				strcpy(plugin_ts, "-");
 
@@ -995,7 +999,7 @@ void *logger(void *arg)
 					" record=v:%d,get:%llu,error:%llu"
 					" block=v:%d,pool:%lu,get:%ld,error:%ld,zip:%ld,unzip_error:%ld"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
-				instance_id, get_timezone(timezone_str), start_time_str, DLOG_VERSION,
+				instance_id, dlog_timezone_str(timezone_str), start_time_str, DLOG_VERSION,
 				active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
 				DLOG_RECORD_VERSION, num_record, num_record_error,
@@ -1018,9 +1022,9 @@ void *logger(void *arg)
 					char *p = strrchr(_log_pathname, '.');
 					if (p)
 					{
-						char time_str[32];
+						char time_str[24];
 						++p;
-						get_time_str(_current_time, true, time_str);
+						_timestamp_of_logfilename(time_str, _current_time);
 						time_str[6] = 0;
 						if (memcmp(p, time_str, 6))
 							_switch_log_file();
@@ -1086,8 +1090,8 @@ void *handle_old_logs_thread(void *)
 {
 	pthread_detach(pthread_self());
 
-	char time_str[32];
-	get_time_str(_current_time, true, time_str);
+	char time_str[24];
+	_timestamp_of_logfilename(time_str, _current_time);
 	dirwalk_run(_log_dir, dw_callback, time_str);
 	return NULL;
 }
@@ -1115,9 +1119,9 @@ static int _dlog_callback(void *state, const char *str, size_t length)
 
 	if (_logfile_fp)
 	{
-		char time_str[32];
+		char time_str[24];
 		time_t t = dispatcher->msecRealtime() / 1000;
-		get_time_str(t, true, time_str);
+		dlog_local_time_str(time_str, t, true);
 		fprintf(_logfile_fp, "%c%s %s %d+0 %.*s\n", TYPECODE[DLOG_TYPE_SYS], time_str, the_ip, pid, (int)length, str);
 	}
 	return 0;
@@ -1343,7 +1347,7 @@ int main(int argc, char **argv)
 		daemon_redirect_stderr(errlog_file);
 
         urandom_generate_base57id(instance_id, sizeof(instance_id));
-	get_time_str(_current_time, true, start_time_str);
+	dlog_local_time_str(start_time_str, _current_time, true);
 
 	dispatcher->setThreadPool(4, 32, STACK_SIZE);
 	dispatcher->start();

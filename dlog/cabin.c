@@ -1,11 +1,12 @@
 #include "cabin.h"
-#include "misc.h"
+#include "dlog.h"
 #include "xslib/queue.h"
 #include "xslib/hmap.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <time.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -150,7 +151,7 @@ box_t *box_create(cabin_t *cab, const char *label)
 	box->begin += size;
 
 	box->timestamp = box->begin;
-	get_time_str(time(NULL), true, box->timestamp);
+	dlog_local_time_str(box->timestamp, time(NULL), true);
 	box->begin += strlen(box->timestamp) + 1;
 	
 	box->filename = box->begin;

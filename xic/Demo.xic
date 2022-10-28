@@ -4,7 +4,7 @@ Demo
 ===============
 
 => time { ?time^%i; }
-<= { con^%s; time^%i; strftime^{utc^%s; local^%s;}; }
+<= { con^%s; time^%i; strftime^{ctime^%s; local^%s;}; }
 
 => echo { ... }
 <= { ... }

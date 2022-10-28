@@ -1650,7 +1650,7 @@ struct PtEngine::PtThrob: public XTimerTask, private XMutex
 	PtThrob(time_t start, const std::string& id)
 		: _euid(-1), _id(id), _enable(true), _debut(true), _minute(0)
 	{
-		dlog_local_time_str(start, _start_time);
+		dlog_local_time_str(_start_time, start, true);
 		gettimeofday(&_utv, NULL);
 		getrusage(RUSAGE_SELF, &_usage);
 

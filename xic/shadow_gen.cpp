@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-#define SHADOW_GEN_VERSION	"221028.11"
+#define SHADOW_GEN_VERSION	"22102820"
 
 #define ID_LEN_MAX		79
 #define RANDID_LEN_MIN		23
