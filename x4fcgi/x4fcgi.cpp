@@ -17,10 +17,9 @@
 #include <vector>
 
 #define X4FCGI_V_EDITION          201202
-#define X4FCGI_V_REVISION         201202
-#define X4FCGI_V_RELEASE          17
+#define X4FCGI_V_REVISION         22102813
 
-#define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION) "." XS_TOSTR(X4FCGI_V_RELEASE)
+#define X4FCGI_VERSION            XS_TOSTR(X4FCGI_V_EDITION) "." XS_TOSTR(X4FCGI_V_REVISION)
 
 static char build_info[] = "$build: x4fcgi-" X4FCGI_VERSION " " __DATE__ " " __TIME__ " $";
 
