@@ -26,7 +26,7 @@
  * 	2-digit hour 	start from 10
  */
 #define XIC_V_EDITION 	210102
-#define XIC_V_REVISION 	22102813
+#define XIC_V_REVISION 	22102921
 
 #define XIC_VERSION	XS_TOSTR(XIC_V_EDITION) "." XS_TOSTR(XIC_V_REVISION)
 

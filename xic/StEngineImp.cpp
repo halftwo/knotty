@@ -1535,19 +1535,19 @@ struct StEngine::StThrob: public STimerTask
 						snprintf(_euser, sizeof(_euser), "%d", _euid);
 				}
 
-				char shadow[24];
+				char shadow[48];
 				if (xic_passport_shadow)
-					snprintf(shadow, sizeof(shadow), "%zd", xic_passport_shadow->count());
+					snprintf(shadow, sizeof(shadow), "%zd,cipher:%s", xic_passport_shadow->count(),
+						MyCipher::get_cipher_name_from_id(xic_cipher));
 				else
 					strcpy(shadow, "-");
 
 				const char *tag = _debut ? "DEBUT" : "THROB";
 				_debut = false;
 				xdlog(NULL, NULL, tag, ST_ENGINE_VERSION,
-					"id=%s start=%s info=euser:%s,MHz:%.0f,cpu:%.1f%%,xlog:%d,shadow:%s,cipher:%s listen=%s %s",
+					"id=%s start=%s info=euser:%s,MHz:%.0f,cpu:%.1f%%,xlog:%d,shadow:%s listen=%s %s",
 					_id.c_str(), _start_time,
 					_euser, (freq / 1000000.0), cpu, xlog_level, shadow,
-					MyCipher::get_cipher_name_from_id(xic_cipher),
 					_listen.c_str(), _logword.c_str());
 			}
 		}
