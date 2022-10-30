@@ -52,6 +52,8 @@
 #include <map>
 #include <sstream>
 
+#define DLOGD_VERSION	"221030.22103019"
+
 #define VER_LOCUS	"v" XS_TOSTR(DLOG_PACKET_VERSION)
 
 #define STACK_SIZE	(256*1024)
@@ -70,6 +72,8 @@ struct block
 	TAILQ_ENTRY(block) link;
 	struct dlog_packet pkt;
 };
+
+static char build_info[] = "$build: dlogd-" DLOGD_VERSION " " __DATE__ " " __TIME__ " $";
 
 static char _program_name[32];
 
@@ -1453,7 +1457,8 @@ void usage(const char *prog)
 "  -u user            process user, default nobody\n"
 "  -x xlog_level      xlog_level, default 0\n"
 "  -g errlog_file     errlog file, default /tmp/%s.log\n"
-		, _program_name, DLOG_CENTER_PORT, _program_name);
+"%s\n\n"
+		, _program_name, DLOG_CENTER_PORT, _program_name, build_info);
 	exit(1);
 }
 

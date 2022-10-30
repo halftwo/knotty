@@ -43,6 +43,8 @@
 #include <stdbool.h>
 #include <errno.h>
 
+#define DLOG_CENTER_VERSION	"221030.22103019"
+
 #define VER_LOCUS		"v" XS_TOSTR(DLOG_PACKET_VERSION)
 
 #define STACK_SIZE		(256*1024)
@@ -77,6 +79,8 @@ struct packet_block
 	bool ip_diff;
 	struct dlog_packet pkt;
 };
+
+static char build_info[] = "$build: dlog_center-" DLOG_CENTER_VERSION " " __DATE__ " " __TIME__ " $";
 
 static char _program_dir[PATH_SIZE-64];
 static char _program_name[32];
@@ -1143,7 +1147,8 @@ static void usage(const char *prog)
 "  -u user            process user, default the user of logdir, or nobody\n"
 "  -x xlog_level      xlog_level, default 0\n"
 "  -g errlog_file     errlog file, default /tmp/%s.log\n"
-		, _program_name, DLOG_CENTER_PORT, _program_name);
+"%s\n\n"
+		, _program_name, DLOG_CENTER_PORT, _program_name, build_info);
 	exit(1);
 }
 
