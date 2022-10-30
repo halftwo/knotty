@@ -117,7 +117,6 @@ static unsigned long long total_size;
 static char instance_id[24];
 static time_t active_time;
 static char start_time_str[24];
-static char timezone_str[8];
 static xatomic_t num_client;
 static char the_ip[40];
 
@@ -994,12 +993,12 @@ void *logger(void *arg)
 
 			const char *tag = _debut ? "DEBUT" : "THROB";
 			_debut = false;
-			xdlog(NULL, _program_name, tag, VER_LOCUS, "id=%s tz=%s start=%s version=%s active=%s client=%d"
+			xdlog(NULL, _program_name, tag, VER_LOCUS, "id=%s start=%s ver=%s active=%s client=%d"
 					" info=euser:%s,MHz:%.0f,cpu:%.1f%%"
 					" record=v:%d,get:%llu,error:%llu"
 					" block=v:%d,pool:%lu,get:%ld,error:%ld,zip:%ld,unzip_error:%ld"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
-				instance_id, dlog_timezone_str(timezone_str), start_time_str, DLOG_VERSION,
+				instance_id, start_time_str, DLOG_VERSION,
 				active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
 				DLOG_RECORD_VERSION, num_record, num_record_error,

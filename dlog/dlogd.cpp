@@ -94,7 +94,6 @@ static uint8_t the_ip64[16];
 static char machine_id[33];
 static char instance_id[24];
 static char start_time_str[24];
-static char timezone_str[8];
 static bool run_logger = true;
 static bool dlog_on = true;
 
@@ -748,12 +747,12 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 		const char *tag = _debut ? "DEBUT" : "THROB";
 		_debut = false;
 		rec = recpool_acquire();
-		dlog_make(rec, NULL, _program_name, tag, VER_LOCUS, "id=%s tz=%s start=%s version=%s now=%s active=%s client=%d"
+		dlog_make(rec, NULL, _program_name, tag, VER_LOCUS, "id=%s start=%s ver=%s now=%s active=%s client=%d"
 					" info=euser:%s,MHz:%.0f,cpu:%.1f%%"
 					" record=v:%d,bad:%ld,take:%llu,cooked:%llu,overflow:%ld,overflow_time:%s"
 					" block=v:%d,pool:%zd,send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
-				instance_id, dlog_timezone_str(timezone_str), start_time_str, DLOG_VERSION,
+				instance_id, start_time_str, DLOG_VERSION,
 				current_ts, active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
 				DLOG_RECORD_VERSION, xatomiclong_get(&num_record_bad), 
