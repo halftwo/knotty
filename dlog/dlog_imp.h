@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 
-#define DLOG_PROTO_VERSION		"221028.22103018"
+#define DLOG_CLIENT_VERSION		"221028.22103018"
 
 #define DLOG_CENTER_PORT		6108
 #define DLOGD_PORT			6109
