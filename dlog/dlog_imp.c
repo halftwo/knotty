@@ -203,9 +203,9 @@ void dlog_make(struct dlog_record *rec, xfmt_callback_function callback,
 	va_end(ap);
 }
 
-const char* dlog_version_rcsid()
+const char* dlog_proto_version_rcsid()
 {
 	xslib_version_rcsid();
-	return "$dlog: " DLOG_VERSION " $";
+	return "$dlog: " DLOG_PROTO_VERSION " $";
 }
 

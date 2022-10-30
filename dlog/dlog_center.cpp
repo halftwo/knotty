@@ -1002,7 +1002,7 @@ void *logger(void *arg)
 					" record=v:%d,get:%llu,error:%llu"
 					" block=v:%d,pool:%lu,get:%ld,error:%ld,zip:%ld,unzip_error:%ld"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
-				instance_id, start_time_str, DLOG_VERSION,
+				instance_id, start_time_str, DLOG_CENTER_VERSION,
 				active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
 				DLOG_RECORD_VERSION, num_record, num_record_error,

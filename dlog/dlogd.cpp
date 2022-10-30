@@ -756,7 +756,7 @@ void MyTimer::event_on_task(const XEvent::DispatcherPtr& dispatcher)
 					" record=v:%d,bad:%ld,take:%llu,cooked:%llu,overflow:%ld,overflow_time:%s"
 					" block=v:%d,pool:%zd,send:%llu,zip:%llu,overflow:%llu,overflow_time:%s"
 					" plugin=file:%s,md5:%s,mtime:%s,status:%c,run:%llu,discard:%llu,error:%llu",
-				instance_id, start_time_str, DLOG_VERSION,
+				instance_id, start_time_str, DLOGD_VERSION,
 				current_ts, active_ts, xatomic_get(&num_client),
 				_euser, (freq / 1000000.0), self_cpu,
 				DLOG_RECORD_VERSION, xatomiclong_get(&num_record_bad), 
